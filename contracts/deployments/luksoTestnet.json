@@ -1,0 +1,17 @@
+{
+  "network": "luksoTestnet",
+  "chainId": 4201,
+  "contract": "contracts/UpCieBadge.sol:UpCieBadge",
+  "address": "0x329DF2F4FE3585757BAFb549E465a4215fb64C2f",
+  "deployBlock": 8737806,
+  "txHash": "0x9959844e6761c0254cf499acb8096d989546229c144e89096d305792e38d24c3",
+  "owner": "0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C",
+  "attester": "0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a",
+  "deployer": "0x84B883180265948505BFe49F0b78e1dAaECa0156",
+  "deployedAt": "2026-10-14T13:27:25.646Z",
+  "gitCommit": "2b439542dca61e9cbdc5c1cfbb31138d87d0b22e",
+  "verified": true,
+  "verifiedOn": [
+    "blockscout"
+  ]
+}
