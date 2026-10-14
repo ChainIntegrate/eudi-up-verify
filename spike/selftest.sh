@@ -88,8 +88,18 @@ start_servers() { # $1 = CRL file to publish as current.crl
 }
 stop_servers() { kill "$OCSP_PID" "$HTTP_PID" 2>/dev/null || true; wait "$OCSP_PID" "$HTTP_PID" 2>/dev/null || true; }
 
+# fake Trusted Lists: the fake CA under an IdV service (trusted) or under another service type (not trusted)
+make_tsl() { # $1 = service type URI, $2 = output file
+  printf '<tsl:TrustServiceStatusList xmlns:tsl="http://uri.etsi.org/02231/v2#"><tsl:TrustServiceProviderList><tsl:TSPService><tsl:ServiceInformation><tsl:ServiceTypeIdentifier>%s</tsl:ServiceTypeIdentifier><tsl:ServiceDigitalIdentity><tsl:DigitalId><tsl:X509Certificate>%s</tsl:X509Certificate></tsl:DigitalId></tsl:ServiceDigitalIdentity></tsl:ServiceInformation></tsl:TSPService></tsl:TrustServiceProviderList></tsl:TrustServiceStatusList>' \
+    "$1" "$(openssl x509 -in ca.pem -outform DER | base64 -w0)" > "$2"
+}
+make_tsl "http://uri.etsi.org/TrstSvc/Svctype/IdV" tsl-idv.xml
+make_tsl "http://uri.etsi.org/TrstSvc/Svctype/CA/QC" tsl-other.xml
+
 V="node $HERE/verify-cie.mjs"
 check "attached + CA + empty CRL"        0 $V --p7m attached.p7m --statement enunciato.txt --ca ca.pem --crl-file empty.crl
+check "trust from Trusted List (IdV)"    0 $V --p7m attached.p7m --statement enunciato.txt --tsl tsl-idv.xml --crl-file empty.crl
+check "Trusted List, CA not IdV"         1 $V --p7m attached.p7m --statement enunciato.txt --tsl tsl-other.xml --crl-file empty.crl
 check "base64 .p7m"                      0 $V --p7m attached-b64.p7m --statement enunciato.txt --ca ca.pem --crl-file empty.crl
 check "detached + CA + empty CRL"        0 $V --p7m detached.p7m --statement enunciato.txt --ca ca.pem --crl-file empty.crl
 check "revoked certificate"              1 $V --p7m attached.p7m --statement enunciato.txt --ca ca.pem --crl-file revoked.crl

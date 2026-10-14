@@ -8,6 +8,9 @@
 // Usage:
 //   node verify-cie.mjs --p7m firmato.p7m --statement enunciato.txt
 //        [--ca ca1.pem --ca ca2.cer ...]   trusted CA certificates (PEM or DER)
+//        [--tsl TSL-IT.xml | --tsl https://eidas.agid.gov.it/TL/TSL-IT.xml]
+//                                          take trusted CAs from the Italian eIDAS Trusted List
+//                                          (services of type .../Svctype/IdV, used for CIE and CNS)
 //        [--crl-file list.crl ...]         local CRLs (PEM or DER)
 //        [--online]                        allow network: AIA issuer download, OCSP, CRL download
 //
@@ -26,6 +29,7 @@ const { values: args } = parseArgs({
     p7m: { type: "string" },
     statement: { type: "string" },
     ca: { type: "string", multiple: true, default: [] },
+    tsl: { type: "string" },
     "crl-file": { type: "string", multiple: true, default: [] },
     online: { type: "boolean", default: false },
   },
@@ -266,6 +270,32 @@ for (const c of embedded) {
 const trusted = args.ca.map(loadCert);
 for (const c of trusted) info(`trusted CA (--ca): "${dnString(c.subject)}", valid until ${c.notAfter.value.toISOString().slice(0, 10)}`);
 
+// Trusted List: keep the certificates of every TSP service of type IdV (identity verification).
+// Spike limitation: the XML signature of the Trusted List itself is NOT verified here.
+if (args.tsl) {
+  try {
+    const xml = (/^https?:\/\//.test(args.tsl) ? await fetchBinary(args.tsl) : readFileSync(args.tsl)).toString("utf8");
+    const services = xml.match(/<(?:\w+:)?TSPService>[\s\S]*?<\/(?:\w+:)?TSPService>/g) ?? [];
+    let idv = 0;
+    const before = trusted.length;
+    for (const svc of services) {
+      if (!svc.includes("http://uri.etsi.org/TrstSvc/Svctype/IdV")) continue;
+      idv++;
+      for (const m of svc.matchAll(/<(?:\w+:)?X509Certificate>([^<]+)<\/(?:\w+:)?X509Certificate>/g)) {
+        try {
+          trusted.push(new pkijs.Certificate({ schema: parseAsn1(Buffer.from(m[1].replace(/\s+/g, ""), "base64"), "TSL certificate") }));
+        } catch { /* skip unparsable entries */ }
+      }
+    }
+    info(`Trusted List: ${services.length} services, ${idv} of type IdV, ${trusted.length - before} certificates loaded (TSL signature NOT verified in this spike)`);
+    const match = trusted.filter((c) => sameName(c.subject, signerCert.issuer));
+    if (match.length) info(`trust anchors include the holder's issuer: "${dnString(match[0].subject)}" (${match.length} certificate(s) with that name)`);
+    else warn("the holder's issuer is not among the loaded trust anchors (it may be an intermediate: see embedded certificates above)");
+  } catch (e) {
+    warn(`Trusted List not loaded: ${e.message}`);
+  }
+}
+
 let issuerCert = [...embedded, ...trusted].find((c) => sameName(c.subject, signerCert.issuer) && c !== signerCert) ?? null;
 if (!issuerCert && args.online && aia.caIssuers.length) {
   try {
@@ -278,7 +308,7 @@ if (!issuerCert && args.online && aia.caIssuers.length) {
 }
 
 if (!trusted.length) {
-  warn("no --ca given: chain NOT validated. Download the Ministero dell'Interno CA certificates and pass them with --ca");
+  warn("no trust anchors (--ca / --tsl): chain NOT validated");
   failures++;
 } else {
   const engine = new pkijs.CertificateChainValidationEngine({
