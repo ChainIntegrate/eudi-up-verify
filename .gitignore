@@ -147,3 +147,10 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# up-cie-link: signed files and statements may contain personal data
+*.p7m
+*.p7s
+spike/enunciato*.txt
+*.db
+.env
