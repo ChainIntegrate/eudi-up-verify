@@ -163,3 +163,6 @@ contracts/cache/
 contracts/types/
 contracts/coverage/
 contracts/ignition/deployments/chain-31337/
+
+# manual verification exports
+contracts/verify-input/

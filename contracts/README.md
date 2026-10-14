@@ -53,7 +53,7 @@ Generate a key with `npm run new-key` (prints the private key once; store it imm
 ```bash
 # testnet
 npm run deploy:testnet     # checks chain 4201, owner is an LSP0 UP, attester != owner; writes deployments/luksoTestnet.json
-npm run verify:testnet     # Blockscout verification; sets "verified": true in the same file
+npm run verify:testnet     # Blockscout, then Sourcify as fallback; sets "verified": true in the same file
 
 # mainnet (same flow, explicit confirmation required)
 CONFIRM_MAINNET=yes npm run deploy:mainnet
@@ -71,6 +71,15 @@ Safety rails in `scripts/deploy.ts`:
 - after deploying, reads back owner, attester and LSP4TokenType and fails if they differ.
 
 `OWNER_UP` can override the owner configured in `scripts/networks.ts` (a warning is printed).
+
+If automatic verification fails (e.g. Blockscout API errors), export the compiler input and upload it in the
+Blockscout UI (Contract → Verify & publish → Solidity, Standard JSON input):
+
+```bash
+npx hardhat run scripts/export-standard-json.ts --network luksoTestnet
+# prints compiler version, contract name, settings and ABI-encoded constructor args;
+# writes verify-input/luksoTestnet-UpCieBadge.standard-input.json (git-ignored)
+```
 
 ## After deployment
 

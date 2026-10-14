@@ -59,7 +59,7 @@ const config: HardhatUserConfig = {
   verify: {
     blockscout: { enabled: true },
     etherscan: { enabled: false },
-    sourcify: { enabled: false },
+    sourcify: { enabled: true },
   },
 };
 
