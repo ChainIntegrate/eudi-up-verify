@@ -1,5 +1,12 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import hardhatToolboxMochaEthers from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable, type HardhatUserConfig } from "hardhat/config";
+
+// Load contracts/.env if present (git-ignored; template in .env.example).
+// Variables already set in the environment (e.g. Codespaces secrets) take precedence.
+const envFile = fileURLToPath(new URL("./.env", import.meta.url));
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const config: HardhatUserConfig = {
   plugins: [hardhatToolboxMochaEthers],

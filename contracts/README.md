@@ -25,24 +25,28 @@ Transfers, burns and operators always revert.
 | `luksoTestnet` | 4201 | `0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C` | explorer.execution.testnet.lukso.network |
 | `luksoMainnet` | 42 | `0x4a2605796e0d91A9667d6E30365aEEC384C48c27` | explorer.execution.mainnet.lukso.network |
 
-## Keys
+## Keys and configuration
 
-| Name | What | Where |
-|---|---|---|
-| `DEPLOYER_PRIVATE_KEY` | pays deployment gas only; no role in the contract | Codespaces secret or Hardhat keystore |
-| `ATTESTER` | **address** of the backend key that mints badges | Codespaces secret / env var |
-| `LUKSO_TESTNET_RPC_URL`, `LUKSO_MAINNET_RPC_URL` | RPC endpoints dedicated to this service | Codespaces secret or Hardhat keystore |
+| Name | What |
+|---|---|
+| `LUKSO_TESTNET_RPC_URL`, `LUKSO_MAINNET_RPC_URL` | RPC endpoints dedicated to this service |
+| `DEPLOYER_PRIVATE_KEY` | pays deployment gas only; no role in the contract (testnet LYX from the faucet) |
+| `ATTESTER` | **address** of the backend key that mints badges (its private key lives only on the backend server) |
+
+Two ways to provide them, use either:
+
+- **`.env` file**: `cp .env.example .env` in this folder and fill it in. It is git-ignored and loaded by
+  `hardhat.config.ts`.
+- **Codespaces secrets** (GitHub → Settings → Codespaces → Secrets, with access to this repository): they become
+  environment variables and take precedence over `.env`.
 
 Generate a key with `npm run new-key` (prints the private key once; store it immediately, never commit it).
-The attester private key belongs to the backend server only; the deployer needs some LYX (testnet: faucet).
 
 ## Deploy from GitHub Codespaces
 
-1. In GitHub: **Settings → Codespaces → Secrets** (user settings), add the secrets above and give this repository
-   access. The `.devcontainer` lists them as recommended secrets.
-   Alternative for keys: `npx hardhat keystore set DEPLOYER_PRIVATE_KEY` (encrypted, password-protected).
-2. Open a codespace on `main`. The container installs dependencies and compiles (`postCreateCommand`).
-   If you add secrets while the codespace is running, rebuild or restart it.
+1. Open a codespace on `main`. The container installs dependencies and compiles (`postCreateCommand`).
+2. In `contracts/`: `cp .env.example .env` and fill it in (or use Codespaces secrets, see above;
+   if you add secrets while the codespace is running, restart it).
 3. Run the tests: `npm test`.
 4. Deploy and verify:
 
