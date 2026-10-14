@@ -10,7 +10,7 @@
   "deployer": "0x84B883180265948505BFe49F0b78e1dAaECa0156",
   "deployedAt": "2026-10-14T13:38:24.720Z",
   "gitCommit": "ab0a1d0b32a14e0a90e0e8bcda2b426836632a8a",
-  "verified": false,
+  "verified": true,
   "superseded": [
     {
       "network": "luksoTestnet",
@@ -29,5 +29,8 @@
         "blockscout"
       ]
     }
+  ],
+  "verifiedOn": [
+    "blockscout"
   ]
 }
