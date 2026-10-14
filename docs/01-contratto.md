@@ -28,6 +28,7 @@ struct Attestation {
     uint64  verifiedAt;  // momento della verifica
     uint64  expiresAt;   // = scadenza del certificato CIE (D4)
     Status  status;
+    bool    primary;     // true = UP principale della persona; false = UP aggiuntiva (eccezione a D3)
 }
 
 // --- ruoli ---
@@ -36,7 +37,7 @@ struct Attestation {
 function setAttester(address newAttester) external onlyOwner;
 
 // --- scrittura: backend ---
-function attest(address up, bytes32 source, uint64 expiresAt) external onlyAttester;
+function attest(address up, bytes32 source, uint64 expiresAt, bool primary) external onlyAttester;
 //  - token inesistente: _mint(up, tokenId, force=false) -> la UP deve supportare LSP1 (niente EOA);
 //    la UP lo registra tra i suoi asset (LSP5) e il bollino compare tra i collezionabili
 //  - token esistente con stato Invalidated, oppure Valid ma scaduto o da aggiornare: aggiorna i dati in place (rinnovo)
@@ -57,12 +58,13 @@ function approveException(bytes32 ticket, uint8 maxUps) external onlyOwner;
 //  il backend conia la UP "in più" solo se trova on-chain l'evento con quel ticket
 
 // --- lettura ---
-function isVerified(address up) external view returns (bool);  // status == Valid && block.timestamp < expiresAt
+function isVerified(address up) external view returns (bool);         // status == Valid && block.timestamp < expiresAt
+function isVerifiedPrimary(address up) external view returns (bool);  // come sopra && primary
 function getAttestation(address up) external view returns (Attestation memory);
 function tokenIdOf(address up) external pure returns (bytes32);
 
 // --- eventi ---
-event Attested(address indexed up, bytes32 indexed tokenId, bytes32 source, uint64 verifiedAt, uint64 expiresAt);
+event Attested(address indexed up, bytes32 indexed tokenId, bytes32 source, uint64 verifiedAt, uint64 expiresAt, bool primary);
 event Invalidated(address indexed up, bytes32 indexed tokenId, bytes32 reason, address indexed by);
 event Revoked(address indexed up, bytes32 indexed tokenId, bytes32 reason);
 event Reinstated(address indexed up, bytes32 indexed tokenId);
@@ -102,6 +104,12 @@ event ExceptionApproved(bytes32 indexed ticket, uint8 maxUps);
 2. Stato `Revoked` separato da `Invalidated`: **sì**.
 3. Nome: **UP CIE Link**.
 4. Nessuna pausa dedicata: `setAttester(address(0))` ferma ogni nuovo `attest`.
+
+5. **UP principale / aggiuntiva** (aggiunto dopo il primo deploy in testnet): ogni bollino dice se la UP è la principale
+   della persona o una UP aggiuntiva concessa in eccezione, **senza collegare le UP tra loro**. `isVerified` vale per
+   entrambe; `isVerifiedPrimary` solo per la principale, ed è la lettura da usare per "una persona, un voto". Nella
+   migrazione la nuova UP diventa principale. Ha richiesto un nuovo deploy in testnet: il contratto precedente
+   (`0x329DF2F4…4C2f`) resta registrato in `superseded` dentro `contracts/deployments/luksoTestnet.json`.
 
 Note d'implementazione: le eccezioni approvate sono leggibili anche con `exceptionOf(ticket)`, oltre che dall'evento,
 così il backend non dipende da `eth_getLogs`. Le funzioni dell'owner rifiutano gli altri chiamanti con il messaggio

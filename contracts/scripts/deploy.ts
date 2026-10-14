@@ -9,7 +9,7 @@
 //
 // The deployer key only pays for the deployment: ownership goes to the owner UP in the constructor.
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { network } from "hardhat";
@@ -86,6 +86,14 @@ if (outFile) {
   try {
     commit = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
   } catch {}
+  // Keep the history: a previous deployment of this network moves into "superseded".
+  const file = fileURLToPath(outFile);
+  let superseded: unknown[] = [];
+  if (existsSync(file)) {
+    const previous = JSON.parse(readFileSync(file, "utf8"));
+    const { superseded: older = [], ...prev } = previous;
+    superseded = [prev, ...older];
+  }
   const record = {
     network: networkName,
     chainId: Number(chainId),
@@ -99,8 +107,8 @@ if (outFile) {
     deployedAt: new Date().toISOString(),
     gitCommit: commit,
     verified: false,
+    superseded,
   };
-  const file = fileURLToPath(outFile);
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, JSON.stringify(record, null, 2) + "\n");
   console.log(`Saved      deployments/${networkName}.json`);

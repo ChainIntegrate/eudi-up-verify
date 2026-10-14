@@ -9,7 +9,9 @@ import {LSP8IdentifiableDigitalAsset} from "@lukso/lsp8-contracts/contracts/LSP8
 /// @dev No personal data is stored: only source, verification time, expiry and status per UP.
 /// One token per UP, tokenId = the UP address left-padded to 32 bytes (LSP8 tokenId format ADDRESS).
 /// "One person, one UP" is enforced off-chain by the attester backend; the owner can approve
-/// exceptions, recorded on-chain with an opaque ticket.
+/// exceptions, recorded on-chain with an opaque ticket. Each badge says whether it is the person's
+/// primary UP or an additional one (exception), without linking UPs to each other: contracts that need
+/// strict "one person, one vote" use {isVerifiedPrimary}.
 contract UpCieBadge is LSP8IdentifiableDigitalAsset {
     enum Status {
         None,
@@ -23,6 +25,7 @@ contract UpCieBadge is LSP8IdentifiableDigitalAsset {
         uint64 verifiedAt;
         uint64 expiresAt;
         Status status;
+        bool primary;
     }
 
     // LSP4TokenType: 1 = NFT, so wallets list the badge among collectibles.
@@ -36,7 +39,14 @@ contract UpCieBadge is LSP8IdentifiableDigitalAsset {
     /// @notice Exceptions to "one person, one UP" approved by the owner: ticket => max number of UPs.
     mapping(bytes32 ticket => uint8 maxUps) public exceptionOf;
 
-    event Attested(address indexed up, bytes32 indexed tokenId, bytes32 source, uint64 verifiedAt, uint64 expiresAt);
+    event Attested(
+        address indexed up,
+        bytes32 indexed tokenId,
+        bytes32 source,
+        uint64 verifiedAt,
+        uint64 expiresAt,
+        bool primary
+    );
     event Invalidated(address indexed up, bytes32 indexed tokenId, bytes32 reason, address indexed by);
     event Revoked(address indexed up, bytes32 indexed tokenId, bytes32 reason);
     event Reinstated(address indexed up, bytes32 indexed tokenId);
@@ -71,7 +81,8 @@ contract UpCieBadge is LSP8IdentifiableDigitalAsset {
 
     /// @notice Mints the badge to `up`, or renews it in place if it already exists.
     /// @param expiresAt Expiry of the CIE holder certificate (unix seconds).
-    function attest(address up, bytes32 source, uint64 expiresAt) external onlyAttester {
+    /// @param primary True for the person's primary UP, false for an additional UP allowed by an exception.
+    function attest(address up, bytes32 source, uint64 expiresAt, bool primary) external onlyAttester {
         if (up == address(0)) revert InvalidUniversalProfile();
         if (expiresAt <= block.timestamp) revert ExpiryNotInFuture(expiresAt);
 
@@ -84,11 +95,12 @@ contract UpCieBadge is LSP8IdentifiableDigitalAsset {
         a.verifiedAt = verifiedAt;
         a.expiresAt = expiresAt;
         a.status = Status.Valid;
+        a.primary = primary;
 
         // force = false: the recipient must support LSP1 (a Universal Profile), never an EOA.
         if (!_exists(tokenId)) _mint(up, tokenId, false, "");
 
-        emit Attested(up, tokenId, source, verifiedAt, expiresAt);
+        emit Attested(up, tokenId, source, verifiedAt, expiresAt, primary);
     }
 
     /// @notice Invalidates a valid badge (e.g. certificate revoked, migration). It can be attested again.
@@ -144,6 +156,13 @@ contract UpCieBadge is LSP8IdentifiableDigitalAsset {
     function isVerified(address up) external view returns (bool) {
         Attestation storage a = _attestations[tokenIdOf(up)];
         return a.status == Status.Valid && block.timestamp < a.expiresAt;
+    }
+
+    /// @notice True if `up` holds a valid, unexpired badge AND it is the person's primary UP.
+    /// Use this for strict "one person, one UP" (e.g. voting, airdrops).
+    function isVerifiedPrimary(address up) external view returns (bool) {
+        Attestation storage a = _attestations[tokenIdOf(up)];
+        return a.status == Status.Valid && block.timestamp < a.expiresAt && a.primary;
     }
 
     function getAttestation(address up) external view returns (Attestation memory) {

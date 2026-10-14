@@ -16,7 +16,8 @@ and marks the UP with a soulbound "verified" badge. **No personal data goes on-c
    (OCSP, fail-closed). It derives a pseudonymous uniqueness key from the tax code (HMAC with a server-side secret)
    and discards every personal value.
 5. The attester mints a **soulbound LSP8 badge** on the UP: source, verification time, expiry (the card's expiry)
-   and status. Other contracts can call `isVerified(up)`.
+   and status. Other contracts can call `isVerified(up)`, or `isVerifiedPrimary(up)` for strict
+   "one person, one UP" (a person's additional UPs, allowed only by exception, are never linked on-chain).
 
 Both signatures cover the same bytes, so the link between the UP and the CIE is cryptographic, not just a session on
 our server.
@@ -27,7 +28,7 @@ our server.
 |---|---|---|
 | 0 | Analysis, options, decisions (`docs/00-analisi.md`) | done |
 | Spike | Verify a real CIE signature (`spike/`) | done, all checks passed on a real CIE |
-| 1 | Attester contract, tests, deployment (`contracts/`) | contract and tests done; testnet deployment pending |
+| 1 | Attester contract, tests, deployment (`contracts/`) | done on testnet; redeploy needed for the primary flag |
 | 2 | Backend (Node/Express): statements, ERC-1271, CIE verification, minting | to do |
 | 3 | Frontend: connect UP, sign, show badge | to do |
 | 4 | Android app (NFC signature), end-to-end demo | to do |

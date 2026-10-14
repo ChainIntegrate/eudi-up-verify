@@ -13,10 +13,14 @@ Design and decisions: [`../docs/01-contratto.md`](../docs/01-contratto.md).
 | Role | Who | Can |
 |---|---|---|
 | owner | ChainIntegrate UP | `revoke`, `reinstate`, `setAttester` (zero address = emergency stop), `approveException`, ERC725Y metadata |
-| attester | backend operational key | `attest` (mint or renew), `invalidate` |
+| attester | backend operational key | `attest(up, source, expiresAt, primary)` (mint or renew), `invalidate` |
 | holder | the badge UP | `renounce` |
 
 Transfers, burns and operators always revert.
+
+Reads: `isVerified(up)` (valid and not expired) and `isVerifiedPrimary(up)` (same, and the UP is the person's
+primary one, not an additional UP allowed by an exception). Use `isVerifiedPrimary` for strict
+"one person, one UP" (votes, airdrops). UPs of the same person are never linked on-chain.
 
 ## Networks
 
@@ -66,7 +70,8 @@ npm run verify:mainnet
 Safety rails in `scripts/deploy.ts`:
 - refuses a wrong chain id for the selected network;
 - refuses an owner that is not an LSP0 Universal Profile, and an attester equal to the owner;
-- refuses to overwrite an existing `deployments/<network>.json` unless `REDEPLOY=yes`;
+- refuses to overwrite an existing `deployments/<network>.json` unless `REDEPLOY=yes` (the previous deployment is
+  kept in the `superseded` list of the same file);
 - on mainnet requires `CONFIRM_MAINNET=yes` and waits for 2 confirmations;
 - after deploying, reads back owner, attester and LSP4TokenType and fails if they differ.
 

@@ -69,44 +69,81 @@ describe("UpCieBadge", function () {
       const { badge, holderUp, attester, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
       const exp = await expiry();
-      await expect(badge.connect(attester).attest(up, CIE, exp))
+      await expect(badge.connect(attester).attest(up, CIE, exp, true))
         .to.emit(badge, "Attested")
-        .withArgs(up, await badge.tokenIdOf(up), CIE, (v: bigint) => v > 0n, exp);
+        .withArgs(up, await badge.tokenIdOf(up), CIE, (v: bigint) => v > 0n, exp, true);
       expect(await badge.tokenOwnerOf(await badge.tokenIdOf(up))).to.equal(up);
       expect(await badge.balanceOf(up)).to.equal(1n);
       expect(await badge.isVerified(up)).to.equal(true);
+      expect(await badge.isVerifiedPrimary(up)).to.equal(true);
       const a = await badge.getAttestation(up);
       expect(a.source).to.equal(CIE);
       expect(a.expiresAt).to.equal(exp);
       expect(a.status).to.equal(Status.Valid);
+      expect(a.primary).to.equal(true);
+    });
+
+    it("an additional UP (exception) is verified but not primary", async function () {
+      const { badge, holderUp, holderUp2, attester, expiry } = await loadFixture(deployFixture);
+      const up1 = await holderUp.getAddress();
+      const up2 = await holderUp2.getAddress();
+      await badge.connect(attester).attest(up1, CIE, await expiry(), true);
+      const exp = await expiry();
+      await expect(badge.connect(attester).attest(up2, CIE, exp, false))
+        .to.emit(badge, "Attested")
+        .withArgs(up2, await badge.tokenIdOf(up2), CIE, (v: bigint) => v > 0n, exp, false);
+      expect(await badge.isVerified(up2)).to.equal(true);
+      expect(await badge.isVerifiedPrimary(up2)).to.equal(false);
+      expect((await badge.getAttestation(up2)).primary).to.equal(false);
+      expect(await badge.isVerifiedPrimary(up1)).to.equal(true);
+    });
+
+    it("migration: the old primary is invalidated, the new UP becomes primary", async function () {
+      const { badge, holderUp, holderUp2, attester, expiry } = await loadFixture(deployFixture);
+      const oldUp = await holderUp.getAddress();
+      const newUp = await holderUp2.getAddress();
+      await badge.connect(attester).attest(oldUp, CIE, await expiry(), true);
+      await badge.connect(attester).invalidate(oldUp, reason("MIGRATED"));
+      await badge.connect(attester).attest(newUp, CIE, await expiry(), true);
+      expect(await badge.isVerifiedPrimary(oldUp)).to.equal(false);
+      expect(await badge.isVerifiedPrimary(newUp)).to.equal(true);
+    });
+
+    it("a renewal can change the primary flag", async function () {
+      const { badge, holderUp, attester, expiry } = await loadFixture(deployFixture);
+      const up = await holderUp.getAddress();
+      await badge.connect(attester).attest(up, CIE, await expiry(), false);
+      expect(await badge.isVerifiedPrimary(up)).to.equal(false);
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
+      expect(await badge.isVerifiedPrimary(up)).to.equal(true);
     });
 
     it("reverts for callers other than the attester", async function () {
       const { badge, holderUp, other, expiry } = await loadFixture(deployFixture);
-      await expect(badge.connect(other).attest(await holderUp.getAddress(), CIE, await expiry()))
+      await expect(badge.connect(other).attest(await holderUp.getAddress(), CIE, await expiry(), true))
         .to.be.revertedWithCustomError(badge, "NotAttester")
         .withArgs(other.address);
     });
 
     it("reverts towards an EOA or a contract without LSP1", async function () {
       const { badge, attester, other, noLsp1, expiry } = await loadFixture(deployFixture);
-      await expect(badge.connect(attester).attest(other.address, CIE, await expiry())).to.be.revertedWithCustomError(
+      await expect(badge.connect(attester).attest(other.address, CIE, await expiry(), true)).to.be.revertedWithCustomError(
         badge,
         "LSP8NotifyTokenReceiverIsEOA",
       );
       await expect(
-        badge.connect(attester).attest(await noLsp1.getAddress(), CIE, await expiry()),
+        badge.connect(attester).attest(await noLsp1.getAddress(), CIE, await expiry(), true),
       ).to.be.revertedWithCustomError(badge, "LSP8NotifyTokenReceiverContractMissingLSP1Interface");
     });
 
     it("reverts for the zero address or an expiry not in the future", async function () {
       const { badge, holderUp, attester } = await loadFixture(deployFixture);
-      await expect(badge.connect(attester).attest(ethers.ZeroAddress, CIE, 2n ** 63n)).to.be.revertedWithCustomError(
+      await expect(badge.connect(attester).attest(ethers.ZeroAddress, CIE, 2n ** 63n, true)).to.be.revertedWithCustomError(
         badge,
         "InvalidUniversalProfile",
       );
       const now = BigInt(await time.latest());
-      await expect(badge.connect(attester).attest(await holderUp.getAddress(), CIE, now))
+      await expect(badge.connect(attester).attest(await holderUp.getAddress(), CIE, now, true))
         .to.be.revertedWithCustomError(badge, "ExpiryNotInFuture");
     });
 
@@ -114,8 +151,8 @@ describe("UpCieBadge", function () {
       const { badge, holderUp, holderUp2, attester, expiry } = await loadFixture(deployFixture);
       const up1 = await holderUp.getAddress();
       const up2 = await holderUp2.getAddress();
-      await badge.connect(attester).attest(up1, CIE, await expiry());
-      await badge.connect(attester).attest(up2, CIE, await expiry());
+      await badge.connect(attester).attest(up1, CIE, await expiry(), true);
+      await badge.connect(attester).attest(up2, CIE, await expiry(), true);
       const id1 = await badge.tokenIdOf(up1);
       const id2 = await badge.tokenIdOf(up2);
       expect(id1).to.not.equal(id2);
@@ -131,9 +168,9 @@ describe("UpCieBadge", function () {
     it("renews in place without minting a second token", async function () {
       const { badge, holderUp, attester, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       const newExp = await expiry(9 * YEAR);
-      await badge.connect(attester).attest(up, CIE, newExp);
+      await badge.connect(attester).attest(up, CIE, newExp, true);
       expect(await badge.balanceOf(up)).to.equal(1n);
       expect(await badge.totalSupply()).to.equal(1n);
       expect((await badge.getAttestation(up)).expiresAt).to.equal(newExp);
@@ -145,12 +182,13 @@ describe("UpCieBadge", function () {
       const { badge, holderUp, attester, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
       expect(await badge.isVerified(up)).to.equal(false);
-      await badge.connect(attester).attest(up, CIE, await expiry(1000));
+      await badge.connect(attester).attest(up, CIE, await expiry(1000), true);
       expect(await badge.isVerified(up)).to.equal(true);
       await time.increase(1001);
       expect(await badge.isVerified(up)).to.equal(false);
+      expect(await badge.isVerifiedPrimary(up)).to.equal(false);
       // an expired badge can be renewed
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       expect(await badge.isVerified(up)).to.equal(true);
     });
   });
@@ -159,15 +197,16 @@ describe("UpCieBadge", function () {
     it("the attester invalidates; the badge can be attested again", async function () {
       const { badge, holderUp, attester, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       await expect(badge.connect(attester).invalidate(up, reason("CERT_REVOKED")))
         .to.emit(badge, "Invalidated")
         .withArgs(up, await badge.tokenIdOf(up), reason("CERT_REVOKED"), attester.address);
       expect(await badge.isVerified(up)).to.equal(false);
+      expect(await badge.isVerifiedPrimary(up)).to.equal(false);
       expect((await badge.getAttestation(up)).status).to.equal(Status.Invalidated);
       // the token stays with the UP (no burn)
       expect(await badge.balanceOf(up)).to.equal(1n);
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       expect(await badge.isVerified(up)).to.equal(true);
     });
 
@@ -181,7 +220,7 @@ describe("UpCieBadge", function () {
     it("the holder UP renounces its own badge", async function () {
       const { badge, holderUp, attester, asHolder, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       await expect(asHolder("renounce", []))
         .to.emit(badge, "Invalidated")
         .withArgs(up, await badge.tokenIdOf(up), reason("SELF"), up);
@@ -198,17 +237,18 @@ describe("UpCieBadge", function () {
     it("revoked badges cannot be renewed until reinstated", async function () {
       const { badge, holderUp, attester, asOwner, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       await expect(asOwner("revoke", [up, reason("ABUSE")]))
         .to.emit(badge, "Revoked")
         .withArgs(up, await badge.tokenIdOf(up), reason("ABUSE"));
       expect(await badge.isVerified(up)).to.equal(false);
-      await expect(badge.connect(attester).attest(up, CIE, await expiry())).to.be.revertedWithCustomError(badge, "BadgeRevoked");
+      expect(await badge.isVerifiedPrimary(up)).to.equal(false);
+      await expect(badge.connect(attester).attest(up, CIE, await expiry(), true)).to.be.revertedWithCustomError(badge, "BadgeRevoked");
       await expect(badge.connect(attester).invalidate(up, reason("X"))).to.be.revertedWithCustomError(badge, "BadgeNotValid");
 
       await expect(asOwner("reinstate", [up])).to.emit(badge, "Reinstated");
       expect((await badge.getAttestation(up)).status).to.equal(Status.Invalidated);
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       expect(await badge.isVerified(up)).to.equal(true);
     });
 
@@ -217,7 +257,7 @@ describe("UpCieBadge", function () {
       const up = await holderUp.getAddress();
       await expect(asOwner("revoke", [up, reason("X")])).to.be.revertedWithCustomError(badge, "BadgeNotFound");
       await expect(asOwner("reinstate", [up])).to.be.revertedWithCustomError(badge, "BadgeNotRevoked");
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       await asOwner("revoke", [up, reason("X")]);
       await expect(asOwner("revoke", [up, reason("X")])).to.be.revertedWithCustomError(badge, "BadgeRevoked");
     });
@@ -241,15 +281,15 @@ describe("UpCieBadge", function () {
         .to.emit(badge, "AttesterChanged")
         .withArgs(attester.address, other.address);
       const up = await holderUp.getAddress();
-      await expect(badge.connect(attester).attest(up, CIE, await expiry())).to.be.revertedWithCustomError(badge, "NotAttester");
-      await badge.connect(other).attest(up, CIE, await expiry());
+      await expect(badge.connect(attester).attest(up, CIE, await expiry(), true)).to.be.revertedWithCustomError(badge, "NotAttester");
+      await badge.connect(other).attest(up, CIE, await expiry(), true);
       expect(await badge.isVerified(up)).to.equal(true);
     });
 
     it("setting the attester to zero stops all attestations (emergency stop)", async function () {
       const { badge, holderUp, attester, asOwner, expiry } = await loadFixture(deployFixture);
       await asOwner("setAttester", [ethers.ZeroAddress]);
-      await expect(badge.connect(attester).attest(await holderUp.getAddress(), CIE, await expiry())).to.be.revertedWithCustomError(
+      await expect(badge.connect(attester).attest(await holderUp.getAddress(), CIE, await expiry(), true)).to.be.revertedWithCustomError(
         badge,
         "NotAttester",
       );
@@ -276,7 +316,7 @@ describe("UpCieBadge", function () {
       const { badge, holderUp, holderUp2, attester, asHolder, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
       const up2 = await holderUp2.getAddress();
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       const tokenId = await badge.tokenIdOf(up);
       for (const force of [false, true]) {
         await expect(asHolder("transfer", [up, up2, tokenId, force, "0x"])).to.be.revertedWithCustomError(badge, "TransferNotAllowed");
@@ -288,7 +328,7 @@ describe("UpCieBadge", function () {
     it("cannot transfer through batchCalls either", async function () {
       const { badge, holderUp, holderUp2, attester, asHolder, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
-      await badge.connect(attester).attest(up, CIE, await expiry());
+      await badge.connect(attester).attest(up, CIE, await expiry(), true);
       const call = badge.interface.encodeFunctionData("transfer", [up, await holderUp2.getAddress(), await badge.tokenIdOf(up), true, "0x"]);
       await expect(asHolder("batchCalls", [[call]])).to.be.revertedWithCustomError(badge, "TransferNotAllowed");
     });
