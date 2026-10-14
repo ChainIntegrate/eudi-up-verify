@@ -163,7 +163,7 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
 
 ## 11. Decisioni prese (2026-10-14)
 
-- **B1–B4:** approvate come proposte in §10.
+- **B1–B4:** confermate esplicitamente come proposte in §10.
 
 - **B5 Backup:** per ora **sullo stesso server** (script, cifratura e rotazione come in §7). La copia fuori dalla
   macchina diventa obbligatoria prima dell'uso "sul serio" (mainnet con utenti reali): lo script ha già il passo
