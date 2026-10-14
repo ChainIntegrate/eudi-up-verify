@@ -168,9 +168,19 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
 - **B5 Backup:** per ora **sullo stesso server** (script, cifratura e rotazione come in §7). La copia fuori dalla
   macchina diventa obbligatoria prima dell'uso "sul serio" (mainnet con utenti reali): lo script ha già il passo
   opzionale, da attivare quando ci sarà la destinazione.
-- **B6 Server:** dietro **nginx** sulla VPS esistente. Sottodominio proposto: **`up-cie-link.chainintegrate.it`**
+- **B6 Server:** dietro **nginx** sulla VPS esistente. Sottodominio **confermato: `up-cie-link.chainintegrate.it`**
+  (DNS già configurato verso la VPS)
   (stesso schema di `crosschain-lukso.chainintegrate.it`, stesso nome del repo e del token). Porta interna da scegliere
   dopo aver controllato quelle libere (`ss -ltnp`); il backend la legge da `PORT` e rifiuta di partire se è occupata.
 - **B7 Canali CIE:** test e demo iniziale **senza app**, con upload del `.p7m` di CieSign; in definitiva **app
   Android**. L'upload resta dietro un'opzione di configurazione (`ALLOW_CADES_UPLOAD`), da spegnere quando l'app è
   pronta.
+
+## 12. RPC (informazioni ricavate da `traceability-registry`, 2026-10-14)
+
+- **Testnet:** RPC pubblico `https://rpc.testnet.lukso.network`.
+- **Mainnet:** nodo self-hosted ChainIntegrate `https://rpc.chainintegrate.it/rpc/<api-key>`, con la chiave **nel
+  percorso dell'URL** e la regola "una chiave dedicata per servizio": una per il backend di up-cie-link e una
+  separata per i deploy. Il dominio non è pubblico: l'RPC si usa solo lato server.
+- Conseguenza: `RPC_URL` non va **mai** scritto nei log (il backend non lo stampa, gli errori riportano solo codici).
+- La porta 3014 è già usata da `traceability-registry`.
