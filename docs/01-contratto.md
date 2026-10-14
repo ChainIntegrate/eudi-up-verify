@@ -1,6 +1,6 @@
 # Fase 1 — Contratto attestatore: interfaccia da approvare
 
-> Stato: **proposta**, nessun codice. Riferimenti: decisioni D3, D4, D5 in `00-analisi.md` §9; vincoli in `CLAUDE.md`.
+> Stato: **approvata e implementata** (`contracts/`, 21 test). Nome del token: **UP CIE Link** (simbolo provvisorio `UPCIE`). Riferimenti: decisioni D3, D4, D5 in `00-analisi.md` §9; vincoli in `CLAUDE.md`.
 
 ## Principio guida
 
@@ -96,7 +96,33 @@ event ExceptionApproved(bytes32 indexed ticket, uint8 maxUps);
 - Ruoli: `setAttester` solo owner; il vecchio attester perde i permessi.
 - Eventi emessi con i parametri attesi.
 
-## Domande aperte
+## Decisioni prese (2026-10-14)
+
+1. Migrazione: **nessun collegamento on-chain** tra vecchia e nuova UP; solo `Invalidated` con motivo `MIGRATED`.
+2. Stato `Revoked` separato da `Invalidated`: **sì**.
+3. Nome: **UP CIE Link**.
+4. Nessuna pausa dedicata: `setAttester(address(0))` ferma ogni nuovo `attest`.
+
+Note d'implementazione: le eccezioni approvate sono leggibili anche con `exceptionOf(ticket)`, oltre che dall'evento,
+così il backend non dipende da `eth_getLogs`. Le funzioni dell'owner rifiutano gli altri chiamanti con il messaggio
+standard di OpenZeppelin (`Ownable: caller is not the owner`), ereditato da ERC725Y v8.
+
+## In futuro: associare un nome alla UP?
+
+Si può fare, ma **solo su iniziativa del titolare** e **mai scrivendo il nome nel nostro contratto**. Opzioni compatibili
+con il design attuale:
+- **Il titolare pubblica il nome sulla propria UP** (profilo LSP3, che già oggi gestisce lui) e noi attestiamo che
+  coincide con quello della CIE: on-chain va solo un'indicazione "nome verificato", senza il nome. Il dato è pubblico per
+  scelta dell'utente, che può toglierlo dal profilo.
+- **Credenziale fuori catena** consegnata al titolare (nome + UP, firmata da ChainIntegrate) da mostrare a chi vuole,
+  quando vuole. Nulla on-chain.
+- Il contratto ha già un punto di estensione: i dati per token di LSP8 (`setDataForTokenId`), scrivibili dall'owner.
+
+Da evitare: nome, CF o loro hash nel contratto. Restano per sempre nella storia della blockchain, quindi niente diritto
+alla cancellazione; e un hash di un nome si ricostruisce con un dizionario. Poiché il backend non conserva il nome, servirà
+comunque una nuova firma CIE del titolare al momento della richiesta.
+
+## Domande aperte (chiuse, vedi sopra)
 
 1. **Migrazione:** un evento che collega vecchia e nuova UP (`Migrated(old, new)`) sarebbe comodo, ma renderebbe pubblico
    che le due UP appartengono alla stessa persona. Proposta: **nessun collegamento on-chain**, solo `Invalidated` con

@@ -156,3 +156,10 @@ spike/enunciato*.txt
 .env
 signed_*
 **/signed_*
+
+# Hardhat (contracts/)
+contracts/artifacts/
+contracts/cache/
+contracts/types/
+contracts/coverage/
+contracts/ignition/deployments/chain-31337/
