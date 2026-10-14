@@ -1,0 +1,15 @@
+# Hourly monitor (read-only): see backend/src/monitor.js. Started by up-cie-link-monitor.timer.
+# Adjust User and the paths (repository directory and node binary: `which node` as that user).
+[Unit]
+Description=up-cie-link monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=CHANGE_ME
+WorkingDirectory=/CHANGE_ME/up-cie-link/backend
+ExecStart=/usr/bin/node src/monitor.js
+TimeoutStartSec=120
+NoNewPrivileges=true
+PrivateTmp=true

@@ -206,7 +206,12 @@ Confermate:
 - SMTP: lo stesso account `no-reply@chainintegrate.it` del relayer; destinatario lo stesso del relayer, scritto solo
   nella configurazione sul server.
 
-Da chiarire (domande a scelta, la risposta "confermato" non indica l'opzione):
-- mail per ogni collegamento riuscito, oppure solo nel riepilogo giornaliero? (per ora: opzione di configurazione,
-  spenta)
-- monitor orario come processo PM2 o come timer systemd?
+Decise il 2026-10-14 (risposte alle domande a scelta):
+- mail per ogni collegamento riuscito: **accesa durante i test e la demo** (`NOTIFY_EACH_LINK=true`), poi spenta; a
+  regime i collegamenti compaiono solo nel riepilogo giornaliero, mentre problemi ed eventi degni di nota arrivano
+  sempre subito;
+- **backend con PM2** (`deploy/ecosystem.config.cjs`, una sola istanza per via della coda seriale);
+  **monitor con timer systemd** (`deploy/systemd/`), indipendente da PM2, così segnala anche un PM2 fermo.
+
+Da chiarire:
+- backup giornaliero: timer systemd (come il monitor) o cron di PM2?

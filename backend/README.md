@@ -75,6 +75,10 @@ npm run backup:keygen > key.txt   # on YOUR machine: age key pair; only the publ
 npm run restore -- --file <backup.db.gz.age> --identity key.txt --out restored.db
 ```
 
+Deployment files are in [`../deploy`](../deploy): `ecosystem.config.cjs` (PM2, backend, a single instance),
+`systemd/up-cie-link-monitor.{service,timer}` (hourly monitor, independent of PM2) and `nginx/up-cie-link.conf`
+(template for `up-cie-link.chainintegrate.it`; replace the `CHANGE_ME` values).
+
 Keep a copy of `UNIQ_PEPPER`, `CERT_REF_KEY`, `ATTESTER_PRIVATE_KEY` and the age private key outside the server:
 without them a backup cannot be used. Backups are on the same server for now; an external copy is required
 before real use.

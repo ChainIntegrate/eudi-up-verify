@@ -1,0 +1,13 @@
+# sudo cp deploy/systemd/up-cie-link-monitor.* /etc/systemd/system/
+# sudo systemctl daemon-reload && sudo systemctl enable --now up-cie-link-monitor.timer
+# Check: systemctl list-timers up-cie-link-monitor.timer ; journalctl -u up-cie-link-monitor
+[Unit]
+Description=up-cie-link monitor, hourly
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=120
+Persistent=true
+
+[Install]
+WantedBy=timers.target

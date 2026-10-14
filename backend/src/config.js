@@ -49,7 +49,7 @@ export function loadConfig(env = process.env) {
     statementTtlSec: int("STATEMENT_TTL_SEC", env, 900), // B1: 15 minutes for the CIE signature
     allowCadesUpload: env.ALLOW_CADES_UPLOAD === "true", // B7
     indexerMaxRange: int("INDEXER_MAX_RANGE", env, 2000),
-    notifyEachLink: env.NOTIFY_EACH_LINK === "true", // to be decided: one email per successful link (default off)
+    notifyEachLink: env.NOTIFY_EACH_LINK === "true", // one email per successful link: on during tests, then off
     // secrets (never logged)
     attesterPrivateKey: required("ATTESTER_PRIVATE_KEY", env),
     uniqPepper: parseKey("UNIQ_PEPPER", required("UNIQ_PEPPER", env)),
