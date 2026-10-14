@@ -225,35 +225,20 @@ EN poi IT; icona ≤ 800 px. `source` diventa `bytes32("CIE")` (o `"CIE_FEA"`), 
 | D8 | **Hardhat 3** (attuale: 3.19.0; la 2.x è ferma alla 2.29.1). Ha `hardhat-toolbox-mocha-ethers` (ethers v6) e la verifica su Blockscout integrata in `@nomicfoundation/hardhat-verify` 3.x. Config in TypeScript/ESM. |
 | D10 | Owner = UP ChainIntegrate; rete **LUKSO testnet**; hosting sul server già in uso (Node/Express su 127.0.0.1 + PM2). |
 
-### Ancora aperte (domande riformulate)
+| D3 | **Una sola UP attiva per persona.** Uscite di sicurezza: *migrazione* con nuova firma CIE (vecchio bollino invalidato con motivo `MIGRATED`); *eccezione* con limite per persona (default 1) alzabile solo dall'owner, con evento on-chain. |
+| D4 | `expiresAt` = **scadenza del certificato CIE** (validità della carta). Nessuna durata arbitraria. Al rinnovo della carta si rifirma. |
+| D5 | Revoca, tutte e tre: (1) alla verifica si rifiutano i certificati revocati; se il servizio di revoca non risponde **si rifiuta** (fail-closed, interpretazione del "sì": da confermare); (2) controllo periodico dopo il conio, quindi si conservano **numero di serie ed emittente del certificato, cifrati**; (3) invalidazione su richiesta dell'utente e dell'owner per abuso. |
+| D9 | **Non** si conserva l'enunciato firmato. Restano solo `SHA-256(enunciato)`, l'HMAC del CF e (per D5.2) serial+emittente cifrati. |
 
-**D3 – Una persona, quante UP?** Proposta: **una sola UP attiva per persona**, con due uscite di sicurezza.
-- *Migrazione* (UP persa o compromessa): una nuova firma CIE su un enunciato "sposto il collegamento da 0xVECCHIA a 0xNUOVA"
-  invalida il bollino vecchio (motivo `MIGRATED`) e conia il nuovo. Nessun intervento manuale.
-- *Eccezione* (serve davvero più di una UP): un limite configurabile per persona (default 1), alzabile solo dall'owner per
-  quella persona, con evento on-chain che lo rende pubblico.
-  Domanda: va bene così, o preferisci che più UP siano ammesse fin dall'inizio, entro un tetto?
+### Indirizzi owner (UP ChainIntegrate)
+| Rete | UP |
+|---|---|
+| LUKSO mainnet | `0x4a2605796e0d91A9667d6E30365aEEC384C48c27` |
+| LUKSO testnet (4201) | `0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C` |
 
-**D4 – Perché una scadenza?** Il bollino dice "in quel momento questa persona aveva una CIE valida". Senza scadenza resterebbe
-valido anche dopo la scadenza della carta, un furto denunciato o il decesso del titolare. Proposta: **nessuna durata
-arbitraria**; `expiresAt` = **scadenza del certificato CIE** (di fatto la validità della carta). Al rinnovo della carta
-basta rifirmare. Chi legge `isVerified` vede sempre anche `verifiedAt` e può applicare regole più severe.
-Domanda: ok scadenza = validità della carta, oppure nessuna scadenza (`expiresAt = 0`) affidandosi solo alla revoca?
-
-**D5 – Revoca: tre domande distinte.**
-1. *Al momento della verifica*: rifiutiamo una CIE il cui certificato risulta revocato (carta denunciata smarrita/rubata)?
-   Proposta: **sì**. E se il servizio di revoca del Ministero non risponde: **rifiutare** (più sicuro) o **accettare
-   segnalandolo** (più comodo)?
-2. *Dopo il conio*: se in seguito la carta viene revocata, vogliamo invalidare il bollino? Per farlo dobbiamo **conservare
-   numero di serie ed emittente del certificato** (un dato che, insieme ai registri del Ministero, identifica la persona) e
-   ricontrollarli periodicamente. Senza questo, la revoca successiva non ci arriva.
-3. *Su richiesta*: l'utente può chiedere l'invalidazione (con una firma della UP o una nuova firma CIE); l'owner può
-   invalidare per abuso. Proposta: **sì a entrambe**.
-
-**D9 – Conservare l'enunciato firmato?** Non è indispensabile per il funzionamento: la verifica avviene subito e on-chain va
-solo il bollino. Servirebbe soltanto come **prova in caso di contestazione** ("non sono stato io"). Proposta: **non
-conservarlo**; tenere solo `SHA-256(enunciato)` e l'HMAC del CF. Si lega a D5.2: se scegli la revoca successiva,
-conserviamo serial+emittente del certificato (cifrati), ma comunque non l'enunciato.
+Le UP hanno i loro controller, ma per ora non servono: il contratto riceve la UP come `owner` già nel costruttore (deploy
+da una chiave di deploy separata). Le operazioni dell'owner (es. `setAttester`) si fanno più avanti dalla UP.
+**[I]** Da verificare via RPC, al momento del deploy, che entrambi gli indirizzi siano UP (LSP0) sulla rete giusta.
 
 ## 10. Primo passo proposto dopo l'approvazione
 
