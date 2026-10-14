@@ -180,7 +180,9 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
 
 - **Testnet:** RPC pubblico `https://rpc.testnet.lukso.network`.
 - **Mainnet:** nodo self-hosted ChainIntegrate `https://rpc.chainintegrate.it/rpc/<api-key>`, con la chiave **nel
-  percorso dell'URL** e la regola "una chiave dedicata per servizio": una per il backend di up-cie-link e una
-  separata per i deploy. Il dominio non è pubblico: l'RPC si usa solo lato server.
+  percorso dell'URL** e la regola "una chiave dedicata per servizio": serve solo per il **backend** di up-cie-link.
+  Il dominio non è pubblico: l'RPC si usa solo lato server.
+- **Deploy dei contratti:** RPC pubblici (testnet e mainnet), decisione del 2026-10-14: per poche transazioni di
+  deploy non serve il nodo.
 - Conseguenza: `RPC_URL` non va **mai** scritto nei log (il backend non lo stampa, gli errori riportano solo codici).
 - La porta 3014 è già usata da `traceability-registry`.
