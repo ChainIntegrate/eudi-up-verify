@@ -49,6 +49,7 @@ Work in progress (phase 2). Implemented so far:
 | GET | `/api/config` | chain id, contract, statement version, windows, accepted CIE channels |
 | POST | `/api/statements` | `{up, mode}` → statement text to sign (the address must be an LSP0 UP) |
 | GET | `/api/statements/:id` | status and text |
+| GET | `/api/statements/:id/file` | the statement as a file to sign with CieSign (exact bytes) |
 | POST | `/api/statements/:id/up-signature` | `{signature}` (EIP-191 by a UP controller), within 5 minutes, single use |
 | POST | `/api/statements/:id/cie-cades` | CieSign `.p7m` as the raw body (only with `ALLOW_CADES_UPLOAD=true`) |
 | POST | `/api/statements/:id/cie-raw` | `{certificate, signature}` base64, from the Android app |
@@ -93,7 +94,9 @@ npm test
 
 Integration tests start a local Hardhat node from `../contracts` (build it first): ERC-1271 on a real LSP0 UP,
 the minter on a real `UpCieBadge`, and `server.e2e.test.js`, which runs the real server process through the whole
-flow (UP signature, CieSign-like CAdES, HTTP OCSP responder, on-chain mint).
+flow (UP signature, CieSign-like CAdES, HTTP OCSP responder, on-chain mint). `frontend.e2e.test.js` drives the
+pages in Chromium (Playwright, when installed globally) with a stub of the UP Browser Extension; set
+`SCREENSHOTS_DIR=<dir>` to save screenshots of the main steps.
 
 Tests build a fake CIE-like PKI with the `openssl` CLI (root, sub CA, holder, OCSP responder): no real CIE and no
 personal data. They also check that error messages never contain the fake tax code or names.

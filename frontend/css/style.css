@@ -1,0 +1,106 @@
+/* UP CIE Link: light blue and grey. Dark is the default; light redefines the same variables. */
+:root, html[data-theme="dark"] {
+  --bg: #0e141b; --panel: #161e27; --raised: #1c2631; --border: #2a3644; --field: #0f161e; --chip: #243040;
+  --text: #e5ecf2; --text-dim: #93a1af;
+  --accent: #46c8ea; --accent-strong: #7fdcf5; --accent-ink: #06232c;
+  --ok: #3fbf7f; --warn: #e0a83c; --err: #ef6b6b;
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  --bg: #f1f4f7; --panel: #ffffff; --raised: #f7f9fb; --border: #d3dbe3; --field: #f8fafc; --chip: #e4e9ef;
+  --text: #17212b; --text-dim: #566472;
+  --accent: #0b87ab; --accent-strong: #066b88; --accent-ink: #ffffff;
+  --ok: #17824a; --warn: #9a5f08; --err: #c23434;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px; line-height: 1.55;
+  max-width: 920px; margin: 0 auto; padding: 0 16px 48px;
+}
+a { color: var(--accent); overflow-wrap: anywhere; }
+main { min-width: 0; }
+a:hover { color: var(--accent-strong); }
+code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+
+.site-header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.brand-logo { width: 40px; height: 40px; border-radius: 8px; }
+.brand-name { font-weight: 700; font-size: 18px; letter-spacing: 0.01em; }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.nav a { padding: 6px 12px; border-radius: 6px; color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 14px; }
+.nav a:hover { color: var(--text); background: var(--chip); }
+.nav a.active { color: var(--accent); background: var(--chip); }
+.toggles { display: flex; gap: 8px; }
+.chip { background: var(--chip); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+h1 { font-size: 26px; line-height: 1.25; margin: 0 0 8px; }
+h2 { font-size: 17px; margin: 0 0 12px; }
+.lead { color: var(--text-dim); margin: 0 0 24px; }
+.banner { display: block; width: 100%; height: auto; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border); }
+
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.panel h2 { color: var(--text-dim); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.text ul, .text ol { padding-left: 20px; margin: 8px 0; }
+.text li { margin-bottom: 6px; }
+.dim { color: var(--text-dim); }
+.small { font-size: 13px; }
+
+button.btn, a.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 8px; padding: 10px 18px;
+  font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; background: var(--accent); color: var(--accent-ink); }
+button.btn:hover, a.btn:hover { background: var(--accent-strong); color: var(--accent-ink); }
+button.btn.secondary, a.btn.secondary { background: var(--chip); color: var(--text); border-color: var(--border); }
+button.btn.danger { background: var(--err); color: #fff; }
+button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+input[type="text"] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--field); color: var(--text); font-size: 14px; }
+input[type="file"] { color: var(--text); max-width: 100%; }
+label.check { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; cursor: pointer; }
+label.check input { margin-top: 4px; }
+.choice { display: block; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; background: var(--raised); }
+.choice:has(input:checked) { border-color: var(--accent); }
+.choice input { margin-right: 8px; }
+
+.steps { list-style: none; padding: 0; margin: 0 0 20px; display: flex; gap: 6px; flex-wrap: wrap; }
+.steps li { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--chip); color: var(--text-dim); }
+.steps li.current { background: var(--accent); color: var(--accent-ink); }
+.steps li.done { color: var(--ok); }
+
+pre.statement { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; margin: 12px 0; }
+.countdown { font-variant-numeric: tabular-nums; font-weight: 700; }
+.countdown.low { color: var(--warn); }
+
+.notice { border-left: 4px solid var(--accent); background: var(--raised); padding: 10px 14px; border-radius: 6px; margin: 12px 0; }
+.notice.ok { border-color: var(--ok); }
+.notice.warn { border-color: var(--warn); }
+.notice.err { border-color: var(--err); }
+
+.status { display: inline-block; font-weight: 700; font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--chip); }
+.status.ok { color: var(--ok); }
+.status.warn { color: var(--warn); }
+.status.err { color: var(--err); }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 12px 0 0; }
+dl.facts dt { color: var(--text-dim); }
+dl.facts dd { margin: 0; overflow-wrap: anywhere; }
+
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: spin 0.8s linear infinite; display: inline-block; vertical-align: -3px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+.site-footer { margin-top: 40px; padding: 18px 0; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
+.site-footer a { font-weight: 600; text-decoration: none; }
+.site-footer p { margin: 4px 0; }
+
+@media (max-width: 560px) {
+  h1 { font-size: 22px; }
+  .panel { padding: 16px; }
+  dl.facts { grid-template-columns: 1fr; }
+  dl.facts dd { margin-bottom: 6px; }
+}
+.mt { margin-top: 20px; }

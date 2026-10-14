@@ -30,7 +30,7 @@ our server.
 | Spike | Verify a real CIE signature (`spike/`) | done, all checks passed on a real CIE |
 | 1 | Attester contract, tests, deployment (`contracts/`) | done on testnet; redeploy needed for the primary flag |
 | 2 | Backend (Node/Express): statements, ERC-1271, CIE verification, minting | to do |
-| 3 | Frontend: connect UP, sign, show badge | to do |
+| 3 | Frontend: connect UP, sign, show badge | in progress (UP Browser extension done; UP Wallet for Android to do) |
 | 4 | Android app (NFC signature), end-to-end demo | to do |
 
 ## Repository layout

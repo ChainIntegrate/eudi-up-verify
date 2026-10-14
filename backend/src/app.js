@@ -100,6 +100,19 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, healthInfo = () 
     res.json({ ...publicStatus(row, cfg, clock()), text: statementText(cfg, row) });
   });
 
+  // F8: the exact bytes to sign with CieSign (ASCII, LF, no trailing newline), as a file download
+  app.get("/api/statements/:id/file", general, (req, res, next) => {
+    const row = getStatement(db, req.params.id);
+    if (!row) return next(new HttpError(404, "NOT_FOUND"));
+    const text = statementText(cfg, row);
+    if (sha256Hex(text) !== row.text_sha256) return next(new HttpError(500, "STATEMENT_INTEGRITY"));
+    res.set({
+      "Content-Type": "text/plain; charset=us-ascii",
+      "Content-Disposition": `attachment; filename="up-cie-link-${row.id.slice(0, 8)}.txt"`,
+    });
+    res.send(Buffer.from(text, "ascii"));
+  });
+
   app.post("/api/statements/:id/up-signature", general, async (req, res, next) => {
     try {
       const row = getStatement(db, req.params.id);

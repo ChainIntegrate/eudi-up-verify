@@ -1,6 +1,8 @@
 # UP CIE Link — Fase 3: frontend (proposta, da confermare)
 
-Stato: **proposta del 2026-10-14**, niente è implementato. Ogni punto va confermato esplicitamente.
+Stato: proposta del 2026-10-14, **decisioni F1-F8 confermate lo stesso giorno** (§4); frontend implementato con
+l'estensione UP Browser. Restano da confermare la connessione con UP Wallet per Android (§5) e la scrittura dei
+metadati on-chain (§6).
 
 Obiettivo: il frontend definitivo (o quasi) su `up-cie-link.chainintegrate.it`, con cui fare subito i test online
 con UP e CIE reali via CieSign; l'app Android (Fase 4) si aggiungerà come secondo canale di firma CIE senza rifare le
@@ -55,3 +57,56 @@ pagine.
 - **F8, endpoint di supporto:** nessuno nuovo per la procedura; aggiungo al backend solo il download
   `GET /api/statements/:id/file` (previsto nell'analisi §5, non ancora fatto), così il file da firmare ha sempre
   esattamente i byte attesi.
+
+## 4. Decisioni prese (2026-10-14)
+
+- **F1:** nessuna dipendenza da librerie online. Interpretazione applicata: HTML, CSS e JavaScript statici scritti
+  da noi, **nessuna libreria di terzi e nessun passo di build**, nessun CDN né font esterni (come le pagine di
+  Cross_Chain). Content-Security-Policy stretta in nginx: solo file del nostro dominio, niente codice inline.
+- **F2:** italiano/inglese con pulsante, e pulsante tema chiaro/scuro (scuro predefinito, come Cross_Chain).
+- **F3:** celeste e grigio. `img/logo.png` e `img/banner.png` sono **segnaposto** da sostituire (sorgenti SVG in
+  `img/src/`).
+- **F4:** dati del titolare presi da Cross_Chain (ChainIntegrate, info@chainintegrate.it, Telegram, GitHub).
+  L'informativa è una bozza: **va rivista prima del mainnet**, non è una consulenza legale.
+- **F5:** 15 minuti, con conto alla rovescia.
+- **F6:** icona del bollino `metadata/badge-icon.png` (800×800, scudo con spunta, stile Cross_Chain, nessun simbolo
+  istituzionale) e `metadata/badge.json` (LSP4Metadata, EN/IT), serviti dal nostro dominio. Lo script
+  `contracts/scripts/lsp4-metadata.mjs` calcola il valore da scrivere (VerifiableURI); verificato su catena locale
+  che la UP owner lo scrive con `execute()` e che un altro indirizzo viene respinto.
+- **F7:** rilascio prima in testnet.
+- **F8:** `GET /api/statements/:id/file` aggiunto.
+
+Pagine: `/`, `/collega`, `/verifica/<up>`, `/il-mio-bollino`, `/privacy`, `/note-legali`.
+
+Verificato: test end-to-end in Chromium (`backend/test/frontend.e2e.test.js`) con backend vero, catena locale, UP
+LSP0 vera e un sostituto dell'estensione che firma con la chiave del controller: collegamento completo, download
+del file con i byte esatti, verifica, rinuncia, errori; nessun errore nella pagina e CSP applicata. Template nginx
+provato con nginx reale (pagine, header, CORS dei metadati, `X-Forwarded-For`, limite 128k).
+Non verificato: l'estensione UP Browser reale, CieSign reale, i browser diversi da Chromium.
+
+## 5. UP Wallet per Android (richiesta del 2026-10-14) — da confermare
+
+La connessione deve funzionare con l'estensione UP Browser **e** con l'app UP Wallet per Android. L'app parla con le
+dApp via **WalletConnect** (incolla il link `wc:` della dApp, come `up-wallet.html`), firma `personal_sign` con il
+controller e invia transazioni dalla UP. Per farlo la pagina deve includere il lato "dApp" di WalletConnect:
+
+- **W1, libreria:** `@walletconnect/sign-client` (Reown) impacchettato in **un file statico nel repository**
+  (`frontend/vendor/`), costruito con esbuild come `vendor/walletkit` in Cross_Chain: nessun CDN, ma è codice di
+  terzi e usa il relay di Reown (servizio online). Licenza: WalletConnect Community License (non open source),
+  avviso nel piè di pagina, soglie d'uso oltre le quali serve una licenza commerciale. Alternativa: nessuna, l'app
+  parla solo WalletConnect.
+- **W2, Project ID Reown:** progetto nuovo per `up-cie-link.chainintegrate.it` (consigliato) oppure lo stesso di
+  Cross_Chain con il dominio aggiunto agli "allowed domains".
+- **W3, QR:** la pagina mostra il link `wc:` con il pulsante "copia" e un QR; per il QR un piccolo generatore
+  (libreria MIT copiata in `vendor/` oppure scritto da noi).
+- **W4, verifica sull'app:** serve che l'app supporti la rete LUKSO testnet (4201), `personal_sign` e
+  `eth_sendTransaction` dalla UP. Non posso verificarlo da qui (il repository `up-wallet-android` non è in
+  questa sessione).
+- Informativa: va aggiunto Reown (vede indirizzo della UP, rete e IP durante la connessione).
+
+## 6. Metadati on-chain e operazioni dell'owner — da confermare
+
+- **F9:** chi firma `setData(LSP4Metadata)` e le operazioni dell'owner (`approveException`, `revoke`,
+  `reinstate`)? Proposta: una pagina `/admin` che si attiva solo se la UP collegata è l'owner del contratto e
+  prepara le transazioni (le firma l'owner con l'estensione o con UP Wallet). Alternativa: calldata stampata dagli
+  script e inviata a mano.

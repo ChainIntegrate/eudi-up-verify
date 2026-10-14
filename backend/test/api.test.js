@@ -65,6 +65,12 @@ describe("API: statements and UP signature", () => {
     // the text is rebuilt identically on read
     const again = await (await fetch(`${base}/api/statements/${s.id}`)).json();
     assert.equal(again.text, s.text);
+    // the file to sign with CieSign has exactly the same bytes
+    const file = await fetch(`${base}/api/statements/${s.id}/file`);
+    assert.equal(file.status, 200);
+    assert.match(file.headers.get("content-disposition"), /^attachment; filename="up-cie-link-[0-9a-f]{8}\.txt"$/);
+    assert.deepEqual(Buffer.from(await file.arrayBuffer()), Buffer.from(s.text, "ascii"));
+    assert.equal((await fetch(`${base}/api/statements/nope/file`)).status, 404);
     await close();
   });
 
