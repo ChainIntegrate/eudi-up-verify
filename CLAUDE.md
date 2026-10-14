@@ -5,6 +5,7 @@ LSP8 badge and no personal data on-chain. Analysis and decisions: `docs/00-anali
 
 ## Process
 - Discuss and confirm before implementing; one phase at a time. State clearly what is verified and what is not.
+- When the owner answers a list of proposals, items not commented on are approved as proposed.
 - Conversation and docs in Italian; **commit messages in English**; README in English.
 - Before every commit: `git status`, no `.env`, no `.db`, no `.p7m`. Plain-text commits, no patch files.
 - Work on `main`.

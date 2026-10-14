@@ -1,6 +1,6 @@
 # Fase 2 — Backend: disegno da approvare
 
-> Stato: **proposta con decisioni B5–B7 prese** (vedi §11), nessun codice. Contratto di riferimento: `contracts/deployments/luksoTestnet.json`
+> Stato: **approvato**, tutte le decisioni prese (vedi §11). Implementazione in `backend/`. Contratto di riferimento: `contracts/deployments/luksoTestnet.json`
 > (`0x056a7e72…7892`, verificato). Vincoli: `CLAUDE.md`. Decisioni precedenti: `00-analisi.md` §9, `01-contratto.md`.
 
 ## 1. Componenti
@@ -162,6 +162,8 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
 - **B7** Upload `.p7m` (CieSign) anche in produzione, o solo per i test finché non c'è l'app Android?
 
 ## 11. Decisioni prese (2026-10-14)
+
+- **B1–B4:** approvate come proposte in §10.
 
 - **B5 Backup:** per ora **sullo stesso server** (script, cifratura e rotazione come in §7). La copia fuori dalla
   macchina diventa obbligatoria prima dell'uso "sul serio" (mainnet con utenti reali): lo script ha già il passo
