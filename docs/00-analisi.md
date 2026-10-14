@@ -224,7 +224,6 @@ EN poi IT; icona ≤ 800 px. `source` diventa `bytes32("CIE")` (o `"CIE_FEA"`), 
 | D7 | Dicitura da definire in corso d'opera (restano fermi i divieti: niente "ufficiale", niente loghi istituzionali). |
 | D8 | **Hardhat 3** (attuale: 3.19.0; la 2.x è ferma alla 2.29.1). Ha `hardhat-toolbox-mocha-ethers` (ethers v6) e la verifica su Blockscout integrata in `@nomicfoundation/hardhat-verify` 3.x. Config in TypeScript/ESM. |
 | D10 | Owner = UP ChainIntegrate; rete **LUKSO testnet**; hosting sul server già in uso (Node/Express su 127.0.0.1 + PM2). |
-
 | D3 | **Una sola UP attiva per persona.** Uscite di sicurezza: *migrazione* con nuova firma CIE (vecchio bollino invalidato con motivo `MIGRATED`); *eccezione* con limite per persona (default 1) alzabile solo dall'owner, con evento on-chain. |
 | D4 | `expiresAt` = **scadenza del certificato CIE** (validità della carta). Nessuna durata arbitraria. Al rinnovo della carta si rifirma. |
 | D5 | Revoca, tutte e tre: (1) alla verifica si rifiutano i certificati revocati; se il servizio di revoca non risponde **si rifiuta** (fail-closed, interpretazione del "sì": da confermare); (2) controllo periodico dopo il conio, quindi si conservano **numero di serie ed emittente del certificato, cifrati**; (3) invalidazione su richiesta dell'utente e dell'owner per abuso. |
