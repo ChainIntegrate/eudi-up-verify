@@ -27,7 +27,7 @@ node make-statement.mjs --up 0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C --out en
 #    - phone: CieSign app -> Firma -> pick the file -> CAdES -> PIN -> hold the CIE on the phone
 #    - PC:    "CIE ID" desktop software + USB NFC reader -> Firma elettronica -> CAdES
 #    Do not open and re-save enunciato.txt with an editor: the bytes must stay identical.
-#    CieSign names the output e.g. signed_<number>_enunciato.txt (still a CAdES file despite the .txt).
+#    CieSign names the output e.g. signed_<number>_enunciato.txt; the script reads it whatever the extension.
 #    Keep both files: the original enunciato.txt and the signed one.
 
 # 3. Verify. Trust anchors come from the Italian eIDAS Trusted List (AgID);
