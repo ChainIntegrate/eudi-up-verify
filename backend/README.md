@@ -21,6 +21,13 @@ Work in progress (phase 2). Implemented so far:
   15-minute validity; the text is rebuilt from the row and checked by hash, never stored.
 - `src/up.js`: LSP0 check and ERC-1271 `isValidSignature` on the UP (EIP-191 hash), through the backend RPC.
 - `src/db.js`: SQLite schema (no personal data; persons only as HMAC of the tax code).
+- `src/cieFlow.js`: CIE submission (CieSign `.p7m` or raw signature from the app), verified in the request; then a
+  serial queue runs the uniqueness decision and the minting, so submissions never race.
+- `src/linking.js`: uniqueness rules (one person, one primary UP): renewal, migration, exceptions with an opaque
+  ticket approved on-chain by the owner, UP already linked to another person.
+- `src/secrets.js`: person key = HMAC(UNIQ_PEPPER, tax code); certificate reference encrypted with AES-256-GCM.
+- `src/chain.js`: UpCieBadge reads and the attester's `attest` / `invalidate`. The server refuses to start if
+  `ATTESTER_PRIVATE_KEY` is not the contract's attester.
 
 ## API (so far)
 
@@ -31,6 +38,12 @@ Work in progress (phase 2). Implemented so far:
 | POST | `/api/statements` | `{up, mode}` → statement text to sign (the address must be an LSP0 UP) |
 | GET | `/api/statements/:id` | status and text |
 | POST | `/api/statements/:id/up-signature` | `{signature}` (EIP-191 by a UP controller), within 5 minutes, single use |
+| POST | `/api/statements/:id/cie-cades` | CieSign `.p7m` as the raw body (only with `ALLOW_CADES_UPLOAD=true`) |
+| POST | `/api/statements/:id/cie-raw` | `{certificate, signature}` base64, from the Android app |
+| GET | `/api/badge/:up` | badge state read on-chain (`verified`, `verifiedPrimary`, status, dates) |
+
+Statement statuses: `pending_up` → `pending_cie` → `verifying` → `queued` → `minting` → `done`, or `failed` with an
+`errorCode` (and an `exceptionTicket` for `EXCEPTION_REQUIRED` / `EXCEPTION_PENDING`), or `expired`.
 
 ## Run
 
@@ -46,6 +59,9 @@ npm ci
 npm test
 ```
 
-`test/erc1271.integration.test.js` starts a local Hardhat node from `../contracts` (build it first) and checks
-ERC-1271 against a real LSP0 Universal Profile. Tests build a fake CIE-like PKI with the `openssl` CLI (root, sub CA, holder, OCSP responder): no real CIE and no
+Integration tests start a local Hardhat node from `../contracts` (build it first): ERC-1271 on a real LSP0 UP,
+the minter on a real `UpCieBadge`, and `server.e2e.test.js`, which runs the real server process through the whole
+flow (UP signature, CieSign-like CAdES, HTTP OCSP responder, on-chain mint).
+
+Tests build a fake CIE-like PKI with the `openssl` CLI (root, sub CA, holder, OCSP responder): no real CIE and no
 personal data. They also check that error messages never contain the fake tax code or names.

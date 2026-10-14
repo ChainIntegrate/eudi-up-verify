@@ -79,5 +79,6 @@ export function publicStatus(row, cfg, now = Date.now()) {
     upSignatureDeadline: iso(row.issued_at + cfg.upSignatureWindowSec * 1000),
     errorCode: row.error_code ?? null,
     txHash: row.tx_hash ?? null,
+    exceptionTicket: row.exception_ticket ?? null,
   };
 }

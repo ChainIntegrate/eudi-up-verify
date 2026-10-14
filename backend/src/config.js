@@ -2,6 +2,7 @@
 // The contract address and DEPLOY_BLOCK come from contracts/deployments/<NETWORK>.json (source of truth).
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { parseKey } from "./secrets.js";
 
 const envFile = fileURLToPath(new URL("../.env", import.meta.url));
 if (existsSync(envFile)) process.loadEnvFile(envFile);
@@ -47,5 +48,12 @@ export function loadConfig(env = process.env) {
     upSignatureWindowSec: int("UP_SIGNATURE_WINDOW_SEC", env, 300), // B1: 5 minutes
     statementTtlSec: int("STATEMENT_TTL_SEC", env, 900), // B1: 15 minutes for the CIE signature
     allowCadesUpload: env.ALLOW_CADES_UPLOAD === "true", // B7
+    // secrets (never logged)
+    attesterPrivateKey: required("ATTESTER_PRIVATE_KEY", env),
+    uniqPepper: parseKey("UNIQ_PEPPER", required("UNIQ_PEPPER", env)),
+    certRefKey: parseKey("CERT_REF_KEY", required("CERT_REF_KEY", env)),
+    // CIE trust store: CA certificates directory + pinned root SHA-256 fingerprints (comma separated)
+    trustDir: env.TRUST_DIR || fileURLToPath(new URL("../trust", import.meta.url)),
+    cieRootSha256: required("CIE_ROOT_SHA256", env).split(",").map((s) => s.trim()).filter(Boolean),
   };
 }

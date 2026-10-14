@@ -56,6 +56,8 @@ const MIGRATIONS = [
     detail TEXT
   );
   `,
+  // v2: exception ticket shown to the user when a statement needs an approved exception
+  `ALTER TABLE statements ADD COLUMN exception_ticket TEXT;`,
 ];
 
 export function openDb(path) {

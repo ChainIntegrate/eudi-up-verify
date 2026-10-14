@@ -1,7 +1,8 @@
 // Express application. Dependencies are injected (db, config, UP checker, clock) so the routes are testable.
 // Error responses carry stable codes only: never stack traces, never personal data.
 import express from "express";
-import { isAddress } from "ethers";
+import { getAddress, isAddress } from "ethers";
+import { FlowError } from "./cieFlow.js";
 import { audit } from "./db.js";
 import { MODES, STATEMENT_VERSION, createStatement, getStatement, publicStatus, sha256Hex, statementText } from "./statements.js";
 
@@ -31,9 +32,10 @@ export function rateLimiter({ windowMs, max, clock }) {
 }
 
 /**
- * @param {{db: any, cfg: any, upChecker: {isUniversalProfile: Function, isValidUpSignature: Function}, clock?: () => number}} deps
+ * @param {{db: any, cfg: any, upChecker: {isUniversalProfile: Function, isValidUpSignature: Function},
+ *          cieFlow?: {submit: Function}, badge?: any, clock?: () => number}} deps
  */
-export function createApp({ db, cfg, upChecker, clock = Date.now }) {
+export function createApp({ db, cfg, upChecker, cieFlow, badge, clock = Date.now }) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", "loopback"); // behind nginx on the same host
@@ -123,6 +125,64 @@ export function createApp({ db, cfg, upChecker, clock = Date.now }) {
       res.json(publicStatus(getStatement(db, row.id), cfg, now));
     } catch (e) {
       next(e);
+    }
+  });
+
+  const cieLimiter = rateLimiter({ windowMs: 60_000, max: 20, clock });
+  const submitCie = (channel, parse) => async (req, res, next) => {
+    try {
+      if (!cieFlow) throw new HttpError(503, "CIE_FLOW_UNAVAILABLE");
+      const payload = parse(req);
+      const row = await cieFlow.submit(req.params.id, channel, payload);
+      res.status(202).json(publicStatus(row, cfg, clock()));
+    } catch (e) {
+      next(e instanceof FlowError ? new HttpError(e.status, e.code) : e);
+    }
+  };
+
+  // CieSign .p7m upload (B7: tests/demo; disabled with ALLOW_CADES_UPLOAD=false)
+  app.post(
+    "/api/statements/:id/cie-cades",
+    cieLimiter,
+    (req, _res, next) => (cfg.allowCadesUpload ? next() : next(new HttpError(404, "CHANNEL_DISABLED"))),
+    express.raw({ type: () => true, limit: "64kb" }),
+    submitCie("cades", (req) => {
+      if (!Buffer.isBuffer(req.body) || req.body.length === 0) throw new HttpError(400, "INVALID_P7M");
+      return { p7m: req.body };
+    }),
+  );
+
+  // Android app: raw PKCS#1 v1.5 / SHA-256 signature + holder certificate (both base64)
+  app.post(
+    "/api/statements/:id/cie-raw",
+    cieLimiter,
+    submitCie("raw", (req) => {
+      const { certificate, signature } = req.body ?? {};
+      const b64 = (v) => typeof v === "string" && /^[A-Za-z0-9+/=\s]+$/.test(v);
+      if (!b64(certificate) || !b64(signature)) throw new HttpError(400, "INVALID_PAYLOAD");
+      return { certificate: Buffer.from(certificate, "base64"), signature: Buffer.from(signature, "base64") };
+    }),
+  );
+
+  // Badge state, read on-chain by the backend (the browser never calls the RPC)
+  app.get("/api/badge/:up", general, async (req, res, next) => {
+    try {
+      if (!badge) throw new HttpError(503, "CHAIN_UNAVAILABLE");
+      if (!isAddress(req.params.up)) throw new HttpError(400, "INVALID_UP");
+      const up = getAddress(req.params.up);
+      const [verified, verifiedPrimary, a] = await Promise.all([badge.isVerified(up), badge.isVerifiedPrimary(up), badge.getAttestation(up)]);
+      const STATUS = ["none", "valid", "invalidated", "revoked"];
+      res.json({
+        up,
+        verified,
+        verifiedPrimary,
+        status: STATUS[Number(a.status)] ?? "unknown",
+        primary: a.primary,
+        verifiedAt: Number(a.verifiedAt) ? new Date(Number(a.verifiedAt) * 1000).toISOString() : null,
+        expiresAt: Number(a.expiresAt) ? new Date(Number(a.expiresAt) * 1000).toISOString() : null,
+      });
+    } catch (e) {
+      next(e instanceof HttpError ? e : new HttpError(502, "CHAIN_READ_FAILED"));
     }
   });
 
