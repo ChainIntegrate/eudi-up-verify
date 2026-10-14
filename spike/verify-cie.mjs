@@ -16,7 +16,7 @@
 //
 // Exit code: 0 if every mandatory check passed, 1 otherwise, 2 on usage errors.
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createHash, webcrypto } from "node:crypto";
 import { parseArgs } from "node:util";
 import * as asn1js from "asn1js";
@@ -37,6 +37,13 @@ const { values: args } = parseArgs({
 if (!args.p7m) {
   console.error("Usage: node verify-cie.mjs --p7m <file> --statement <file> [--ca <file>...] [--crl-file <file>...] [--online]");
   process.exit(2);
+}
+
+for (const [opt, path] of [["--p7m", args.p7m], ["--statement", args.statement], ...args.ca.map((p) => ["--ca", p]), ...args["crl-file"].map((p) => ["--crl-file", p])]) {
+  if (path && !existsSync(path)) {
+    console.error(`File not found for ${opt}: ${path}\n(current folder: ${process.cwd()}; on Windows check hidden extensions, e.g. .txt.p7m)`);
+    process.exit(2);
+  }
 }
 
 // ---------- output helpers ----------
