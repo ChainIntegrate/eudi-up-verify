@@ -1,6 +1,6 @@
 # Fase 2 — Backend: disegno da approvare
 
-> Stato: **proposta**, nessun codice. Contratto di riferimento: `contracts/deployments/luksoTestnet.json`
+> Stato: **proposta con decisioni B5–B7 prese** (vedi §11), nessun codice. Contratto di riferimento: `contracts/deployments/luksoTestnet.json`
 > (`0x056a7e72…7892`, verificato). Vincoli: `CLAUDE.md`. Decisioni precedenti: `00-analisi.md` §9, `01-contratto.md`.
 
 ## 1. Componenti
@@ -160,3 +160,15 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
   storage S3-compatibile, Google Drive, altro)? Retention 14 + 8 ok?
 - **B6** Server: sottodominio, reverse proxy già in uso (nginx? Caddy?), porta interna libera.
 - **B7** Upload `.p7m` (CieSign) anche in produzione, o solo per i test finché non c'è l'app Android?
+
+## 11. Decisioni prese (2026-10-14)
+
+- **B5 Backup:** per ora **sullo stesso server** (script, cifratura e rotazione come in §7). La copia fuori dalla
+  macchina diventa obbligatoria prima dell'uso "sul serio" (mainnet con utenti reali): lo script ha già il passo
+  opzionale, da attivare quando ci sarà la destinazione.
+- **B6 Server:** dietro **nginx** sulla VPS esistente. Sottodominio proposto: **`up-cie-link.chainintegrate.it`**
+  (stesso schema di `crosschain-lukso.chainintegrate.it`, stesso nome del repo e del token). Porta interna da scegliere
+  dopo aver controllato quelle libere (`ss -ltnp`); il backend la legge da `PORT` e rifiuta di partire se è occupata.
+- **B7 Canali CIE:** test e demo iniziale **senza app**, con upload del `.p7m` di CieSign; in definitiva **app
+  Android**. L'upload resta dietro un'opzione di configurazione (`ALLOW_CADES_UPLOAD`), da spegnere quando l'app è
+  pronta.
