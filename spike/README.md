@@ -4,8 +4,15 @@ Goal: check, on a **real** Italian CIE, the facts the whole project depends on:
 signature format produced by CieSign, certificate chain up to the CA of the Ministero dell'Interno,
 where the codice fiscale sits in the holder certificate, and revocation (OCSP/CRL).
 
-This is throwaway code, not the production backend. It runs on Linux, macOS and **Windows**
-(Node.js 20 or newer, nothing else). Only `selftest.sh` needs a Unix shell.
+This is throwaway code, not the production backend.
+
+> **Known flaw (found 2026-10-14 while writing the backend):** steps 5 and 6 rely on pkijs path validation
+> (`CertificateChainValidationEngine`, `BasicOCSPResponse.verify`), which accepted a certificate not signed by the
+> CA it was linked to, matching by name only. A genuine CIE still verifies correctly, but this script would not
+> reject a forged chain with copied CA names. The backend (`backend/src/cie/chain.js`) validates every link
+> explicitly with OpenSSL. Do not reuse the spike's chain logic.
+
+It runs on Linux, macOS and **Windows** (Node.js 20 or newer, nothing else). Only `selftest.sh` needs a Unix shell.
 
 ## Privacy
 

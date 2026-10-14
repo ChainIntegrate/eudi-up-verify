@@ -278,6 +278,11 @@ L'output non contiene dati personali; i valori sotto sono quelli stampati dallo 
 - La variante A2 (app Android con NFC) usa **la stessa chiave e lo stesso certificato**: questi risultati valgono anche
   per lei. Cambia solo il formato: firma PKCS#1 "nuda" invece di CMS.
 
+**Nota (scoperta scrivendo il backend):** lo spike valida catena e risposta OCSP con i componenti di pkijs, che in test
+hanno accettato un certificato non firmato dalla CA a cui era collegato (abbinamento solo per nome). Il risultato sulla
+CIE reale resta valido (certificati autentici), ma la logica dello spike non va riusata: il backend valida ogni anello
+in modo esplicito con OpenSSL (`backend/src/cie/chain.js`), con test di regressione dedicati.
+
 **Ancora da verificare [I]:** la CRL (formato reale del file scaricato); la forma esatta del `commonName` (cosa sono i 13
 caratteri dopo il CF); il comportamento con una CIE revocata (difficile da provare, si affida al test con PKI finta).
 
