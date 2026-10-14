@@ -154,3 +154,5 @@ vite.config.ts.timestamp-*
 spike/enunciato*.txt
 *.db
 .env
+signed_*
+**/signed_*
