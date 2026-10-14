@@ -186,3 +186,27 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
   deploy non serve il nodo.
 - Conseguenza: `RPC_URL` non va **mai** scritto nei log (il backend non lo stampa, gli errori riportano solo codici).
 - La porta 3014 è già usata da `traceability-registry`.
+
+## 13. Decisioni del 2026-10-14 (pezzo 3 e monitoraggio)
+
+Confermate:
+- UP aggiuntiva senza una principale: rifiuto `NO_PRIMARY_LINK`.
+- Eccezioni: al primo tentativo l'utente riceve un ticket opaco (64 caratteri esadecimali) da inviare a ChainIntegrate;
+  dopo `approveException(ticket, n)` dalla UP owner rifà il collegamento.
+- Il limite `n` conta tutte le UP della persona, principale compresa.
+- Al riavvio gli enunciati a metà diventano `failed / INTERRUPTED`.
+- Monitoraggio con mail sullo schema del relayer di Cross_Chain (monitor separato ogni ora, sola lettura, mail solo
+  quando cambia qualcosa, promemoria ogni 24 h), con:
+  - **A, problemi (mail immediata):** backend giù, RPC irraggiungibile o catena sbagliata, OCSP irraggiungibile nel
+    ricontrollo per 3 giorni, conio fallito, saldo attestatore basso, attestatore on-chain diverso o azzerato, backup
+    fallito o vecchio, CA della CIE in scadenza entro 60 giorni;
+  - **B, eventi (mail immediata):** richiesta di eccezione (con il comando per approvarla), certificato revocato con
+    bollino invalidato, revoca/ripristino dell'owner, rinuncia di un titolare;
+  - **C, riepilogo giornaliero:** solo numeri e indirizzi UP, mai dati personali.
+- SMTP: lo stesso account `no-reply@chainintegrate.it` del relayer; destinatario lo stesso del relayer, scritto solo
+  nella configurazione sul server.
+
+Da chiarire (domande a scelta, la risposta "confermato" non indica l'opzione):
+- mail per ogni collegamento riuscito, oppure solo nel riepilogo giornaliero? (per ora: opzione di configurazione,
+  spenta)
+- monitor orario come processo PM2 o come timer systemd?
