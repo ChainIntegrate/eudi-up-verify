@@ -110,6 +110,24 @@ describe("UpCieBadge", function () {
         .to.be.revertedWithCustomError(badge, "ExpiryNotInFuture");
     });
 
+    it("two UPs get two distinct tokens, each owned by its UP", async function () {
+      const { badge, holderUp, holderUp2, attester, expiry } = await loadFixture(deployFixture);
+      const up1 = await holderUp.getAddress();
+      const up2 = await holderUp2.getAddress();
+      await badge.connect(attester).attest(up1, CIE, await expiry());
+      await badge.connect(attester).attest(up2, CIE, await expiry());
+      const id1 = await badge.tokenIdOf(up1);
+      const id2 = await badge.tokenIdOf(up2);
+      expect(id1).to.not.equal(id2);
+      expect(await badge.totalSupply()).to.equal(2n);
+      expect(await badge.tokenOwnerOf(id1)).to.equal(up1);
+      expect(await badge.tokenOwnerOf(id2)).to.equal(up2);
+      expect(await badge.tokenIdsOf(up1)).to.deep.equal([id1]);
+      expect(await badge.tokenIdsOf(up2)).to.deep.equal([id2]);
+      // the tokenId decodes back to the UP address
+      expect(ethers.getAddress(ethers.dataSlice(id2, 12))).to.equal(up2);
+    });
+
     it("renews in place without minting a second token", async function () {
       const { badge, holderUp, attester, expiry } = await loadFixture(deployFixture);
       const up = await holderUp.getAddress();
