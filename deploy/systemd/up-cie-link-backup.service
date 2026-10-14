@@ -1,0 +1,15 @@
+# Daily encrypted backup: see backend/scripts/backup.js. Started by up-cie-link-backup.timer.
+# Same User as the backend (it must read DB_PATH and write BACKUP_DIR). Adjust User and the paths.
+# On failure the script queues a problem email; the monitor also reports a missing or old backup.
+[Unit]
+Description=up-cie-link encrypted backup
+
+[Service]
+Type=oneshot
+User=CHANGE_ME
+WorkingDirectory=/CHANGE_ME/up-cie-link/backend
+ExecStart=/usr/bin/node scripts/backup.js
+TimeoutStartSec=600
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true

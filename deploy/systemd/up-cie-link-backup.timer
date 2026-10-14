@@ -1,0 +1,13 @@
+# sudo cp deploy/systemd/up-cie-link-backup.* /etc/systemd/system/
+# sudo systemctl daemon-reload && sudo systemctl enable --now up-cie-link-backup.timer
+# Run once now: sudo systemctl start up-cie-link-backup ; logs: journalctl -u up-cie-link-backup
+[Unit]
+Description=up-cie-link encrypted backup, daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

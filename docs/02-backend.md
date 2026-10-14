@@ -213,5 +213,4 @@ Decise il 2026-10-14 (risposte alle domande a scelta):
 - **backend con PM2** (`deploy/ecosystem.config.cjs`, una sola istanza per via della coda seriale);
   **monitor con timer systemd** (`deploy/systemd/`), indipendente da PM2, così segnala anche un PM2 fermo.
 
-Da chiarire:
-- backup giornaliero: timer systemd (come il monitor) o cron di PM2?
+- **backup giornaliero con timer systemd** (`deploy/systemd/up-cie-link-backup.*`, alle 03:15 ora del server).

@@ -76,7 +76,8 @@ npm run restore -- --file <backup.db.gz.age> --identity key.txt --out restored.d
 ```
 
 Deployment files are in [`../deploy`](../deploy): `ecosystem.config.cjs` (PM2, backend, a single instance),
-`systemd/up-cie-link-monitor.{service,timer}` (hourly monitor, independent of PM2) and `nginx/up-cie-link.conf`
+`systemd/up-cie-link-monitor.{service,timer}` (hourly monitor, independent of PM2),
+`systemd/up-cie-link-backup.{service,timer}` (daily encrypted backup) and `nginx/up-cie-link.conf`
 (template for `up-cie-link.chainintegrate.it`; replace the `CHANGE_ME` values).
 
 Keep a copy of `UNIQ_PEPPER`, `CERT_REF_KEY`, `ATTESTER_PRIVATE_KEY` and the age private key outside the server:
