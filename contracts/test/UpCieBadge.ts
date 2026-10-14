@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import type { Interface } from "ethers";
 import { network } from "hardhat";
 
 const { ethers, networkHelpers } = await network.create();
@@ -32,10 +33,10 @@ async function deployFixture() {
 
   // Calls an owner-only function through the owner UP.
   const asOwner = (fn: string, args: unknown[]) =>
-    ownerUp.connect(ownerController).execute(OP_CALL, badgeAddress, 0, badge.interface.encodeFunctionData(fn, args));
+    ownerUp.connect(ownerController).execute(OP_CALL, badgeAddress, 0, (badge.interface as Interface).encodeFunctionData(fn, args));
   // Calls a function as the holder UP (e.g. renounce).
   const asHolder = (fn: string, args: unknown[]) =>
-    holderUp.connect(holderController).execute(OP_CALL, badgeAddress, 0, badge.interface.encodeFunctionData(fn, args));
+    holderUp.connect(holderController).execute(OP_CALL, badgeAddress, 0, (badge.interface as Interface).encodeFunctionData(fn, args));
 
   const expiry = async (seconds = 7 * YEAR) => BigInt(await time.latest()) + BigInt(seconds);
 

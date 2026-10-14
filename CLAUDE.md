@@ -21,3 +21,8 @@ LSP8 badge and no personal data on-chain. Analysis and decisions: `docs/00-anali
 - No personal data on-chain or in logs. Store only what uniqueness needs, pseudonymised with a server-side secret.
 - Never "official", "state recognised", CIE emblems or institutional logos.
 - Owner UPs: testnet `0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C`, mainnet `0x4a2605796e0d91A9667d6E30365aEEC384C48c27`.
+
+## Deployment
+- Networks `luksoTestnet` (4201) and `luksoMainnet` (42); owner UPs in `contracts/scripts/networks.ts`.
+- Deploy from GitHub Codespaces with `npm run deploy:<net>` then `npm run verify:<net>`; mainnet needs `CONFIRM_MAINNET=yes`.
+- `contracts/deployments/<network>.json` is the source of truth for address and `DEPLOY_BLOCK`; commit it after deploying.

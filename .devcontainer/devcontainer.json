@@ -1,0 +1,24 @@
+{
+  "name": "up-cie-link",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "cd contracts && npm ci && npx hardhat build",
+  "customizations": {
+    "vscode": {
+      "extensions": ["NomicFoundation.hardhat-solidity"]
+    }
+  },
+  "secrets": {
+    "LUKSO_TESTNET_RPC_URL": {
+      "description": "RPC endpoint for LUKSO testnet (chainId 4201), dedicated to this service"
+    },
+    "LUKSO_MAINNET_RPC_URL": {
+      "description": "RPC endpoint for LUKSO mainnet (chainId 42), dedicated to this service"
+    },
+    "DEPLOYER_PRIVATE_KEY": {
+      "description": "Private key that only pays deployment gas. Not the owner, not the attester."
+    },
+    "ATTESTER": {
+      "description": "Address (not the key) of the backend operational key that will mint badges"
+    }
+  }
+}

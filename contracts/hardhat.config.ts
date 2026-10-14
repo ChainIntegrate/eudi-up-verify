@@ -19,8 +19,25 @@ const config: HardhatUserConfig = {
       url: configVariable("LUKSO_TESTNET_RPC_URL"),
       accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
     },
+    luksoMainnet: {
+      type: "http",
+      chainType: "l1",
+      chainId: 42,
+      url: configVariable("LUKSO_MAINNET_RPC_URL"),
+      accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
+    },
   },
   chainDescriptors: {
+    42: {
+      name: "LUKSO Mainnet",
+      blockExplorers: {
+        blockscout: {
+          name: "LUKSO Mainnet Blockscout",
+          url: "https://explorer.execution.mainnet.lukso.network",
+          apiUrl: "https://explorer.execution.mainnet.lukso.network/api",
+        },
+      },
+    },
     4201: {
       name: "LUKSO Testnet",
       blockExplorers: {
