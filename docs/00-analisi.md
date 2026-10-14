@@ -245,6 +245,42 @@ da una chiave di deploy separata). Le operazioni dell'owner (es. `setAttester`) 
 CieSign e verificare in locale, con uno script Node, firma, catena, revoca e campo del CF. È il fatto che regge tutto il
 progetto e oggi è **[I]**. Se fallisce, si ripiega su A2 o D prima di aver scritto altro codice.
 
+## 11. Risultati dello spike su CIE reale (2026-10-14)
+
+Firma fatta con **CieSign** (smartphone) su un enunciato generato da `spike/make-statement.mjs`, verificata su Windows
+con `spike/verify-cie.mjs --tsl https://eidas.agid.gov.it/TL/TSL-IT.xml --online`. Esito: **tutti i controlli superati**.
+L'output non contiene dati personali; i valori sotto sono quelli stampati dallo script. **[V]**
+
+| Aspetto | Risultato |
+|---|---|
+| File prodotto da CieSign | `signed_<n>_enunciato.txt.p7m`: CMS SignedData, **contenuto incapsulato** (attached), un firmatario, 3 certificati inclusi (titolare, sub CA, root) |
+| Contenuto firmato | **identico byte per byte** all'enunciato (517 byte): CieSign non altera il file |
+| Firma | SHA-256 + RSA PKCS#1 v1.5 (`1.2.840.113549.1.1.11`), CAdES-BES (`signingCertificateV2`), attributo `signingTime` presente |
+| Certificato titolare | RSA 2048; `keyUsage = digitalSignature`; `extKeyUsage = clientAuth`; policy `1.3.76.47.4`; validità residua ~7,3 anni (è la validità della carta: base per D4) |
+| Emittente | `CN=Issuing sub CA for the Italian Electronic Identity Card - SUBCA003, OU=Direz. Centr. per i Servizi Demografici - CNSD, O=Ministero dell'Interno, C=IT` |
+| Radice | `CN=National root CA for the Italian Electronic Identity Card` (stessa OU/O), autofirmata, inclusa nel CMS |
+| Trusted List AgID | 562 servizi, 176 di tipo IdV; la **SUBCA003 è presente** tra i servizi IdV → catena valida |
+| Codice fiscale | nel **`commonName`**: lunghezza 29, CF all'inizio + 13 caratteri dopo (forma probabile `CF/<12 cifre>`, da confermare). `serialNumber` (15, misto) **non** contiene il CF |
+| Revoca – OCSP | `https://ocsp.cie.interno.gov.it/` risponde; risposta **firmata e valida**, stato **GOOD** |
+| Revoca – CRL | `http://ldap.cie.interno.gov.it/ciesubca003.crl`: il contenuto scaricato **non è una CRL DER/PEM** (causa da capire); non bloccante perché l'OCSP funziona |
+
+**Conseguenze per il progetto:**
+- **Strada A confermata**: la firma CIE di un enunciato scelto da noi si verifica in modo completo con librerie standard
+  (`pkijs`), senza accreditamenti.
+- **Unicità (D3)**: chiave = `HMAC(UNIQ_PEPPER, primi 16 caratteri del commonName)`, dopo aver verificato il pattern del CF.
+  Non usare `serialNumber` né la parte dopo il CF: probabilmente identificano la carta e cambiano al rinnovo **[I]**.
+- **Revoca (D5)**: OCSP disponibile, quindi la politica fail-closed è praticabile. Per il ricontrollo dopo il conio (D5.2)
+  bastano numero di serie ed emittente del certificato, da conservare cifrati.
+- **Scadenza (D4)**: `expiresAt` = `notAfter` del certificato del titolare.
+- **Trust anchor in produzione**: lo spike non verifica la firma XML della Trusted List. Proposta: **pinnare la "National
+  root CA for the Italian Electronic Identity Card"** (impronta SHA-256 in configurazione) e accettare le sub CA che ne
+  discendono; la Trusted List resta un controllo incrociato.
+- La variante A2 (app Android con NFC) usa **la stessa chiave e lo stesso certificato**: questi risultati valgono anche
+  per lei. Cambia solo il formato: firma PKCS#1 "nuda" invece di CMS.
+
+**Ancora da verificare [I]:** la CRL (formato reale del file scaricato); la forma esatta del `commonName` (cosa sono i 13
+caratteri dopo il CF); il comportamento con una CIE revocata (difficile da provare, si affida al test con PKI finta).
+
 ## Fonti web consultate (orientative, non verificate a fondo)
 
 - [Ministero dell'Interno – CieSign](https://www.cartaidentita.interno.gov.it/en/public-and-business-administration/electronic-signature-with-cie-ciesign/)
