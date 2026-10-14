@@ -58,7 +58,31 @@ const MIGRATIONS = [
   `,
   // v2: exception ticket shown to the user when a statement needs an approved exception
   `ALTER TABLE statements ADD COLUMN exception_ticket TEXT;`,
+  // v3: notification outbox (sent by the backend's mailer loop) and small key/value state
+  `
+  CREATE TABLE notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    severity TEXT NOT NULL CHECK (severity IN ('problem','event','info')),
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    sent_at INTEGER
+  );
+  CREATE INDEX notifications_unsent ON notifications(sent_at);
+  CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  `,
+  // v4: last chain block applied to a link by the indexer (older events are ignored)
+  `ALTER TABLE links ADD COLUMN last_event_block INTEGER;`,
 ];
+
+export const kvGet = (db, key, fallback = null) => {
+  const row = db.prepare("SELECT value FROM kv WHERE key = ?").get(key);
+  return row ? JSON.parse(row.value) : fallback;
+};
+export const kvSet = (db, key, value) =>
+  db.prepare("INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(key, JSON.stringify(value));
 
 export function openDb(path) {
   const db = new Database(path);

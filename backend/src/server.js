@@ -4,7 +4,10 @@ import { createBadgeReader, createMinter } from "./chain.js";
 import { loadTrustStore } from "./cie/trust.js";
 import { createCieFlow, failInterrupted } from "./cieFlow.js";
 import { loadConfig } from "./config.js";
-import { openDb } from "./db.js";
+import { kvGet, openDb } from "./db.js";
+import { runIndexer } from "./indexer.js";
+import { createMailer, flushNotifications } from "./notify.js";
+import { runCleanup, runRevocationCheck } from "./revocation.js";
 import { createSerialQueue } from "./queue.js";
 import { createProvider, createUpChecker } from "./up.js";
 
@@ -36,17 +39,38 @@ const trust = loadTrustStore(cfg.trustDir, cfg.cieRootSha256);
 const interrupted = failInterrupted(db);
 if (interrupted) console.warn(`${interrupted} statement(s) interrupted by the previous shutdown marked as failed`);
 
-const cieFlow = createCieFlow({
-  db,
-  cfg,
-  trust,
-  pepper: cfg.uniqPepper,
-  certRefKey: cfg.certRefKey,
-  badge,
-  minter,
-  queue: createSerialQueue(),
-});
-const app = createApp({ db, cfg, upChecker: createUpChecker(provider), cieFlow, badge });
+const queue = createSerialQueue();
+const cieFlow = createCieFlow({ db, cfg, trust, pepper: cfg.uniqPepper, certRefKey: cfg.certRefKey, badge, minter, queue });
+const healthInfo = () => ({ indexer: kvGet(db, "indexer"), queue: queue.size });
+const app = createApp({ db, cfg, upChecker: createUpChecker(provider), cieFlow, badge, healthInfo });
+
+// --- periodic jobs (errors are counted, never crash the process; codes only in the logs) ---
+const mailer = createMailer();
+if (!mailer) console.warn("SMTP not configured: notifications stay queued in the database");
+const every = (name, ms, fn, firstDelayMs = 0) => {
+  let running = false;
+  const tick = async () => {
+    if (running) return;
+    running = true;
+    try {
+      await fn();
+    } catch (e) {
+      console.error(`[job ${name}] ${e?.code ?? e?.name ?? "error"}`);
+    } finally {
+      running = false;
+    }
+  };
+  setTimeout(() => {
+    tick();
+    setInterval(tick, ms).unref();
+  }, firstDelayMs).unref();
+};
+const DAY = 86_400_000;
+every("indexer", 60_000, () =>
+  runIndexer({ db, provider, address: cfg.deployment.address, deployBlock: cfg.deployment.deployBlock, maxRange: cfg.indexerMaxRange }));
+every("notifications", 60_000, () => flushNotifications(db, mailer, { label: `up-cie-link ${cfg.network}` }), 5_000);
+every("revocation", DAY, () => runRevocationCheck({ db, trust, certRefKey: cfg.certRefKey, queue, minter }), 10 * 60_000);
+every("cleanup", DAY, () => runCleanup(db), 15 * 60_000);
 const server = app.listen(cfg.port, "127.0.0.1", () => {
   console.log(`up-cie-link backend on 127.0.0.1:${cfg.port} (${cfg.network}, contract ${cfg.deployment.address})`);
   console.log(`attester ${minter.address}, trust store: ${trust.roots.length} root(s), ${trust.intermediates.length} intermediate(s)`);

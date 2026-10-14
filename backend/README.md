@@ -28,6 +28,18 @@ Work in progress (phase 2). Implemented so far:
 - `src/secrets.js`: person key = HMAC(UNIQ_PEPPER, tax code); certificate reference encrypted with AES-256-GCM.
 - `src/chain.js`: UpCieBadge reads and the attester's `attest` / `invalidate`. The server refuses to start if
   `ATTESTER_PRIVATE_KEY` is not the contract's attester.
+- `src/indexer.js` (every minute): reads the contract events from `DEPLOY_BLOCK` (2 confirmations, bounded ranges)
+  and applies renounce / revoke / reinstate to the local state; a mint not recorded locally is a problem.
+- `src/revocation.js` (daily): OCSP recheck of every valid link; a revoked certificate invalidates the badge
+  (`CERT_REVOKED`, through the same serial queue). OCSP unreachable never invalidates: after 3 consecutive days it
+  is reported once. Cleanup of expired statements, stale exception requests and old notifications.
+- `src/notify.js`: notifications go to an outbox table and are emailed by the server loop (retried on failure).
+- `src/monitor.js` (separate process, hourly): backend health, indexer progress, RPC and chain id, attester
+  (on-chain match and balance), backup age, CA certificate expiry, stuck emails, OCSP availability. Emails on
+  change only (`[PROBLEM]`, `[OK]`), a `[REMINDER]` every 24 h while a problem lasts, a daily `[INFO]` summary.
+- `scripts/backup.js` (daily): online SQLite copy, integrity check, gzip, age encryption to a public key,
+  SHA-256 file, rotation (14 recent + 8 weekly), `last-backup.json` for the monitor. `scripts/restore.js` checks
+  hash and integrity and never overwrites without `--force`.
 
 ## API (so far)
 
@@ -51,6 +63,21 @@ Statement statuses: `pending_up` → `pending_cie` → `verifying` → `queued` 
 cp .env.example .env   # fill in NETWORK, RPC_URL, PORT, PUBLIC_ORIGIN, DB_PATH
 node src/server.js
 ```
+
+## Operations
+
+```bash
+npm run monitor -- --test-email   # check SMTP settings
+npm run monitor -- --dry-run      # print findings and the daily summary, send nothing
+npm run monitor                   # one monitor run (schedule hourly)
+npm run backup                    # one encrypted backup (schedule daily)
+npm run backup:keygen > key.txt   # on YOUR machine: age key pair; only the public key goes in BACKUP_AGE_RECIPIENT
+npm run restore -- --file <backup.db.gz.age> --identity key.txt --out restored.db
+```
+
+Keep a copy of `UNIQ_PEPPER`, `CERT_REF_KEY`, `ATTESTER_PRIVATE_KEY` and the age private key outside the server:
+without them a backup cannot be used. Backups are on the same server for now; an external copy is required
+before real use.
 
 ## Tests
 

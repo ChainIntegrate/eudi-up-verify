@@ -35,7 +35,7 @@ export function rateLimiter({ windowMs, max, clock }) {
  * @param {{db: any, cfg: any, upChecker: {isUniversalProfile: Function, isValidUpSignature: Function},
  *          cieFlow?: {submit: Function}, badge?: any, clock?: () => number}} deps
  */
-export function createApp({ db, cfg, upChecker, cieFlow, badge, clock = Date.now }) {
+export function createApp({ db, cfg, upChecker, cieFlow, badge, healthInfo = () => ({}), clock = Date.now }) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", "loopback"); // behind nginx on the same host
@@ -65,7 +65,7 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, clock = Date.now
   const creation = rateLimiter({ windowMs: 60_000, max: 10, clock });
 
   app.get("/api/health", general, (_req, res) => {
-    res.json({ ok: true, network: cfg.network });
+    res.json({ ok: true, network: cfg.network, ...healthInfo() });
   });
 
   app.get("/api/config", general, (_req, res) => {

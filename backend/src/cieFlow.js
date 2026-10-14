@@ -6,6 +6,7 @@ import { audit } from "./db.js";
 import { CieError } from "./cie/pki.js";
 import { verifyCieCades, verifyCieRaw } from "./cie/verify.js";
 import { LinkError, applyLink, decide } from "./linking.js";
+import { notify } from "./notify.js";
 import { encryptCertRef, personKey as derivePersonKey } from "./secrets.js";
 import { getStatement, statementText } from "./statements.js";
 
@@ -75,6 +76,35 @@ export function createCieFlow(deps) {
       if (!(e instanceof LinkError)) throw e;
       setStatus(db, row.id, { status: "failed", error_code: e.code, exception_ticket: e.ticket ?? null });
       audit(db, "link_refused", { up: row.up, detail: e.code }, clock());
+      if (e.code === "EXCEPTION_REQUIRED") {
+        notify(db, {
+          kind: "exception_requested",
+          severity: "event",
+          subject: `exception requested for an additional UP (${row.up})`,
+          body: [
+            `A person who already has a primary UP asks to link the additional UP ${row.up}.`,
+            `Ticket: ${e.ticket}`,
+            "",
+            "If you approve, call from the owner UP (ChainIntegrate) on the contract",
+            `${cfg.deployment.address} (${cfg.network}):`,
+            `  approveException(${e.ticket}, 2)`,
+            "(2 = primary + one additional UP; use a higher number to allow more).",
+            "Then the holder links the UP again with mode \"additional\".",
+          ].join("\n"),
+        }, clock());
+      }
+      if (e.code === "EXCEPTION_LIMIT_REACHED") {
+        notify(db, {
+          kind: "exception_limit",
+          severity: "event",
+          subject: `exception limit reached (${row.up})`,
+          body: [
+            `A person asks to link one more additional UP (${row.up}) but has reached the approved limit.`,
+            `Ticket: ${e.ticket}`,
+            `To allow it, call approveException(${e.ticket}, <higher number>) from the owner UP on ${cfg.deployment.address}.`,
+          ].join("\n"),
+        }, clock());
+      }
       return;
     }
     setStatus(db, row.id, { status: "minting" });
@@ -104,9 +134,23 @@ export function createCieFlow(deps) {
       );
       setStatus(db, row.id, { status: "done", tx_hash: txHash, exception_ticket: plan.ticket });
       audit(db, "attested", { up: row.up, txHash, detail: plan.primary ? "primary" : "additional" }, clock());
+      if (cfg.notifyEachLink) {
+        notify(db, {
+          kind: "attested",
+          severity: "info",
+          subject: `badge ${plan.primary ? "primary" : "additional"} for ${row.up}`,
+          body: `Badge minted for ${row.up} (${plan.primary ? "primary" : "additional"}, mode ${row.mode}), tx ${txHash}.`,
+        }, clock());
+      }
     } catch {
       setStatus(db, row.id, { status: "failed", error_code: "MINT_FAILED" });
       audit(db, "mint_failed", { up: row.up }, clock());
+      notify(db, {
+        kind: "mint_failed",
+        severity: "problem",
+        subject: `minting failed for ${row.up}`,
+        body: `attest()/invalidate() failed for ${row.up} (mode ${row.mode}). Check the attester balance and the RPC. The holder has to link again.`,
+      }, clock());
     }
   }
 
