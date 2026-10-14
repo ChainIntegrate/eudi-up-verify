@@ -213,22 +213,47 @@ EN poi IT; icona ≤ 800 px. `source` diventa `bytes32("CIE")` (o `"CIE_FEA"`), 
 | PM2 è AGPL-3.0 | Solo runtime, non distribuito: nessun impatto sulla licenza Apache-2.0 |
 | Uso del codice SDK IPZS | BSD-3: mantenere copyright e nota in `THIRD_PARTY_NOTICES`; niente loghi CIE/CieID |
 
-## 9. Decisioni che servono da te
+## 9. Decisioni
 
-1. **D1 – Strada:** A (firma CIE) come base? Avviare in parallelo l'adesione a "Entra con CIE" (D) per il futuro?
-2. **D2 – Variante:** A1 (CieSign + upload, nessuna app) per partire e A2 (app Android) come obiettivo? L'app sarebbe
-   `up-wallet-android` o una nuova?
-3. **D3 – Unicità:** HMAC del codice fiscale. Se la stessa persona collega una seconda UP: rifiuto, oppure invalido la
-   vecchia e conio sulla nuova?
-4. **D4 – Scadenza del bollino:** `min(scadenza certificato CIE, 12 mesi)`?
-5. **D5 – Revoca:** controllo OCSP/CRL obbligatorio anche in demo?
-6. **D6 – Nome del repo:** "eudi-up-verify" non descrive più il progetto. Rinominarlo (es. `up-cie-link`)? GitHub
-   reindirizza i vecchi link.
-7. **D7 – Dicitura:** "Verificato con CIE da ChainIntegrate" / "Verified with CIE by ChainIntegrate", più il disclaimer
-   "non è un servizio ufficiale né un documento d'identità"?
-8. **D8 – Hardhat 2 o 3** (ultima su npm: 3.19.0).
-9. **D9 – Conservazione dell'enunciato firmato:** non conservarlo (minimizzazione) o conservarlo cifrato (prova)?
-10. **D10 – UP owner** di ChainIntegrate su testnet e **hosting** (dominio HTTPS).
+### Prese (2026-10-14)
+| # | Decisione |
+|---|---|
+| D1 | **Strada A: firma CIE** dell'enunciato congiunto. |
+| D2 | **Variante A2** (app Android con NFC); probabile integrazione in **UP-Wallet**, da decidere più avanti. A1 (CieSign + upload) resta come ripiego per i test. |
+| D6 | Rinominare il repo (il nome lo sceglie il titolare: lo strumento GitHub di questa sessione non permette di rinominare). |
+| D7 | Dicitura da definire in corso d'opera (restano fermi i divieti: niente "ufficiale", niente loghi istituzionali). |
+| D8 | **Hardhat 3** (attuale: 3.19.0; la 2.x è ferma alla 2.29.1). Ha `hardhat-toolbox-mocha-ethers` (ethers v6) e la verifica su Blockscout integrata in `@nomicfoundation/hardhat-verify` 3.x. Config in TypeScript/ESM. |
+| D10 | Owner = UP ChainIntegrate; rete **LUKSO testnet**; hosting sul server già in uso (Node/Express su 127.0.0.1 + PM2). |
+
+### Ancora aperte (domande riformulate)
+
+**D3 – Una persona, quante UP?** Proposta: **una sola UP attiva per persona**, con due uscite di sicurezza.
+- *Migrazione* (UP persa o compromessa): una nuova firma CIE su un enunciato "sposto il collegamento da 0xVECCHIA a 0xNUOVA"
+  invalida il bollino vecchio (motivo `MIGRATED`) e conia il nuovo. Nessun intervento manuale.
+- *Eccezione* (serve davvero più di una UP): un limite configurabile per persona (default 1), alzabile solo dall'owner per
+  quella persona, con evento on-chain che lo rende pubblico.
+  Domanda: va bene così, o preferisci che più UP siano ammesse fin dall'inizio, entro un tetto?
+
+**D4 – Perché una scadenza?** Il bollino dice "in quel momento questa persona aveva una CIE valida". Senza scadenza resterebbe
+valido anche dopo la scadenza della carta, un furto denunciato o il decesso del titolare. Proposta: **nessuna durata
+arbitraria**; `expiresAt` = **scadenza del certificato CIE** (di fatto la validità della carta). Al rinnovo della carta
+basta rifirmare. Chi legge `isVerified` vede sempre anche `verifiedAt` e può applicare regole più severe.
+Domanda: ok scadenza = validità della carta, oppure nessuna scadenza (`expiresAt = 0`) affidandosi solo alla revoca?
+
+**D5 – Revoca: tre domande distinte.**
+1. *Al momento della verifica*: rifiutiamo una CIE il cui certificato risulta revocato (carta denunciata smarrita/rubata)?
+   Proposta: **sì**. E se il servizio di revoca del Ministero non risponde: **rifiutare** (più sicuro) o **accettare
+   segnalandolo** (più comodo)?
+2. *Dopo il conio*: se in seguito la carta viene revocata, vogliamo invalidare il bollino? Per farlo dobbiamo **conservare
+   numero di serie ed emittente del certificato** (un dato che, insieme ai registri del Ministero, identifica la persona) e
+   ricontrollarli periodicamente. Senza questo, la revoca successiva non ci arriva.
+3. *Su richiesta*: l'utente può chiedere l'invalidazione (con una firma della UP o una nuova firma CIE); l'owner può
+   invalidare per abuso. Proposta: **sì a entrambe**.
+
+**D9 – Conservare l'enunciato firmato?** Non è indispensabile per il funzionamento: la verifica avviene subito e on-chain va
+solo il bollino. Servirebbe soltanto come **prova in caso di contestazione** ("non sono stato io"). Proposta: **non
+conservarlo**; tenere solo `SHA-256(enunciato)` e l'HMAC del CF. Si lega a D5.2: se scegli la revoca successiva,
+conserviamo serial+emittente del certificato (cifrati), ma comunque non l'enunciato.
 
 ## 10. Primo passo proposto dopo l'approvazione
 
