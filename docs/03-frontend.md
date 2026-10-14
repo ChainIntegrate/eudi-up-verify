@@ -84,7 +84,10 @@ del file con i byte esatti, verifica, rinuncia, errori; nessun errore nella pagi
 provato con nginx reale (pagine, header, CORS dei metadati, `X-Forwarded-For`, limite 128k).
 Non verificato: l'estensione UP Browser reale, CieSign reale, i browser diversi da Chromium.
 
-## 5. UP Wallet per Android (richiesta del 2026-10-14) — da confermare
+## 5. UP Wallet per Android (richiesta del 2026-10-14) — rinviata al mainnet
+
+Decisione del 2026-10-14: per semplicità WalletConnect si aggiunge **al passaggio in mainnet**; in testnet solo
+l'estensione UP Browser. Le domande W1-W4 qui sotto restano aperte fino ad allora.
 
 La connessione deve funzionare con l'estensione UP Browser **e** con l'app UP Wallet per Android. L'app parla con le
 dApp via **WalletConnect** (incolla il link `wc:` della dApp, come `up-wallet.html`), firma `personal_sign` con il
@@ -104,9 +107,27 @@ controller e invia transazioni dalla UP. Per farlo la pagina deve includere il l
   questa sessione).
 - Informativa: va aggiunto Reown (vede indirizzo della UP, rete e IP durante la connessione).
 
-## 6. Metadati on-chain e operazioni dell'owner — da confermare
+## 6. Pagina admin (decisione del 2026-10-14; dettagli da confermare)
 
-- **F9:** chi firma `setData(LSP4Metadata)` e le operazioni dell'owner (`approveException`, `revoke`,
-  `reinstate`)? Proposta: una pagina `/admin` che si attiva solo se la UP collegata è l'owner del contratto e
-  prepara le transazioni (le firma l'owner con l'estensione o con UP Wallet). Alternativa: calldata stampata dagli
-  script e inviata a mano.
+Decisione: le operazioni dell'owner si fanno da una pagina admin che funziona **solo se la UP collegata è quella di
+ChainIntegrate (owner del contratto) e ha firmato l'accesso**; predisposta per testnet e mainnet.
+
+Proposta di dettaglio:
+- **A1, accesso:** la pagina collega la UP; il backend controlla che sia l'`owner()` del contratto letto on-chain
+  sulla rete configurata (attese: testnet `0x83cB…472C`, mainnet `0x4a26…8c27`). Poi la UP firma un messaggio di
+  accesso (ERC-1271, nonce monouso, finestra 5 minuti); il backend rilascia una sessione di 30 minuti (cookie
+  `HttpOnly`, `Secure`, `SameSite=Strict`, solo in memoria). Senza sessione le API admin rispondono 401 e la pagina
+  non mostra nulla.
+- **A2, contenuto:**
+  - stato del servizio: rete, contratto, attestatore e saldo, indicizzatore, coda, ultimo backup, OCSP;
+  - richieste di eccezione in attesa (ticket, UP, data; nessun dato personale): "Approva per n UP" →
+    `approveException(ticket, n)`; "Rifiuta" → chiusa nel backend;
+  - cerca una UP: `revoke(up, motivo)` / `reinstate(up)`;
+  - metadati del bollino: confronto tra il valore on-chain e `metadata/badge.json`, "Aggiorna" → `setData`;
+  - emergenza: "Ferma i conii" → `setAttester(0x0)`, e ripristino dell'attestatore.
+- **A3, firme:** ogni transazione la firma la UP owner nell'estensione; il backend non ha mai chiavi dell'owner.
+  In mainnet ogni transazione chiede una conferma in più (scrivere `MAINNET`).
+- **A4, reti:** rete, owner atteso ed explorer letti dalla configurazione; banner con la rete ben visibile.
+- **A5, traccia:** ogni azione admin va nel registro di audit (UP owner, azione, transazione) e manda una mail
+  "event".
+
