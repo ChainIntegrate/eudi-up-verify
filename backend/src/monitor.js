@@ -180,22 +180,33 @@ export async function runMonitor({ cfg, provider, db, fetchHealth, mailer, state
   const sent = [];
   const label = `up-cie-link ${cfg.network}`;
 
+  // A failed e-mail never stops the monitor and is never recorded as sent: the state is left as it was,
+  // so the same message is tried again at the next run.
+  const mailErrors = [];
   const send = async (subject, text) => {
     sent.push(subject);
-    if (!dryRun && mailer) await mailer.send(subject, text);
+    if (dryRun || !mailer) return true;
+    try {
+      await mailer.send(subject, text);
+      return true;
+    } catch (e) {
+      mailErrors.push(`${e?.code ?? "error"} ${e?.hostname ?? ""}`.trim());
+      return false;
+    }
   };
 
+  let delivered = true;
   if (changed && ids.length > 0) {
-    await send(`[PROBLEM] ${label}: ${findings.length} finding(s)`, render(findings));
-    state.lastMail = now;
+    delivered = await send(`[PROBLEM] ${label}: ${findings.length} finding(s)`, render(findings));
   } else if (changed && ids.length === 0 && state.ids.length > 0) {
-    await send(`[OK] ${label}: all clear`, "All previously reported findings are resolved.");
-    state.lastMail = now;
+    delivered = await send(`[OK] ${label}: all clear`, "All previously reported findings are resolved.");
   } else if (!changed && ids.length > 0 && now - state.lastMail >= 24 * HOUR) {
-    await send(`[REMINDER] ${label}: ${findings.length} finding(s) still open`, render(findings));
-    state.lastMail = now;
+    delivered = await send(`[REMINDER] ${label}: ${findings.length} finding(s) still open`, render(findings));
+  } else {
+    delivered = null; // nothing to send
   }
-  state.ids = ids;
+  if (delivered) state.lastMail = now;
+  if (delivered !== false) state.ids = ids;
 
   const day = new Date(now).toISOString().slice(0, 10);
   if (db && state.lastSummaryDay !== day && new Date(now).getUTCHours() >= (cfg.digestHourUtc ?? 6)) {
@@ -205,12 +216,11 @@ export async function runMonitor({ cfg, provider, db, fetchHealth, mailer, state
     } catch {}
     const statusFile = cfg.backupDir ? path.join(cfg.backupDir, "last-backup.json") : null;
     const backupStatus = statusFile && existsSync(statusFile) ? JSON.parse(readFileSync(statusFile, "utf8")) : null;
-    await send(`[INFO] ${label}: daily summary ${day}`, dailySummary({ db, now, attesterBalance: balance, backupStatus }));
-    state.lastSummaryDay = day;
+    if (await send(`[INFO] ${label}: daily summary ${day}`, dailySummary({ db, now, attesterBalance: balance, backupStatus }))) state.lastSummaryDay = day;
   }
 
   if (!dryRun) writeFileSync(stateFile, JSON.stringify(state, null, 2) + "\n", { mode: 0o600 });
-  return { findings, sent };
+  return { findings, sent, mailErrors };
 }
 
 export function monitorConfig(env = process.env) {
@@ -247,7 +257,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       console.error("monitor: SMTP_HOST and NOTIFICATION_EMAIL are required");
       process.exit(2);
     }
-    await mailer.send("[TEST] up-cie-link monitor", "Test email from the up-cie-link monitor.");
+    try {
+      await mailer.send("[TEST] up-cie-link monitor", "Test email from the up-cie-link monitor.");
+    } catch (e) {
+      console.error(`test email FAILED: ${e?.code ?? "error"}${e?.hostname ? ` (host ${e.hostname})` : ""}${e?.responseCode ? ` (SMTP ${e.responseCode})` : ""}`);
+      process.exit(1);
+    }
     console.log(`test email sent to the configured address`);
     process.exit(0);
   }
@@ -261,7 +276,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const provider = new JsonRpcProvider(cfg.rpcUrl, cfg.deployment.chainId, { staticNetwork: true });
   const db = existsSync(cfg.dbPath) ? new Database(cfg.dbPath, { readonly: true, fileMustExist: true }) : null;
   const fetchHealth = async () => (await fetch(`http://127.0.0.1:${cfg.port}/api/health`, { signal: AbortSignal.timeout(10_000) })).json();
-  const { findings, sent } = await runMonitor({
+  const { findings, sent, mailErrors } = await runMonitor({
     cfg,
     provider,
     db,
@@ -273,6 +288,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log(findings.length ? render(findings) : "no findings");
   if (sent.length) console.log(`${args.has("--dry-run") ? "would send" : "sent"}: ${sent.join(" | ")}`);
   if (!mailer && !args.has("--dry-run")) console.warn("SMTP not configured: nothing was emailed");
+  if (mailErrors.length) console.error(`e-mail NOT sent (${mailErrors.join("; ")}): retried at the next run`);
   db?.close();
   provider.destroy();
+  if (mailErrors.length) process.exitCode = 1; // visible in systemctl / journalctl
 }

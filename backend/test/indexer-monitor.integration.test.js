@@ -159,6 +159,23 @@ describe("indexer and monitor on a real chain", { skip: !contractsAvailable && "
     assert.equal(sent.length, count + 1);
     assert.match(sent.at(-1).subject, /^\[OK\]/);
 
+    // a failing mail server: the monitor does not stop and tries the same message again next time
+    cfg.retryDelayMs = 1;
+    const failing = { send: async () => { throw Object.assign(new Error("dns"), { code: "EDNS", hostname: "smtps.example" }); } };
+    backendUp = false;
+    t += HOUR;
+    r = await runMonitor({ cfg, provider: node.provider, db, fetchHealth, mailer: failing, stateFile, now: t });
+    assert.deepEqual(r.mailErrors, ["EDNS smtps.example"]);
+    const before = sent.length;
+    t += HOUR;
+    await run(t); // working mailer again: the PROBLEM mail is sent now
+    assert.equal(sent.length, before + 1);
+    assert.match(sent.at(-1).subject, /^\[PROBLEM\]/);
+    backendUp = true;
+    t += HOUR;
+    await run(t);
+    assert.match(sent.at(-1).subject, /^\[OK\]/);
+
     // low attester balance and old backup are problems
     cfg.minAttesterBalance = parseEther("100000000");
     t += 48 * HOUR;
