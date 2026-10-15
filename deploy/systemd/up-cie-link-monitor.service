@@ -1,4 +1,5 @@
 # Hourly monitor (read-only): see backend/src/monitor.js. Started by up-cie-link-monitor.timer.
+# Configuration: backend/monitor.env (from monitor.env.example; no private keys), never backend/.env.
 # Adjust User and the paths (repository directory and node binary: `which node` as that user).
 [Unit]
 Description=up-cie-link monitor

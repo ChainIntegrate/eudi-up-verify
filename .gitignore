@@ -166,3 +166,6 @@ contracts/ignition/deployments/chain-31337/
 
 # manual verification exports
 contracts/verify-input/
+
+# monitor configuration (UCL-22)
+monitor.env

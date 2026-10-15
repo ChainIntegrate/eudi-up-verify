@@ -111,6 +111,15 @@ describe("revocation recheck and cleanup", () => {
     assert.equal(kvGet(db, "ocsp_unavailable").days, 0);
   });
 
+  it("UCL-06: unusable OCSP answers in two consecutive runs are a problem", async () => {
+    const db = await dbWithLink();
+    const minter = minterSpy();
+    const broken = async () => Buffer.from("not an OCSP response");
+    for (let i = 0; i < 3; i++) await runRevocationCheck({ db, trust, certRefKey, queue: createSerialQueue(), minter, transport: broken });
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM notifications WHERE kind = 'revocation_errors'").get().n, 1);
+    assert.equal(minter.calls.length, 0);
+  });
+
   it("cleanup removes old statements and abandons stale exception requests", () => {
     const db = openDb(":memory:");
     const now = Date.now();

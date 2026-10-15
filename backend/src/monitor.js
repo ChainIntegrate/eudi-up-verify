@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { X509Certificate } from "node:crypto";
 import Database from "better-sqlite3";
-import { JsonRpcProvider, Wallet, formatEther, parseEther } from "ethers";
+import { JsonRpcProvider, formatEther, parseEther } from "ethers";
 import { createBadgeReader } from "./chain.js";
 import { loadDeployment } from "./config.js";
 import { createMailer } from "./notify.js";
@@ -95,9 +95,30 @@ export async function collectFindings({ cfg, provider, db, fetchHealth, now }) {
   if (db) {
     const stuck = db.prepare("SELECT COUNT(*) n FROM notifications WHERE sent_at IS NULL AND ts < ?").get(now - 30 * 60_000).n;
     if (stuck > 0) add("mail_stuck", "problem", `${stuck} notification(s) not sent by the backend for more than 30 minutes`);
-    const ocsp = db.prepare("SELECT value FROM kv WHERE key = 'ocsp_unavailable'").get();
-    const days = ocsp ? JSON.parse(ocsp.value).days : 0;
+    const kv = (key) => {
+      const row = db.prepare("SELECT value FROM kv WHERE key = ?").get(key);
+      return row ? JSON.parse(row.value) : null;
+    };
+    const days = kv("ocsp_unavailable")?.days ?? 0;
     if (days >= 3) add("ocsp_unavailable", "problem", `OCSP unreachable during the revocation recheck for ${days} days`);
+
+    // UCL-06: the revocation recheck must run and give usable answers
+    const validLinks = db.prepare("SELECT COUNT(*) n FROM links WHERE status = 'valid' AND expires_at > ?").get(now).n;
+    const rev = kv("revocation");
+    if (validLinks > 0 && (!rev || now - rev.at > 36 * HOUR)) {
+      add("revocation_stale", "problem", rev ? `revocation recheck last ran ${Math.round((now - rev.at) / HOUR)} hours ago` : "revocation recheck never ran");
+    }
+    if (rev?.errors > 0) add("revocation_errors", "problem", `last revocation recheck: ${rev.errors} of ${rev.checked} certificates without a usable OCSP answer`);
+
+    // UCL-01 / UCL-22: minting pipeline
+    const openMints = db.prepare("SELECT COUNT(*) n FROM mints WHERE created_at < ?").get(now - 15 * 60_000).n;
+    if (openMints > 0) add("mints_open", "problem", `${openMints} mint(s) open for more than 15 minutes (transaction pending or not confirmed)`);
+    const stuckStatements = db.prepare("SELECT COUNT(*) n FROM statements WHERE status IN ('verifying','queued') AND issued_at < ?").get(now - 30 * 60_000).n;
+    if (stuckStatements > 0) add("queue_stuck", "problem", `${stuckStatements} statement(s) still verifying or queued 30 minutes after creation: the queue may be blocked`);
+    const failingInvalidations = db.prepare("SELECT COUNT(*) n FROM pending_invalidations WHERE attempts >= 3").get().n;
+    if (failingInvalidations > 0) add("invalidations_failing", "problem", `${failingInvalidations} on-chain invalidation(s) failed at least 3 times`);
+    const mintFailures = db.prepare("SELECT COUNT(*) n FROM audit WHERE event = 'mint_failed' AND ts >= ?").get(now - 24 * HOUR).n;
+    if (mintFailures >= 3) add("mint_failures", "problem", `${mintFailures} minting failures in the last 24 hours`);
   }
   return findings;
 }
@@ -121,6 +142,12 @@ export function dailySummary({ db, now, attesterBalance, backupStatus }) {
     `  badges minted (additional):${count("attested", "additional")}`,
     `  minting failures:          ${count("mint_failed")}`,
     `  renounced / revoked:       ${count("renounced")} / ${count("revoked")}`,
+    `  revocation recheck:        ${(() => {
+      const r = db.prepare("SELECT value FROM kv WHERE key = 'revocation'").get();
+      if (!r) return "not run yet";
+      const v = JSON.parse(r.value);
+      return `${new Date(v.at).toISOString()}: ${v.checked} checked, ${v.good} good, ${v.revoked} revoked, ${v.unavailable} unavailable, ${v.errors} errors`;
+    })()}`,
     "  CIE refused by reason:     " + (grouped("cie_rejected").map((r) => `${r.detail} ${r.n}`).join(", ") || "none"),
     "  links refused by reason:   " + (grouped("link_refused").map((r) => `${r.detail} ${r.n}`).join(", ") || "none"),
     "",
@@ -189,9 +216,10 @@ export async function runMonitor({ cfg, provider, db, fetchHealth, mailer, state
 export function monitorConfig(env = process.env) {
   const network = env.NETWORK;
   const deploymentsDir = env.DEPLOYMENTS_DIR || fileURLToPath(new URL("../../contracts/deployments", import.meta.url));
-  const attesterAddress = env.ATTESTER_ADDRESS || (env.ATTESTER_PRIVATE_KEY ? new Wallet(env.ATTESTER_PRIVATE_KEY).address : null);
+  // UCL-22: the monitor never reads the attester's private key, only its address
+  const attesterAddress = env.ATTESTER_ADDRESS;
   if (!network || !env.RPC_URL || !env.PORT || !env.DB_PATH || !attesterAddress) {
-    throw new Error("monitor needs NETWORK, RPC_URL, PORT, DB_PATH and ATTESTER_ADDRESS (or ATTESTER_PRIVATE_KEY)");
+    throw new Error("monitor needs NETWORK, RPC_URL, PORT, DB_PATH and ATTESTER_ADDRESS (see monitor.env.example)");
   }
   return {
     network,
@@ -209,7 +237,8 @@ export function monitorConfig(env = process.env) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const envFile = fileURLToPath(new URL("../.env", import.meta.url));
+  // its own configuration file, without secrets other than SMTP (UCL-22); never backend/.env
+  const envFile = process.env.MONITOR_ENV_FILE || fileURLToPath(new URL("../monitor.env", import.meta.url));
   if (existsSync(envFile)) process.loadEnvFile(envFile);
   const args = new Set(process.argv.slice(2));
   const mailer = createMailer();

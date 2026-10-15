@@ -64,6 +64,19 @@ export async function runRevocationCheck({ db, trust, certRefKey, queue, minter,
     streak.lastDay = day;
   }
   kvSet(db, "ocsp_unavailable", streak);
+  // UCL-06: answers that are not "unavailable" but unusable (invalid response, unknown issuer...) must not pass
+  // unnoticed: errors in two consecutive runs are a problem (revoked cards could keep their badge).
+  const errs = kvGet(db, "revocation_errors", { runs: 0 });
+  errs.runs = result.errors > 0 ? errs.runs + 1 : 0;
+  if (errs.runs === 2) {
+    notify(db, {
+      kind: "revocation_errors",
+      severity: "problem",
+      subject: `revocation recheck failing (${result.errors} of ${result.checked} certificates)`,
+      body: `For two consecutive runs the revocation recheck could not get a usable OCSP answer for ${result.errors} certificate(s) (not a network outage). Possible causes: OCSP responder certificate changed, new sub CA missing from the trust store. Until fixed, revoked cards keep their badge.`,
+    }, t);
+  }
+  kvSet(db, "revocation_errors", errs);
   kvSet(db, "revocation", { at: t, ...result });
   return result;
 }
