@@ -16,7 +16,8 @@
     "restore": "node scripts/restore.js",
     "backup:keygen": "node scripts/age-keygen.js",
     "data:export": "node scripts/data-subject.js export",
-    "data:erase": "node scripts/data-subject.js erase"
+    "data:erase": "node scripts/data-subject.js erase",
+    "check:p7m": "node scripts/check-p7m.js"
   },
   "dependencies": {
     "age-encryption": "0.3.1",

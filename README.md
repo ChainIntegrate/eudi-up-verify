@@ -42,7 +42,7 @@ our server.
 contracts/   Hardhat 3 project: UpCieBadge (LSP8 soulbound), tests, deploy/verify/metadata scripts, deployments/
 backend/     Node/Express service: statements, UP and CIE verification, minting queue, indexer, monitor, backups
 frontend/    Static pages (no third-party code): link, verify, my badge, privacy, legal notes
-deploy/      PM2, systemd timers (monitor, backup), nginx template, server set-up notes
+deploy/      PM2, systemd timers (monitor, backup), nginx site; server operations in docs/operations.md
 spike/       Stand-alone scripts to create a statement and verify a CIE CAdES signature
 docs/        Analysis, design notes and decisions (Italian); docs/audit: audit report and fix tracking
 .devcontainer/  GitHub Codespaces setup (Node 22, dependencies, recommended secrets)

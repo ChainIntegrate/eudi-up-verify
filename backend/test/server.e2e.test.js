@@ -25,11 +25,11 @@ const freePort = () =>
   });
 
 describe("server end-to-end", { skip: !contractsAvailable && "contracts not built" }, () => {
-  let node, pki, stopOcsp, server, dir, base, up, controller, badgeAddress, logs = "";
+  let node, pki, stopOcsp, server, dir, base, up, controller, badgeAddress, env, deployer, ownerUp, logs = "";
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
-    const [deployer] = node.wallets;
+    [deployer] = node.wallets;
     const attesterKey = node.keys[1];
     controller = Wallet.createRandom();
     const upArt = artifact("universalProfile");
@@ -38,7 +38,7 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
       await c.waitForDeployment();
       return c.getAddress();
     };
-    const ownerUp = await deployUp(Wallet.createRandom().address);
+    ownerUp = await deployUp(Wallet.createRandom().address);
     ({ up } = await deployProfile(deployer, controller));
     const b = artifact("badge");
     const badge = await new ContractFactory(b.abi, b.bytecode, deployer).deploy(ownerUp, new Wallet(attesterKey).address);
@@ -59,7 +59,7 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
 
     const port = await freePort();
     base = `http://127.0.0.1:${port}`;
-    const env = {
+    env = {
       ...process.env,
       NETWORK: "luksoTestnet",
       RPC_URL: node.url,
@@ -120,5 +120,29 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
     // the server never logs the tax code or the RPC URL
     assert.ok(!logs.includes("RSSMRA80A01H501X"));
     assert.ok(!logs.includes(node.url));
+  });
+
+  it("starts after an emergency stop (attester zero) so that the admin page can restore it", async () => {
+    const b = artifact("badge");
+    const stopped = await new ContractFactory(b.abi, b.bytecode, deployer).deploy(ownerUp, "0x0000000000000000000000000000000000000000");
+    await stopped.waitForDeployment();
+    const d2 = path.join(dir, "deployments-stopped");
+    mkdirSync(d2);
+    writeFileSync(path.join(d2, "luksoTestnet.json"), JSON.stringify({ chainId: 4201, address: await stopped.getAddress(), deployBlock: await node.provider.getBlockNumber() }));
+    const port = await freePort();
+    let out = "";
+    const child = spawn(process.execPath, [fileURLToPath(new URL("../src/server.js", import.meta.url))], {
+      env: { ...env, PORT: String(port), DEPLOYMENTS_DIR: d2, DB_PATH: path.join(dir, "stopped.db") },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    child.stdout.on("data", (x) => (out += x));
+    child.stderr.on("data", (x) => (out += x));
+    try {
+      for (let i = 0; i < 100 && !out.includes("trust store:"); i++) await new Promise((r) => setTimeout(r, 100));
+      assert.match(out, /Minting is STOPPED/);
+      assert.equal((await (await fetch(`http://127.0.0.1:${port}/api/health`)).json()).ok, true);
+    } finally {
+      child.kill("SIGTERM");
+    }
   });
 });

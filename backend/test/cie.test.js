@@ -174,6 +174,28 @@ describe("CIE verification", () => {
     });
   });
 
+  describe("UCL-06: check-p7m script", () => {
+    it("checks a .p7m end to end and prints no personal data", async () => {
+      const { checkP7m } = await import("../scripts/check-p7m.js");
+      const dir = mkdtempSync(path.join(tmpdir(), "check-"));
+      try {
+        writeFileSync(path.join(dir, "root.pem"), pki.rootPem);
+        writeFileSync(path.join(dir, "sub.pem"), pki.subPem);
+        const file = path.join(dir, "x.p7m");
+        writeFileSync(file, pki.signCades(Buffer.from("any statement")));
+        const r = await checkP7m(file, { trustDir: dir, rootSha256: [pki.rootSha256], ocspTransport: pki.ocspTransport });
+        assert.equal(r.ok, true);
+        assert.equal(r.taxCodeFound, true);
+        assert.match(r.certificateValidUntil, /^\d{4}-\d{2}$/);
+        assert.ok(!JSON.stringify(r).includes(FAKE_TAX_CODE));
+        writeFileSync(file, pki.signCades(Buffer.from("x"), { detached: true }));
+        await assert.rejects(checkP7m(file, { trustDir: dir, rootSha256: [pki.rootSha256], ocspTransport: pki.ocspTransport }), (e) => e.code === "CMS_INVALID");
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+  });
+
   describe("trust store from files", () => {
     it("loads only pinned roots and CA intermediates", () => {
       const dir = mkdtempSync(path.join(tmpdir(), "trust-"));

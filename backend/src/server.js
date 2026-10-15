@@ -44,7 +44,11 @@ if (rpcChainId !== cfg.deployment.chainId) {
 const badge = createBadgeReader(provider, cfg.deployment.address);
 const minter = createMinter(provider, cfg.deployment.address, cfg.attesterPrivateKey);
 const onChainAttester = await badge.attester();
-if (onChainAttester.toLowerCase() !== minter.address.toLowerCase()) {
+if (/^0x0{40}$/i.test(onChainAttester)) {
+  // emergency stop (admin page): start anyway, so that the admin page can restore the attester;
+  // every mint fails its simulation until then, and the monitor reports attester_zero
+  console.warn("Minting is STOPPED: the contract's attester is zero. Restore it from the admin page.");
+} else if (onChainAttester.toLowerCase() !== minter.address.toLowerCase()) {
   console.error(`ATTESTER_PRIVATE_KEY is not the contract's attester (${onChainAttester})`);
   process.exit(1);
 }
