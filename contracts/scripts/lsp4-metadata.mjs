@@ -31,9 +31,9 @@ const metadata = {
     name: "UP CIE Link",
     description:
       "Non-transferable badge: the holder of this Universal Profile also signed a statement with a valid Italian electronic identity card (CIE). " +
-      "No personal data on-chain. Experimental service by ChainIntegrate, not a public service.\n\n" +
+      "No name, tax code or card data on-chain. Experimental service by ChainIntegrate, not a public service.\n\n" +
       "Bollino non trasferibile: il titolare di questa Universal Profile ha firmato un enunciato anche con una Carta d'Identità Elettronica valida. " +
-      "Nessun dato personale on-chain. Servizio sperimentale di ChainIntegrate, non è un servizio pubblico.",
+      "Nessun nome, codice fiscale o dato della carta on-chain. Servizio sperimentale di ChainIntegrate, non è un servizio pubblico.",
     links: [
       { title: "Verify / Verifica", url: `${site}/verifica` },
       { title: "Source code", url: "https://github.com/ChainIntegrate/up-cie-link" },

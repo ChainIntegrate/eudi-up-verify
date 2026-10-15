@@ -235,6 +235,7 @@ Emergenza (chiave dell'attestatore o server compromessi):
 - deploy del contratto in mainnet (`CONFIRM_MAINNET=yes`), verifica, metadati dalla pagina admin;
 - `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
 - WalletConnect per UP Wallet Android (docs/03-frontend.md §5);
-- copia dei backup fuori dal server (audit UCL-25), processo separato per HMAC e firma (UCL-08);
-- informativa con il titolare ("ChainIntegrate SRLS" o "ChainIntegrate, servizi di Simone Cavalletti", UCL-14);
+- copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto; processo separato
+  per HMAC e firma (UCL-08);
+- informativa: completare i punti mancanti (UCL-14); il titolare è già "ChainIntegrate, servizi di Simone Cavalletti";
 - `NOTIFY_EACH_LINK=false`.

@@ -1,7 +1,7 @@
 {
   "LSP4Metadata": {
     "name": "UP CIE Link",
-    "description": "Non-transferable badge: the holder of this Universal Profile also signed a statement with a valid Italian electronic identity card (CIE). No personal data on-chain. Experimental service by ChainIntegrate, not a public service.\n\nBollino non trasferibile: il titolare di questa Universal Profile ha firmato un enunciato anche con una Carta d'Identità Elettronica valida. Nessun dato personale on-chain. Servizio sperimentale di ChainIntegrate, non è un servizio pubblico.",
+    "description": "Non-transferable badge: the holder of this Universal Profile also signed a statement with a valid Italian electronic identity card (CIE). No name, tax code or card data on-chain. Experimental service by ChainIntegrate, not a public service.\n\nBollino non trasferibile: il titolare di questa Universal Profile ha firmato un enunciato anche con una Carta d'Identità Elettronica valida. Nessun nome, codice fiscale o dato della carta on-chain. Servizio sperimentale di ChainIntegrate, non è un servizio pubblico.",
     "links": [
       {
         "title": "Verify / Verifica",

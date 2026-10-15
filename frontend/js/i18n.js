@@ -270,7 +270,7 @@ const T = {
         <li>Nessuna pubblicità, nessun tracciamento, nessuna statistica d'uso, nessun cookie.</li>
       </ul>
       <h2>2 · Chi è il titolare</h2>
-      <p>ChainIntegrate, che gestisce il servizio. Contatti: ${CONTACTS_IT}.</p>
+      <p>ChainIntegrate, servizi di Simone Cavalletti, che gestisce il servizio. Contatti: ${CONTACTS_IT}.</p>
       <h2>3 · Perché e su quale base</h2>
       <p>Per collegare la tua Universal Profile alla tua CIE ed emettere il bollino, garantendo una sola UP principale per persona e invalidando il bollino se il certificato della carta viene revocato. Base giuridica: il tuo <strong>consenso</strong> (art. 6.1.a GDPR), che dai prima della firma e puoi revocare in ogni momento (punto 7).</p>
       <h2>4 · Cosa conserviamo</h2>
@@ -567,7 +567,7 @@ const T = {
         <li>No ads, no tracking, no usage statistics, no cookies.</li>
       </ul>
       <h2>2 · Who is responsible</h2>
-      <p>ChainIntegrate, which runs the service. Contact: ${CONTACTS_EN}.</p>
+      <p>ChainIntegrate, services of Simone Cavalletti, which runs the service. Contact: ${CONTACTS_EN}.</p>
       <h2>3 · Why, and on what basis</h2>
       <p>To link your Universal Profile to your CIE and issue the badge, allowing a single primary UP per person and invalidating the badge if the card's certificate is revoked. Legal basis: your <strong>consent</strong> (Art. 6(1)(a) GDPR), given before signing and revocable at any time (section 7).</p>
       <h2>4 · What we keep</h2>

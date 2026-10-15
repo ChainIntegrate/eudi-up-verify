@@ -27,7 +27,7 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 | UCL-11 | Medium | Nessun controllo d'età | solo maggiorenni, età dal codice fiscale in memoria, codice neutro `AGE_NOT_ELIGIBLE` | `8d59cab` | risolto |
 | UCL-12 | Medium | `expired` durante verifica/coda/conio | scadenza solo per `pending_up` / `pending_cie` | `a5b79a5` | risolto |
 | UCL-13 | Medium | Termini CieSign e policy dei certificati CIE | owner: i termini di CieSign li accetta ogni utente per conto suo | — | accettato (vedi nota) |
-| UCL-14 | Low | Informativa incompleta | per ora resta parziale come quella di Cross_Chain; il titolare sarà "ChainIntegrate SRLS" o "ChainIntegrate, servizi di Simone Cavalletti" come sul sito | — | rinviato (prima del mainnet) |
+| UCL-14 | Low | Informativa incompleta | titolare indicato come "ChainIntegrate, servizi di Simone Cavalletti" (decisione del 2026-10-15); il resto dell'informativa resta parziale come quella di Cross_Chain | — | parziale (completare prima del mainnet) |
 | UCL-15 | Low | Rate limit | IPv6 per /64, mappa limitata, cache di 10 s di `/api/badge`, `limit_req` in nginx | `abca9c9`, `6cd0cd6` | risolto |
 | UCL-16 | Low | nginx | header ripetuti in ogni location, HSTS, Permissions-Policy, `server_tokens off`, log senza query string, sorgenti SVG non serviti; provato con nginx reale | `abca9c9` | risolto (controllare logrotate sul server) |
 | UCL-17 | Low | SMTP | `requireTLS` con `SMTP_SECURE=false` | `abca9c9` | risolto |
@@ -38,7 +38,7 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 | UCL-22 | Low | Monitor | controlli su conii, coda, invalidazioni, conii falliti, ricontrollo revoche; `monitor.env` senza chiave privata | `3c57cf9` | risolto |
 | UCL-23 | Low | `/api/health` pubblico | dettagli solo da 127.0.0.1; 404 da nginx | `abca9c9` | risolto |
 | UCL-24 | Low | Fine riga CRLF | `.gitattributes` | `a5b79a5` | risolto |
-| UCL-25 | Low | Backup sullo stesso server | — | — | rinviato al mainnet (con utenti reali) |
+| UCL-25 | Low | Backup sullo stesso server | copia esterna quando gli utenti saranno in numero discreto, non per i primi test (decisione del 2026-10-15) | — | rinviato |
 | UCL-26 | Info | Documenti non aggiornati | README, docs | `3b7045b` | risolto |
 | UCL-27 | Info | Titolare del copyright | `NOTICE`: "Copyright 2026 ChainIntegrate" | `3b7045b` | risolto |
 | UCL-28 | Info | Banner | senza "placeholder", filtro corretto | `3b7045b` | risolto |
@@ -47,9 +47,9 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 
 ## Note e rischi residui
 
-- **UCL-03, residuo:** la carta scade il giorno del compleanno, quindi "primo giorno del mese successivo" rivela ancora
-  il **mese** di nascita (non il giorno). Anche il tipo di validità della carta (3/5/10 anni) resta deducibile in parte.
-  Scelta dell'owner; arrotondare a trimestre o a "verifica + 12 mesi" lo ridurrebbe.
+- **UCL-03, residuo accettato:** la carta scade il giorno del compleanno, quindi "primo giorno del mese successivo"
+  rivela ancora il **mese** di nascita (non il giorno). L'owner lo ritiene accettabile (2026-10-15): non si arrotonda
+  al trimestre.
 - **UCL-05:** nuovo contratto in testnet il 2026-10-15: `0x6A525B5662EF905f3DD90F7139DC3a702b1371BA`, blocco
   8745039, dal commit `90ed066`, verificato su Blockscout, metadati LSP4 impostati dall'owner. La verifica "è una UP" accetta qualsiasi Key Manager che dichiari LSP6 e punti alla UP: un contratto costruito
   apposta può ancora farlo, ma il conio viene comunque simulato e il contratto non è più rientrabile.
