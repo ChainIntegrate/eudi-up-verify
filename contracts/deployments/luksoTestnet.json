@@ -2,16 +2,33 @@
   "network": "luksoTestnet",
   "chainId": 4201,
   "contract": "contracts/UpCieBadge.sol:UpCieBadge",
-  "address": "0x056a7e721fbd727862d767CC44C48Bf2a7177892",
-  "deployBlock": 8737860,
-  "txHash": "0x61fbc442afe16519709e1652dcc5405e2e10e33443f1dab9adc9d4a6a3f9be85",
+  "address": "0x6A525B5662EF905f3DD90F7139DC3a702b1371BA",
+  "deployBlock": 8745039,
+  "txHash": "0xd2eb3c1568c393414e882f7e50f5416572c986e966706cbef225c3c3b2aa6a78",
   "owner": "0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C",
   "attester": "0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a",
   "deployer": "0x84B883180265948505BFe49F0b78e1dAaECa0156",
-  "deployedAt": "2026-10-14T13:38:24.720Z",
-  "gitCommit": "ab0a1d0b32a14e0a90e0e8bcda2b426836632a8a",
+  "deployedAt": "2026-10-15T14:04:12.531Z",
+  "gitCommit": "90ed0669c650e04651c489832848b55030b502c4",
   "verified": true,
   "superseded": [
+    {
+      "network": "luksoTestnet",
+      "chainId": 4201,
+      "contract": "contracts/UpCieBadge.sol:UpCieBadge",
+      "address": "0x056a7e721fbd727862d767CC44C48Bf2a7177892",
+      "deployBlock": 8737860,
+      "txHash": "0x61fbc442afe16519709e1652dcc5405e2e10e33443f1dab9adc9d4a6a3f9be85",
+      "owner": "0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C",
+      "attester": "0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a",
+      "deployer": "0x84B883180265948505BFe49F0b78e1dAaECa0156",
+      "deployedAt": "2026-10-14T13:38:24.720Z",
+      "gitCommit": "ab0a1d0b32a14e0a90e0e8bcda2b426836632a8a",
+      "verified": true,
+      "verifiedOn": [
+        "blockscout"
+      ]
+    },
     {
       "network": "luksoTestnet",
       "chainId": 4201,
