@@ -48,6 +48,16 @@ sudo -u up-cie-link -H npm ci --omit=dev
 
 ### 2.3 Segreti e configurazione del backend
 
+Sul PC (una volta), nella cartella `backend` del repository, la coppia di chiavi age per i backup:
+
+```bash
+npm ci --ignore-scripts
+npm run backup:keygen -- up-cie-link-backup-key.txt
+```
+
+Il file contiene la chiave **privata**: resta sul PC (e in una copia sicura), mai sul server. Il comando stampa la
+chiave **pubblica** `age1…` da mettere in `BACKUP_AGE_RECIPIENT`.
+
 Generare i due segreti e **copiarli subito nel gestore di password** (senza di loro i backup sono inutili):
 
 ```bash
@@ -78,7 +88,7 @@ CERT_REF_KEY=<secondo openssl rand>
 CIE_ROOT_SHA256=<dal passo 2.4>
 SMTP_HOST=… SMTP_PORT=… SMTP_SECURE=… SMTP_USER=… SMTP_PASS=… SMTP_FROM=… NOTIFICATION_EMAIL=…  (come il relayer)
 BACKUP_DIR=/var/backups/up-cie-link
-BACKUP_AGE_RECIPIENT=<chiave pubblica age1… generata sul PC con npm run backup:keygen>
+BACKUP_AGE_RECIPIENT=<chiave pubblica age1… generata sul PC con npm run backup:keygen -- <file>>
 ```
 
 Il backend non parte se `.env` è leggibile da altri utenti.

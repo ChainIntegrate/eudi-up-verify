@@ -73,7 +73,7 @@ npm run monitor -- --test-email   # check SMTP settings
 npm run monitor -- --dry-run      # print findings and the daily summary, send nothing
 npm run monitor                   # one monitor run (schedule hourly)
 npm run backup                    # one encrypted backup (schedule daily)
-npm run backup:keygen > key.txt   # on YOUR machine: age key pair; only the public key goes in BACKUP_AGE_RECIPIENT
+npm run backup:keygen -- key.txt  # on YOUR machine (npm ci --ignore-scripts first): writes the private key file, prints the public key
 npm run restore -- --file <backup.db.gz.age> --identity key.txt --out restored.db
 ```
 

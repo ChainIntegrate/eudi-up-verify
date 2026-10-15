@@ -23,7 +23,10 @@ export async function restore({ file, identity, out, force = false }) {
     const actual = createHash("sha256").update(encrypted).digest("hex");
     if (expected !== actual) throw new Error("SHA-256 mismatch: the backup file is corrupted or altered");
   }
-  const key = readFileSync(identity, "utf8").split("\n").map((l) => l.trim()).find((l) => l.startsWith("AGE-SECRET-KEY-"));
+  // accept UTF-8 (with or without BOM) and UTF-16LE (a PowerShell ">" redirect)
+  const raw = readFileSync(identity);
+  const keyText = raw[0] === 0xff && raw[1] === 0xfe ? raw.subarray(2).toString("utf16le") : raw.toString("utf8").replace(/^\uFEFF/, "");
+  const key = keyText.split(/\r?\n/).map((l) => l.trim()).find((l) => l.startsWith("AGE-SECRET-KEY-"));
   if (!key) throw new Error("no AGE-SECRET-KEY found in the identity file");
   const dec = new Decrypter();
   dec.addIdentity(key);

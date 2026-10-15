@@ -219,6 +219,12 @@ describe("backup and restore", () => {
     restored.close();
     await assert.rejects(restore({ file: path.join(backupDir, s.file), identity: keyFile, out }), /exists/);
 
+    // a key file saved by PowerShell as UTF-16LE with CRLF works too
+    const utf16 = path.join(dir, "age-key-utf16.txt");
+    writeFileSync(utf16, Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(`# key\r\n${identity}\r\n`, "utf16le")]));
+    const out2 = path.join(dir, "restored2.db");
+    assert.equal((await restore({ file: path.join(backupDir, s.file), identity: utf16, out: out2 })).schemaVersion, r.schemaVersion);
+
     // interoperable with the standard age tool, when installed
     try {
       execFileSync("age", ["--version"]);
