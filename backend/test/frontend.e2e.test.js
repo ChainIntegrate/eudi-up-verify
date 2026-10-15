@@ -263,7 +263,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
       return window.__inline === undefined;
     });
     assert.equal(blocked, true);
-    assert.ok(!logs.includes("RSSMRA80A01H501U"));
+    assert.ok(!logs.includes("RSSMRA80A01H501X"));
   });
 
   it("UCL-02: earlier deadlines do not end later steps (fake clock)", async () => {

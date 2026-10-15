@@ -7,7 +7,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-export const FAKE_TAX_CODE = "RSSMRA80A01H501U";
+export const FAKE_TAX_CODE = "RSSMRA80A01H501X";
 export const FAKE_NAME = "MARIO";
 export const FAKE_SURNAME = "ROSSI";
 

@@ -240,6 +240,17 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     assert.equal(db.prepare("SELECT COUNT(*) n FROM links").get().n, 0);
   });
 
+  it("UCL-11: a minor's CIE is refused with a neutral code and nothing about the person is stored", async () => {
+    const minor = pki.issueHolder("BNCLRA15M50H501X");
+    const s = await signedStatement(UP1);
+    const r = await cades(s, minor);
+    assert.equal(r.status, 400);
+    assert.equal((await r.json()).error, "AGE_NOT_ELIGIBLE");
+    assert.equal((await status(s.id)).errorCode, "AGE_NOT_ELIGIBLE");
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM persons").get().n, 0);
+    assert.equal(minter.calls.length, 0);
+  });
+
   it("minting failure is reported and leaves no link", async () => {
     minter.fail = true;
     const st = await link(UP1);

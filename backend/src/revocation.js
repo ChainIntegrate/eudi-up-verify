@@ -68,12 +68,40 @@ export async function runRevocationCheck({ db, trust, certRefKey, queue, minter,
   return result;
 }
 
-/** Deletes expired statements after 7 days and marks exception requests untouched for 30 days as abandoned. */
+const YEAR = 365 * DAY;
+
+/**
+ * Daily cleanup and retention (UCL-10):
+ *  - statements: 7 days after expiry;            - exception requests untouched for 30 days: abandoned;
+ *  - certificate reference: as soon as the badge has expired (no more revocation checks to do);
+ *  - links: 12 months after the end of validity (expiry, invalidation or revocation; revocations stay on-chain);
+ *  - exception requests and person keys with no link left: after 12 months;
+ *  - audit rows: 12 months;                       - sent notifications: 90 days.
+ */
 export function runCleanup(db, now = Date.now()) {
-  const statements = db.prepare("DELETE FROM statements WHERE expires_at < ?").run(now - 7 * DAY).changes;
-  const exceptions = db
-    .prepare("UPDATE exception_requests SET status = 'abandoned' WHERE status = 'pending' AND created_at < ?")
-    .run(now - 30 * DAY).changes;
-  const notifications = db.prepare("DELETE FROM notifications WHERE sent_at IS NOT NULL AND sent_at < ?").run(now - 90 * DAY).changes;
-  return { statements, exceptions, notifications };
+  return db.transaction(() => {
+    const statements = db.prepare("DELETE FROM statements WHERE expires_at < ? AND id NOT IN (SELECT statement_id FROM mints)").run(now - 7 * DAY).changes;
+    const exceptions = db
+      .prepare("UPDATE exception_requests SET status = 'abandoned' WHERE status = 'pending' AND created_at < ?")
+      .run(now - 30 * DAY).changes;
+    const certRefs = db.prepare("UPDATE links SET cert_ref_enc = NULL WHERE cert_ref_enc IS NOT NULL AND expires_at < ?").run(now).changes;
+    const links = db
+      .prepare(
+        `DELETE FROM links WHERE up NOT IN (SELECT up FROM pending_invalidations) AND (
+           (status = 'valid' AND expires_at < @cut) OR (status IN ('invalidated','revoked') AND updated_at < @cut))`,
+      )
+      .run({ cut: now - YEAR }).changes;
+    const orphanRequests = db
+      .prepare("DELETE FROM exception_requests WHERE created_at < ? AND person_key NOT IN (SELECT person_key FROM links)")
+      .run(now - YEAR).changes;
+    const persons = db
+      .prepare(
+        `DELETE FROM persons WHERE created_at < ? AND person_key NOT IN (SELECT person_key FROM links)
+           AND person_key NOT IN (SELECT person_key FROM exception_requests) AND person_key NOT IN (SELECT person_key FROM mints)`,
+      )
+      .run(now - YEAR).changes;
+    const auditRows = db.prepare("DELETE FROM audit WHERE ts < ?").run(now - YEAR).changes;
+    const notifications = db.prepare("DELETE FROM notifications WHERE sent_at IS NOT NULL AND sent_at < ?").run(now - 90 * DAY).changes;
+    return { statements, exceptions, notifications, certRefs, links, orphanRequests, persons, auditRows };
+  })();
 }

@@ -8,7 +8,7 @@ T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 cd "$T"
 
-FAKE_CF="RSSMRA80A01H501U"   # fake tax code, must never appear in the verifier output
+FAKE_CF="RSSMRA80A01H501X"   # fake tax code, must never appear in the verifier output
 pass=0; fail=0
 check() { # name, expected exit code, command...
   local name="$1" expected="$2"; shift 2

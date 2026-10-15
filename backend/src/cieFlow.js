@@ -6,11 +6,14 @@
 import { audit } from "./db.js";
 import { CieError } from "./cie/pki.js";
 import { verifyCieCades, verifyCieRaw } from "./cie/verify.js";
+import { isAtLeast } from "./cie/taxcode.js";
 import { LinkError, decide } from "./linking.js";
 import { badgeExpiry, failMint, finishMint, processInvalidations, recordMintTx, startMint } from "./mints.js";
 import { notify } from "./notify.js";
 import { encryptCertRef, personKey as derivePersonKey } from "./secrets.js";
 import { getStatement, statementText } from "./statements.js";
+
+export const MIN_AGE = 18; // UCL-11
 
 export class FlowError extends Error {
   constructor(status, code) {
@@ -56,6 +59,14 @@ export function createCieFlow(deps) {
       setStatus(db, row.id, { status: "failed", error_code: code });
       audit(db, "cie_rejected", { up: row.up, detail: code }, clock());
       throw new FlowError(code === "OCSP_UNAVAILABLE" ? 503 : 400, code);
+    }
+
+    // UCL-11: adults only (age read from the tax code in memory; the code is never logged or stored)
+    if (!isAtLeast(result.taxCode, MIN_AGE, new Date(now))) {
+      result.taxCode = undefined;
+      setStatus(db, row.id, { status: "failed", error_code: "AGE_NOT_ELIGIBLE" });
+      audit(db, "cie_rejected", { up: row.up, detail: "AGE_NOT_ELIGIBLE" }, clock());
+      throw new FlowError(400, "AGE_NOT_ELIGIBLE");
     }
 
     const job = {

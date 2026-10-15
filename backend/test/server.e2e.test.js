@@ -118,7 +118,7 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
     assert.equal(badge.status, "valid");
 
     // the server never logs the tax code or the RPC URL
-    assert.ok(!logs.includes("RSSMRA80A01H501U"));
+    assert.ok(!logs.includes("RSSMRA80A01H501X"));
     assert.ok(!logs.includes(node.url));
   });
 });

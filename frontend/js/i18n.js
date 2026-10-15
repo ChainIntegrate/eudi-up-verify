@@ -2,8 +2,8 @@
 // Strings used with { html } may contain markup and must stay static.
 import { storage } from "./dom.js";
 
-const PRIVACY_DATE_IT = "14 ottobre 2026";
-const PRIVACY_DATE_EN = "14 October 2026";
+const PRIVACY_DATE_IT = "15 ottobre 2026";
+const PRIVACY_DATE_EN = "15 October 2026";
 const CONTACTS_IT = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> oppure una segnalazione su <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 const CONTACTS_EN = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> or an issue on <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 
@@ -17,7 +17,7 @@ const T = {
     navLink: "Collega",
     navVerify: "Verifica",
     navMine: "Il mio bollino",
-    footer: `Servizio sperimentale di <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Note legali</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Codice sorgente</a> · <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Assistenza via Telegram</a>`,
+    footer: `Servizio sperimentale di <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Note legali</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Codice sorgente</a> · Assistenza: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
     footerNote: "Non è un servizio pubblico e non è collegato al Ministero dell'Interno.",
     testnetBanner: "Rete di prova (LUKSO testnet): i bollini emessi qui servono solo per i test.",
     loading: "Caricamento…",
@@ -25,7 +25,7 @@ const T = {
 
     // home
     homeTitle: "Collega la tua Universal Profile alla tua CIE",
-    homeLead: "Firmi un enunciato con la Universal Profile e con la Carta d'Identità Elettronica. Se le firme sono valide, la tua UP riceve un bollino non trasferibile: nessun dato personale va sulla blockchain.",
+    homeLead: "Firmi un enunciato con la Universal Profile e con la Carta d'Identità Elettronica. Se le firme sono valide, la tua UP riceve un bollino non trasferibile: sulla blockchain non vanno nome, codice fiscale o dati della carta.",
     homeStart: "Collega la UP",
     homeVerify: "Verifica una UP",
     howTitle: "Come funziona",
@@ -182,6 +182,7 @@ const T = {
       EXCEPTION_PENDING: "La richiesta di eccezione è in attesa di approvazione.",
       EXCEPTION_LIMIT_REACHED: "Hai raggiunto il numero di UP consentito dall'eccezione.",
       EXCEPTION_WITHDRAWN: "L'eccezione per le UP aggiuntive è stata ritirata da ChainIntegrate.",
+      AGE_NOT_ELIGIBLE: "Il servizio è riservato ai maggiorenni.",
       MINT_IN_PROGRESS: "C'è già un bollino in corso di emissione per questa CIE o questa UP. Riprova tra qualche minuto.",
       MIGRATION_TOO_SOON: "Hai già spostato la UP principale negli ultimi 30 giorni. Riprova più avanti.",
       MINT_FAILED: "Il conio del bollino non è riuscito. ChainIntegrate è stata avvisata: riprova più tardi.",
@@ -205,7 +206,7 @@ const T = {
       <ul>
         <li>Il servizio legge il certificato della tua CIE solo per verificarlo, in memoria. Nome, cognome, codice fiscale e il file firmato <strong>non vengono salvati</strong>.</li>
         <li>Conserva un'impronta del codice fiscale (HMAC con una chiave segreta del server), per garantire una sola UP principale per persona. È un dato pseudonimizzato: per la legge resta un dato personale.</li>
-        <li>Sulla blockchain va solo il bollino sulla tua UP, con date e stato: nessun dato personale. La blockchain è pubblica e permanente.</li>
+        <li>Sulla blockchain va solo il bollino sulla tua UP, con date e stato: nessun nome, codice fiscale o dato della carta. Il bollino però è legato alla tua UP, quindi a chi sa che quella UP è tua dice che hai una CIE verificata. La blockchain è pubblica e permanente.</li>
         <li>Nessuna pubblicità, nessun tracciamento, nessuna statistica d'uso, nessun cookie.</li>
       </ul>
       <h2>2 · Chi è il titolare</h2>
@@ -214,26 +215,28 @@ const T = {
       <p>Per collegare la tua Universal Profile alla tua CIE ed emettere il bollino, garantendo una sola UP principale per persona e invalidando il bollino se il certificato della carta viene revocato. Base giuridica: il tuo <strong>consenso</strong> (art. 6.1.a GDPR), che dai prima della firma e puoi revocare in ogni momento (punto 7).</p>
       <h2>4 · Cosa conserviamo</h2>
       <ul>
-        <li><strong>Collegamento</strong>: indirizzo della UP, impronta del codice fiscale, UP principale sì/no, date di verifica e scadenza, stato, transazione. Finché il servizio è attivo o fino alla tua richiesta di cancellazione.</li>
-        <li><strong>Riferimento al certificato</strong> (numero di serie e autorità emittente, cifrati): serve solo a ricontrollare ogni giorno se il certificato è stato revocato. Si cancella con il collegamento.</li>
+        <li><strong>Collegamento</strong>: indirizzo della UP, impronta del codice fiscale, UP principale sì/no, date di verifica e scadenza, stato, transazione. Fino a 12 mesi dopo la fine della validità del bollino (scadenza, rinuncia, invalidazione o revoca), poi si cancella; l'impronta del codice fiscale si cancella quando non resta alcun collegamento.</li>
+        <li><strong>Riferimento al certificato</strong> (numero di serie e autorità emittente, cifrati): serve solo a ricontrollare ogni giorno se il certificato è stato revocato. Si cancella appena il bollino scade o viene invalidato.</li>
         <li><strong>Enunciati</strong>: indirizzo della UP, modalità, date, esito. Si cancellano 7 giorni dopo la scadenza.</li>
         <li><strong>Richieste di eccezione</strong>: codice, impronta del codice fiscale, stato. Quelle non approvate si chiudono dopo 30 giorni.</li>
+        <li><strong>Registro delle operazioni</strong> (data, tipo di operazione, indirizzo della UP, transazione): 12 mesi.</li>
         <li><strong>Copie di sicurezza</strong> cifrate del database: fino a 14 giorni, più una a settimana per 8 settimane.</li>
         <li><strong>Registri del server web</strong>: indirizzo IP, data e pagina richiesta, per sicurezza; cancellati dopo 14 giorni. I limiti di richieste usano l'IP solo in memoria.</li>
       </ul>
       <h2>5 · Con chi parla il servizio, e cosa vede</h2>
       <ul>
-        <li><strong>Servizio OCSP del Ministero dell'Interno</strong> (ocsp.cie.interno.gov.it): il nostro server chiede se il certificato della tua carta è revocato, alla verifica e poi ogni giorno. Riceve il numero di serie del certificato e l'IP del nostro server, non il tuo.</li>
+        <li><strong>Servizio OCSP del Ministero dell'Interno</strong> (ocsp.cie.interno.gov.it): il nostro server chiede se il certificato della tua carta è revocato, alla verifica e poi ogni giorno. Riceve il numero di serie del certificato e l'IP del nostro server, non il tuo; poiché il Ministero sa a chi appartiene ogni certificato, può dedurre che la tua carta è collegata a questo servizio.</li>
         <li><strong>Nodo della blockchain LUKSO</strong> (sulla rete principale un nodo di ChainIntegrate; sulla rete di prova il nodo pubblico di LUKSO): il nostro server legge lo stato dei bollini e invia le transazioni. Vede gli indirizzi delle UP.</li>
         <li><strong>Estensione UP Browser</strong> (LUKSO): firma l'enunciato e la rinuncia con la tua UP, nel tuo browser.</li>
+        <li><strong>Chiunque legga la blockchain</strong>: vede il bollino delle UP. Se sposti la UP principale (migrazione), le due operazioni avvengono a breve distanza e possono far capire che le due UP sono della stessa persona.</li>
         <li><strong>Avvisi a ChainIntegrate</strong>: per i problemi del servizio e gli eventi importanti (per esempio una richiesta di eccezione) riceviamo una e-mail con l'indirizzo della UP, mai dati della carta.</li>
       </ul>
       <h2>6 · Cosa resta nel tuo browser</h2>
       <p>La lingua e il tema scelti, e il numero dell'enunciato in corso (solo per la sessione). Nient'altro.</p>
       <h2>7 · I tuoi diritti</h2>
-      <p>Secondo il Regolamento UE 2016/679 (GDPR) puoi chiedere l'accesso, la rettifica o la cancellazione dei dati che ti riguardano, o revocare il consenso, scrivendo ai contatti del punto 2 con l'indirizzo della UP. La cancellazione invalida il bollino. Puoi anche rinunciare al bollino da solo, dalla pagina "Il mio bollino". Puoi presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). Quello che sta sulla blockchain (il bollino e la sua storia) non può essere cancellato da nessuno.</p>
+      <p>Secondo il Regolamento UE 2016/679 (GDPR) puoi chiedere l'accesso, la rettifica o la cancellazione dei dati che ti riguardano, o revocare il consenso, scrivendo ai contatti del punto 2 con l'indirizzo della UP. La cancellazione invalida i bollini e cancella anche l'impronta del codice fiscale: dopo potresti collegare di nuovo la CIE come se fosse la prima volta. Puoi anche rinunciare al bollino da solo, dalla pagina "Il mio bollino". Puoi presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). Quello che sta sulla blockchain (il bollino e la sua storia) non può essere cancellato da nessuno.</p>
       <h2>8 · Minori e modifiche</h2>
-      <p>Il servizio non è pensato per chi ha meno di 18 anni. Se questa informativa cambia, cambia la data in alto; le versioni precedenti restano nella <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">cronologia del repository</a>.</p>`,
+      <p>Il servizio è riservato ai maggiorenni: l'età si ricava dal codice fiscale del certificato, solo durante la verifica. Se questa informativa cambia, cambia la data in alto; le versioni precedenti restano nella <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">cronologia del repository</a>.</p>`,
 
     // legal
     legalTitle: "Note legali",
@@ -259,14 +262,14 @@ const T = {
     navLink: "Link",
     navVerify: "Verify",
     navMine: "My badge",
-    footer: `Experimental service by <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Legal notes</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Source code</a> · <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Support on Telegram</a>`,
+    footer: `Experimental service by <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Legal notes</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Source code</a> · Support: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
     footerNote: "Not a public service and not connected to the Italian Ministry of the Interior.",
     testnetBanner: "Test network (LUKSO testnet): badges issued here are for testing only.",
     loading: "Loading…",
     configError: "The service is not responding. Try again in a few minutes.",
 
     homeTitle: "Link your Universal Profile to your CIE",
-    homeLead: "You sign a statement with your Universal Profile and with your Italian electronic identity card (CIE). If both signatures are valid, your UP receives a non-transferable badge: no personal data goes on the blockchain.",
+    homeLead: "You sign a statement with your Universal Profile and with your Italian electronic identity card (CIE). If both signatures are valid, your UP receives a non-transferable badge: no name, tax code or card data goes on the blockchain.",
     homeStart: "Link your UP",
     homeVerify: "Verify a UP",
     howTitle: "How it works",
@@ -419,6 +422,7 @@ const T = {
       EXCEPTION_PENDING: "The exception request is waiting for approval.",
       EXCEPTION_LIMIT_REACHED: "You have reached the number of UPs allowed by the exception.",
       EXCEPTION_WITHDRAWN: "The exception for additional UPs was withdrawn by ChainIntegrate.",
+      AGE_NOT_ELIGIBLE: "The service is for adults only.",
       MINT_IN_PROGRESS: "A badge is already being issued for this CIE or this UP. Try again in a few minutes.",
       MIGRATION_TOO_SOON: "You already moved your primary UP in the last 30 days. Try again later.",
       MINT_FAILED: "Minting the badge failed. ChainIntegrate has been notified: try again later.",
@@ -441,7 +445,7 @@ const T = {
       <ul>
         <li>The service reads your CIE certificate only to check it, in memory. Name, surname, tax code and the signed file are <strong>not stored</strong>.</li>
         <li>It keeps a fingerprint of the tax code (HMAC with a secret server key), to allow a single primary UP per person. It is pseudonymised data: legally it is still personal data.</li>
-        <li>Only the badge on your UP, with dates and status, goes on the blockchain: no personal data. The blockchain is public and permanent.</li>
+        <li>Only the badge on your UP, with dates and status, goes on the blockchain: no name, tax code or card data. The badge is tied to your UP, though: anyone who knows the UP is yours learns that you have a verified CIE. The blockchain is public and permanent.</li>
         <li>No ads, no tracking, no usage statistics, no cookies.</li>
       </ul>
       <h2>2 · Who is responsible</h2>
@@ -450,26 +454,28 @@ const T = {
       <p>To link your Universal Profile to your CIE and issue the badge, allowing a single primary UP per person and invalidating the badge if the card's certificate is revoked. Legal basis: your <strong>consent</strong> (Art. 6(1)(a) GDPR), given before signing and revocable at any time (section 7).</p>
       <h2>4 · What we keep</h2>
       <ul>
-        <li><strong>Link</strong>: UP address, tax code fingerprint, primary yes/no, verification and expiry dates, status, transaction. While the service runs or until you ask for deletion.</li>
-        <li><strong>Certificate reference</strong> (serial number and issuing authority, encrypted): used only for the daily check of the certificate's revocation. Deleted with the link.</li>
+        <li><strong>Link</strong>: UP address, tax code fingerprint, primary yes/no, verification and expiry dates, status, transaction. Until 12 months after the badge stops being valid (expiry, renunciation, invalidation or revocation), then deleted; the tax code fingerprint is deleted when no link is left.</li>
+        <li><strong>Certificate reference</strong> (serial number and issuing authority, encrypted): used only for the daily check of the certificate's revocation. Deleted as soon as the badge expires or is invalidated.</li>
         <li><strong>Statements</strong>: UP address, mode, dates, outcome. Deleted 7 days after they expire.</li>
         <li><strong>Exception requests</strong>: code, tax code fingerprint, status. Unapproved ones are closed after 30 days.</li>
+        <li><strong>Operations log</strong> (date, type of operation, UP address, transaction): 12 months.</li>
         <li><strong>Encrypted backups</strong> of the database: up to 14 days, plus one per week for 8 weeks.</li>
         <li><strong>Web server logs</strong>: IP address, date and page requested, for security; deleted after 14 days. Rate limits use the IP in memory only.</li>
       </ul>
       <h2>5 · Who the service talks to, and what they see</h2>
       <ul>
-        <li><strong>OCSP service of the Italian Ministry of the Interior</strong> (ocsp.cie.interno.gov.it): our server asks whether your card's certificate is revoked, at the check and then daily. It receives the certificate's serial number and our server's IP, not yours.</li>
+        <li><strong>OCSP service of the Italian Ministry of the Interior</strong> (ocsp.cie.interno.gov.it): our server asks whether your card's certificate is revoked, at the check and then daily. It receives the certificate's serial number and our server's IP, not yours; since the Ministry knows whom each certificate belongs to, it can infer that your card is linked to this service.</li>
         <li><strong>LUKSO blockchain node</strong> (on mainnet a ChainIntegrate node; on the test network LUKSO's public node): our server reads the badges and sends the transactions. It sees the UP addresses.</li>
         <li><strong>UP Browser extension</strong> (LUKSO): signs the statement and the renunciation with your UP, in your browser.</li>
+        <li><strong>Anyone reading the blockchain</strong>: sees the badges of the UPs. If you move your primary UP (migration), the two operations happen close together and may reveal that both UPs belong to the same person.</li>
         <li><strong>Alerts to ChainIntegrate</strong>: for service problems and notable events (for example an exception request) we receive an e-mail with the UP address, never card data.</li>
       </ul>
       <h2>6 · What stays in your browser</h2>
       <p>The language and theme you chose, and the number of the statement in progress (for the session only). Nothing else.</p>
       <h2>7 · Your rights</h2>
-      <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to, rectification or erasure of your data, or withdraw your consent, by writing to the contacts in section 2 with your UP address. Erasure invalidates the badge. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
+      <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to, rectification or erasure of your data, or withdraw your consent, by writing to the contacts in section 2 with your UP address. Erasure invalidates the badges and also deletes the tax code fingerprint: afterwards you could link the CIE again as if for the first time. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
       <h2>8 · Minors and changes</h2>
-      <p>The service is not meant for people under 18. If this notice changes, the date at the top changes; previous versions stay in the <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">repository history</a>.</p>`,
+      <p>The service is for adults only: the age is read from the certificate's tax code, during the check only. If this notice changes, the date at the top changes; previous versions stay in the <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">repository history</a>.</p>`,
 
     legalTitle: "Legal notes",
     legal: `

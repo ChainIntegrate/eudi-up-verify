@@ -120,8 +120,61 @@ describe("revocation recheck and cleanup", () => {
       .run(UP, now, now + DAY);
     db.prepare("INSERT INTO persons (person_key, created_at) VALUES (?, ?)").run(Buffer.alloc(32, 1), now);
     db.prepare("INSERT INTO exception_requests VALUES ('0xt', ?, 'pending', ?)").run(Buffer.alloc(32, 1), now - 40 * DAY);
-    assert.deepEqual(runCleanup(db, now), { statements: 1, exceptions: 1, notifications: 0 });
+    assert.deepEqual(runCleanup(db, now), { statements: 1, exceptions: 1, notifications: 0, certRefs: 0, links: 0, orphanRequests: 0, persons: 0, auditRows: 0 });
     assert.equal(db.prepare("SELECT status FROM exception_requests").get().status, "abandoned");
+  });
+});
+
+describe("UCL-10: retention and data-subject requests", () => {
+  const now = Date.parse("2026-10-15T10:00:00Z");
+  const YEAR = 365 * DAY;
+  const UP2 = "0x4a2605796e0d91A9667d6E30365aEEC384C48c27";
+
+  function linked(db, up, personKey, fields = {}) {
+    applyLink(db, { up, personKey, primary: true, expiresAtMs: now + YEAR, certRefEnc: Buffer.from("ref"), txHash: "0x01" }, now - 2 * YEAR);
+    const sets = Object.keys(fields).map((k) => `${k} = @${k}`).join(", ");
+    if (sets) db.prepare(`UPDATE links SET ${sets} WHERE up = @up`).run({ up, ...fields });
+  }
+
+  it("deletes certificate references at expiry and links, person keys and audit after 12 months", () => {
+    const db = openDb(":memory:");
+    const alice = randomBytes(32);
+    const bob = randomBytes(32);
+    linked(db, UP, alice, { expires_at: now - DAY }); // expired yesterday: keep the link, drop the cert ref
+    linked(db, UP2, bob, { status: "invalidated", updated_at: now - YEAR - DAY }); // ended over a year ago
+    db.prepare("INSERT INTO audit (ts, event, up) VALUES (?, 'old', ?)").run(now - YEAR - DAY, UP);
+    const r = runCleanup(db, now);
+    assert.equal(r.certRefs, 1);
+    assert.equal(r.links, 1);
+    assert.equal(r.persons, 1);
+    assert.equal(r.auditRows, 1);
+    assert.equal(db.prepare("SELECT cert_ref_enc FROM links WHERE up = ?").get(UP).cert_ref_enc, null);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM links WHERE up = ?").get(UP2).n, 0);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM persons WHERE person_key = ?").get(bob).n, 0);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM persons WHERE person_key = ?").get(alice).n, 1);
+  });
+
+  it("export shows everything kept; erase removes it and queues the on-chain invalidation", async () => {
+    const { eraseSubject, exportSubject } = await import("../src/subject.js");
+    const db = openDb(":memory:");
+    const person = randomBytes(32);
+    linked(db, UP, person);
+    applyLink(db, { up: UP2, personKey: person, primary: false, expiresAtMs: now + YEAR, certRefEnc: null, txHash: "0x02" }, now);
+    db.prepare("INSERT INTO exception_requests VALUES ('0xt', ?, 'approved', ?)").run(person, now);
+    db.prepare("INSERT INTO audit (ts, event, up) VALUES (?, 'attested', ?)").run(now, UP);
+    notify(db, { kind: "k", severity: "event", subject: `badge for ${UP}`, body: "x" }, now);
+
+    const data = exportSubject(db, UP2);
+    assert.deepEqual(data.links.map((l) => l.up).sort(), [UP, UP2].sort());
+    assert.equal(data.exceptionRequests[0].ticket, "0xt");
+    assert.equal(exportSubject(db, "0x0000000000000000000000000000000000000001"), null);
+
+    const r = eraseSubject(db, UP.toLowerCase(), now);
+    assert.equal(r.invalidations, 2);
+    for (const table of ["links", "persons", "exception_requests"]) assert.equal(db.prepare(`SELECT COUNT(*) n FROM ${table}`).get().n, 0, table);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM audit WHERE up IS NOT NULL").get().n, 0);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM notifications").get().n, 0);
+    assert.deepEqual(db.prepare("SELECT reason FROM pending_invalidations").all().map((x) => x.reason), ["ERASED", "ERASED"]);
   });
 });
 

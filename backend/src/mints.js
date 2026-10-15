@@ -76,7 +76,8 @@ const markInvalidated = (db, up, txHash, nowMs) =>
 const REASON_TEXT = {
   MIGRATED: (up, tx) => [`migration: old primary ${up} invalidated`, `The holder moved the primary badge to another UP; ${up} was invalidated (tx ${tx}).`],
   CERT_REVOKED: (up, tx) => [`CIE certificate revoked: badge of ${up} invalidated`, `The CIE certificate linked to ${up} is revoked (OCSP). The badge was invalidated on-chain (tx ${tx}).`],
-  ERASED: (up, tx) => [`erasure request: badge of ${up} invalidated`, `Personal data erased on request; the badge of ${up} was invalidated on-chain (tx ${tx}).`],
+  // after an erasure the UP address is not written again (neither here nor in the audit)
+  ERASED: (_up, tx) => ["erasure request: badge invalidated", `Personal data erased on request; the badge was invalidated on-chain (tx ${tx}).`],
 };
 
 /**
@@ -92,7 +93,7 @@ export async function processInvalidations({ db, minter, badge, now = Date.now }
       db.transaction(() => {
         markInvalidated(db, row.up, txHash, now());
         db.prepare("DELETE FROM pending_invalidations WHERE up = ?").run(row.up);
-        audit(db, "invalidated", { up: row.up, txHash, detail: row.reason }, now());
+        audit(db, "invalidated", { up: row.reason === "ERASED" ? null : row.up, txHash, detail: row.reason }, now());
       })();
       const [subject, body] = (REASON_TEXT[row.reason] ?? REASON_TEXT.MIGRATED)(row.up, txHash);
       if (row.reason !== "MIGRATED") notify(db, { kind: `invalidated_${row.reason.toLowerCase()}`, severity: "event", subject, body }, now());
