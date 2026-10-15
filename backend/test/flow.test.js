@@ -205,6 +205,10 @@ describe("CIE flow: verification, uniqueness, minting", () => {
 
     const third = await link(UP3, "additional");
     assert.equal(third.errorCode, "EXCEPTION_LIMIT_REACHED");
+
+    // UCL-21: the owner withdraws the exception on-chain
+    badge.exceptions.set(first.exceptionTicket, 0);
+    assert.equal((await link(UP3, "additional")).errorCode, "EXCEPTION_WITHDRAWN");
   });
 
   it("additional without a primary link is refused", async () => {

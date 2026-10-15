@@ -304,10 +304,40 @@ describe("UpCieBadge", function () {
       expect(await badge.exceptionOf(ticket)).to.equal(3n);
     });
 
-    it("rejects an empty ticket or a limit below 2", async function () {
+    it("rejects an empty ticket", async function () {
       const { badge, asOwner } = await loadFixture(deployFixture);
       await expect(asOwner("approveException", [ethers.ZeroHash, 2])).to.be.revertedWithCustomError(badge, "InvalidException");
-      await expect(asOwner("approveException", [ethers.id("t"), 1])).to.be.revertedWithCustomError(badge, "InvalidException");
+    });
+
+    it("UCL-21: an exception can be lowered or withdrawn (0)", async function () {
+      const { badge, asOwner } = await loadFixture(deployFixture);
+      const ticket = ethers.id("ticket");
+      await asOwner("approveException", [ticket, 3]);
+      await expect(asOwner("approveException", [ticket, 2])).to.emit(badge, "ExceptionApproved").withArgs(ticket, 2);
+      expect(await badge.exceptionOf(ticket)).to.equal(2n);
+      await expect(asOwner("approveException", [ticket, 0])).to.emit(badge, "ExceptionApproved").withArgs(ticket, 0);
+      expect(await badge.exceptionOf(ticket)).to.equal(0n);
+    });
+  });
+
+  describe("UCL-05: UP-like contracts and re-entrancy", function () {
+    it("a recipient that renounces while its badge is minted makes the whole attest revert", async function () {
+      const { badge, attester, expiry } = await loadFixture(deployFixture);
+      const fake = await ethers.deployContract("TestReentrantFakeUP", [await badge.getAddress()]);
+      const fakeAddress = await fake.getAddress();
+      await expect(badge.connect(attester).attest(fakeAddress, CIE, await expiry(), true)).to.be.revertedWithCustomError(badge, "Reentrancy");
+      expect((await badge.getAttestation(fakeAddress)).status).to.equal(Status.None);
+      expect(await badge.isVerified(fakeAddress)).to.equal(false);
+    });
+
+    it("Attested is emitted before the mint's transfer event", async function () {
+      const { badge, holderUp, attester, expiry } = await loadFixture(deployFixture);
+      const receipt = await (await badge.connect(attester).attest(await holderUp.getAddress(), CIE, await expiry(), true)).wait();
+      const names = receipt!.logs
+        .filter((l) => l.address === (badge as unknown as { target: string }).target)
+        .map((l) => { try { return badge.interface.parseLog(l)?.name; } catch { return null; } })
+        .filter(Boolean);
+      expect(names.indexOf("Attested")).to.be.lessThan(names.indexOf("Transfer"));
     });
   });
 

@@ -22,9 +22,36 @@ const artifactPath = (rel) => `${contractsDir}artifacts/contracts/${rel}`;
 export const ARTIFACTS = {
   universalProfile: artifactPath("test/TestHelpers.sol/TestUniversalProfile.json"),
   badge: artifactPath("UpCieBadge.sol/UpCieBadge.json"),
+  keyManager: artifactPath("test/TestHelpers.sol/TestKeyManager.json"),
+  reentrantFakeUp: artifactPath("test/TestHelpers.sol/TestReentrantFakeUP.json"),
+  fakeUpNoLsp1: artifactPath("test/TestHelpers.sol/TestFakeUPNoLsp1.json"),
 };
 export const contractsAvailable = existsSync(hardhatBin) && Object.values(ARTIFACTS).every(existsSync);
 export const artifact = (name) => JSON.parse(readFileSync(ARTIFACTS[name], "utf8"));
+
+/**
+ * A Universal Profile as in production: LSP0 owned by a (test) LSP6 Key Manager with one controller.
+ * `execute(to, data)` sends a call from the UP, signed by the controller (it must be a funded signer).
+ */
+export async function deployProfile(deployer, controller) {
+  const { ContractFactory, Contract, Interface } = await import("ethers");
+  const kmArt = artifact("keyManager");
+  const upArt = artifact("universalProfile");
+  const controllerAddress = await controller.getAddress();
+  const km = await (await new ContractFactory(kmArt.abi, kmArt.bytecode, deployer).deploy(controllerAddress)).waitForDeployment();
+  const upC = await (await new ContractFactory(upArt.abi, upArt.bytecode, deployer).deploy(await km.getAddress())).waitForDeployment();
+  const up = await upC.getAddress();
+  await (await km.setTarget(up)).wait();
+  const upIface = new Interface(upArt.abi);
+  return {
+    up,
+    keyManager: await km.getAddress(),
+    execute: async (to, data) => {
+      const tx = await new Contract(await km.getAddress(), kmArt.abi, controller).execute(upIface.encodeFunctionData("execute", [0, to, 0, data]));
+      return tx.wait();
+    },
+  };
+}
 
 export async function startNode({ chainId } = {}) {
   const port = await freePort();

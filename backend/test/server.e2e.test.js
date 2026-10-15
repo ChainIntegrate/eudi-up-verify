@@ -13,7 +13,7 @@ import { after, before, describe, it } from "node:test";
 import { ContractFactory, Wallet, randomBytes, hexlify } from "ethers";
 import { createBadgeReader } from "../src/chain.js";
 import { createFakePki } from "./helpers/fake-pki.js";
-import { artifact, contractsAvailable, startNode } from "./helpers/hardhat-node.js";
+import { artifact, contractsAvailable, deployProfile, startNode } from "./helpers/hardhat-node.js";
 
 const freePort = () =>
   new Promise((resolve) => {
@@ -39,7 +39,7 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
       return c.getAddress();
     };
     const ownerUp = await deployUp(Wallet.createRandom().address);
-    up = await deployUp(controller.address);
+    ({ up } = await deployProfile(deployer, controller));
     const b = artifact("badge");
     const badge = await new ContractFactory(b.abi, b.bytecode, deployer).deploy(ownerUp, new Wallet(attesterKey).address);
     await badge.waitForDeployment();

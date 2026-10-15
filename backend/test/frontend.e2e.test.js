@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { after, before, describe, it } from "node:test";
 import { Contract, ContractFactory, Interface, NonceManager, Wallet, getBytes, hexlify, id, randomBytes } from "ethers";
 import { createFakePki } from "./helpers/fake-pki.js";
-import { artifact, contractsAvailable, startNode } from "./helpers/hardhat-node.js";
+import { artifact, contractsAvailable, deployProfile, startNode } from "./helpers/hardhat-node.js";
 
 const FRONTEND = fileURLToPath(new URL("../../frontend/", import.meta.url));
 export const CSP =
@@ -73,7 +73,7 @@ function serveFrontend(port, apiBase) {
 }
 
 describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "contracts not built") || (!browserAvailable && "playwright not installed") }, () => {
-  let node, pki, stopOcsp, server, web, dir, site, up, controller, badgeAddress, browser, logs = "";
+  let node, pki, stopOcsp, server, web, dir, site, up, profile, controller, badgeAddress, browser, logs = "";
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
@@ -87,7 +87,8 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
       return c.getAddress();
     };
     const ownerUp = await deployUp(Wallet.createRandom().address);
-    up = await deployUp(await controller.getAddress());
+    profile = await deployProfile(deployer, controller);
+    up = profile.up;
     const b = artifact("badge");
     const badge = await new ContractFactory(b.abi, b.bytecode, deployer).deploy(ownerUp, new Wallet(attesterKey).address);
     await badge.waitForDeployment();
@@ -151,7 +152,6 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     const problems = [];
     page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
     page.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && problems.push(`console: ${m.text()}`));
-    const upContract = new Contract(up, artifact("universalProfile").abi, controller);
     await page.exposeFunction("__walletRequest", async (method, params) => {
       switch (method) {
         case "eth_requestAccounts":
@@ -166,9 +166,8 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
         case "eth_sendTransaction": {
           const [tx] = params;
           assert.equal(tx.from, up);
-          const sent = await upContract.execute(0, tx.to, 0, tx.data);
-          await sent.wait();
-          return sent.hash;
+          const receipt = await profile.execute(tx.to, tx.data);
+          return receipt.hash;
         }
         default:
           throw Object.assign(new Error(`unsupported ${method}`), { code: 4200 });

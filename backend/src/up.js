@@ -1,14 +1,18 @@
 // Universal Profile checks through the backend's RPC (the browser never calls the RPC).
-//  - isUniversalProfile: ERC-165 supportsInterface(LSP0)
+//  - isUniversalProfile: ERC-165 supportsInterface(LSP0) AND its owner() is an LSP6 Key Manager whose target() is
+//    this UP (UCL-05: a contract that only claims the LSP0 interface is not accepted)
 //  - isValidUpSignature: ERC-1271 isValidSignature(EIP-191 hash of the statement, signature) on the UP,
 //    which delegates to its Key Manager (the signing controller needs the SIGN permission).
 import { Contract, JsonRpcProvider, hashMessage, isHexString } from "ethers";
 
 export const INTERFACE_ID_LSP0 = "0x24871b3d";
+export const INTERFACE_ID_LSP6 = "0x23f34c62";
 export const ERC1271_MAGIC = "0x1626ba7e";
 
 const ABI = [
   "function supportsInterface(bytes4) view returns (bool)",
+  "function owner() view returns (address)",
+  "function target() view returns (address)",
   "function isValidSignature(bytes32 dataHash, bytes signature) view returns (bytes4)",
 ];
 
@@ -17,7 +21,12 @@ export function createUpChecker(provider) {
   return {
     async isUniversalProfile(up) {
       try {
-        return await new Contract(up, ABI, provider).supportsInterface(INTERFACE_ID_LSP0);
+        const profile = new Contract(up, ABI, provider);
+        if (!(await profile.supportsInterface(INTERFACE_ID_LSP0))) return false;
+        const keyManager = new Contract(await profile.owner(), ABI, provider);
+        if (!(await keyManager.supportsInterface(INTERFACE_ID_LSP6))) return false;
+        // getFunction: `target` is a reserved property of ethers' Contract
+        return (await keyManager.getFunction("target")()).toLowerCase() === up.toLowerCase();
       } catch {
         return false;
       }

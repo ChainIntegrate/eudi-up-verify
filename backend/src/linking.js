@@ -17,7 +17,7 @@ const isActive = (link, nowMs) => link.status === "valid" && link.expires_at > n
  * Decides what to do for a verified (UP, person) pair.
  * @returns {Promise<{primary: boolean, invalidate: string|null, ticket: string|null}>}
  * @throws LinkError with codes UP_REVOKED, UP_LINKED_TO_ANOTHER_PERSON, MIGRATION_OR_EXCEPTION_REQUIRED,
- *         NO_PRIMARY_LINK, EXCEPTION_REQUIRED, EXCEPTION_PENDING, EXCEPTION_LIMIT_REACHED
+ *         NO_PRIMARY_LINK, EXCEPTION_REQUIRED, EXCEPTION_PENDING, EXCEPTION_LIMIT_REACHED, EXCEPTION_WITHDRAWN
  */
 export async function decide(db, badge, { up, mode, personKey }, nowMs = Date.now()) {
   const linkOfUp = db.prepare("SELECT * FROM links WHERE up = ?").get(up);
@@ -63,6 +63,11 @@ export async function decide(db, badge, { up, mode, personKey }, nowMs = Date.no
     throw new LinkError("EXCEPTION_REQUIRED", { ticket });
   }
   const maxUps = Number(await badge.exceptionOf(request.ticket));
+  if (maxUps === 0 && request.status === "approved") {
+    // UCL-21: the owner withdrew the exception on-chain (approveException(ticket, 0))
+    db.prepare("UPDATE exception_requests SET status = 'withdrawn' WHERE ticket = ?").run(request.ticket);
+    throw new LinkError("EXCEPTION_WITHDRAWN");
+  }
   if (maxUps === 0) throw new LinkError("EXCEPTION_PENDING", { ticket: request.ticket });
   if (activeElsewhere.length + 1 > maxUps) throw new LinkError("EXCEPTION_LIMIT_REACHED", { ticket: request.ticket });
   if (request.status !== "approved") db.prepare("UPDATE exception_requests SET status = 'approved' WHERE ticket = ?").run(request.ticket);
