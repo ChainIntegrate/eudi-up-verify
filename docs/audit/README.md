@@ -19,7 +19,7 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 | UCL-03 | Medium | `expiresAt` rivela il compleanno e collega le UP | scadenza on-chain = primo giorno del mese successivo alla scadenza della carta; motivo on-chain sempre `INVALIDATED`; informativa: migrazione collegabile, cosa dice il bollino | `bad21d1`, `8d59cab` | risolto (residuo sotto) |
 | UCL-04 | Medium | Conio non registrato rompe l'unicità | tabella `mints` scritta prima dell'invio, hash salvato subito, `reconcileMints()` all'avvio e ogni minuto; un conio aperto blocca nuove richieste della stessa persona/UP | `bad21d1` | risolto |
 | UCL-05 | Medium | Contratti "simil-UP", `renounce()` rientrante | contratto: `nonReentrant`, `Attested` prima del mint; backend: `owner()` deve essere un Key Manager LSP6 con `target()` = la UP; test con i contratti dell'audit | `cd36843`, deploy `6b0982a` | risolto (testnet `0x6A52…71BA`) |
-| UCL-06 | Medium | Ricontrollo revoche silenzioso; OCSP reale non provato | errori in due giri consecutivi → problema; monitor: ricontrollo vecchio o con errori; conteggi nel riepilogo | `3c57cf9` | parziale: **manca la prova con un `.p7m` reale e l'OCSP reale** |
+| UCL-06 | Medium | Ricontrollo revoche silenzioso; OCSP reale non provato | errori in due giri consecutivi → problema; monitor: ricontrollo vecchio o con errori; conteggi nel riepilogo; `scripts/check-p7m.js`: il 2026-10-15 sul server un `.p7m` reale di CieSign è passato (firma, catena alla root fissata, OCSP reale `ocsp.cie.interno.gov.it`, senza SHA-1) | `3c57cf9`, `87c1092` | risolto |
 | UCL-07 | Medium | Firma CIE non legata alla sessione (phishing) | enunciato v2 con avviso che nomina sito e UP; massimo una migrazione ogni 30 giorni | `bad21d1` | risolto |
 | UCL-08 | Medium | Segreti e dati sullo stesso host | umask 077, `.env` leggibile da altri → il backend non parte, DB a 600, utente dedicato (`deploy/README.md`), monitor senza chiave | `abca9c9`, `3c57cf9` | parziale: processo separato per HMAC/firma **rinviato al mainnet** |
 | UCL-09 | Medium | Catena web3 1.x nelle dipendenze dei contratti | `overrides` npm con pacchetto vuoto: 13 pacchetti di produzione, `npm audit` 0, niente `git+ssh`; devcontainer con `--ignore-scripts` | `f5bb398` | risolto |
@@ -53,8 +53,7 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 - **UCL-05:** nuovo contratto in testnet il 2026-10-15: `0x6A525B5662EF905f3DD90F7139DC3a702b1371BA`, blocco
   8745039, dal commit `90ed066`, verificato su Blockscout, metadati LSP4 impostati dall'owner. La verifica "è una UP" accetta qualsiasi Key Manager che dichiari LSP6 e punti alla UP: un contratto costruito
   apposta può ancora farlo, ma il conio viene comunque simulato e il contratto non è più rientrabile.
-- **UCL-06:** prima di aprire il servizio va eseguita una verifica completa con un `.p7m` reale di CieSign e l'OCSP
-  reale del Ministero (algoritmo di firma della risposta, certificato del responder, nonce, freschezza).
+- **UCL-06:** verifica completa con un `.p7m` reale e l'OCSP reale eseguita il 2026-10-15 sul server: `CHECK OK`.
 - **UCL-13:** i termini di CieSign riguardano l'utente. Resta un punto distinto e non verificato: se la policy dei
   certificati CIE (CP/CPS) consente a un privato di basarsi sul certificato di autenticazione fuori da "Entra con CIE".
 - **WalletConnect (futuro):** prima di includere il bundle, verificare la licenza (non open source) e aggiungere Reown
