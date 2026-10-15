@@ -161,6 +161,15 @@ describe("API: statements and UP signature", () => {
   });
 });
 
+describe("statement status", () => {
+  it("UCL-12: expires only while waiting for a signature", async () => {
+    const { publicStatus } = await import("../src/statements.js");
+    const row = { id: "x", up: UP, mode: "link", issued_at: 0, expires_at: 1000 };
+    for (const status of ["pending_up", "pending_cie"]) assert.equal(publicStatus({ ...row, status }, cfg, 2000).status, "expired");
+    for (const status of ["verifying", "queued", "minting", "done", "failed"]) assert.equal(publicStatus({ ...row, status }, cfg, 2000).status, status);
+  });
+});
+
 describe("statement text", () => {
   it("is ASCII-only and rejects other characters", () => {
     const base = { origin: "https://x", chainId: 42, contract: "0x0", up: "0x1", mode: "link", nonce: "n", issuedAt: 0, expiresAt: 1000 };

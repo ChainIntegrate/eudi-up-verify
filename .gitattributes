@@ -1,0 +1,7 @@
+# LF everywhere (UCL-24): shell scripts, and files whose exact bytes are hashed on-chain.
+* text=auto eol=lf
+# The badge metadata JSON is hashed (keccak256) in the on-chain LSP4Metadata: never convert it.
+frontend/metadata/** -text
+*.png binary
+*.ico binary
+*.p7m binary

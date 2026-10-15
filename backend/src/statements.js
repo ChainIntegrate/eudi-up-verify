@@ -67,8 +67,10 @@ export function getStatement(db, id) {
 
 /** Status as seen by clients, with expiry applied lazily. */
 export function publicStatus(row, cfg, now = Date.now()) {
-  const terminal = ["done", "failed", "expired"].includes(row.status);
-  const status = !terminal && now > row.expires_at ? "expired" : row.status;
+  // UCL-12: only a statement still waiting for a signature expires; once the CIE file is accepted
+  // (verifying, queued, minting) the outcome is decided by the flow, whatever the time.
+  const waiting = row.status === "pending_up" || row.status === "pending_cie";
+  const status = waiting && now > row.expires_at ? "expired" : row.status;
   return {
     id: row.id,
     up: row.up,

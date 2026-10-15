@@ -35,5 +35,6 @@ export function createUpChecker(provider) {
 }
 
 export function createProvider(rpcUrl, chainId) {
-  return new JsonRpcProvider(rpcUrl, chainId, { staticNetwork: true });
+  // no request cache: consecutive reads (nonce, badge state) must always reach the node
+  return new JsonRpcProvider(rpcUrl, chainId, { staticNetwork: true, cacheTimeout: -1 });
 }

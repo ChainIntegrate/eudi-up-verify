@@ -1,6 +1,6 @@
 // UpCieBadge client: reads (exceptionOf) and the attester's writes (attest, invalidate).
 // Writes are only called from the serial queue, so the attester never has two transactions in flight.
-import { Contract, NonceManager, Wallet, encodeBytes32String } from "ethers";
+import { Contract, Wallet, encodeBytes32String } from "ethers";
 
 export const BADGE_ABI = [
   "function exceptionOf(bytes32 ticket) view returns (uint8)",
@@ -29,22 +29,53 @@ export function createBadgeReader(provider, address) {
   };
 }
 
+export class MintError extends Error {
+  constructor(code, txHash = null) {
+    super(code);
+    this.code = code;
+    this.txHash = txHash;
+  }
+}
+
 /**
- * @param {{confirmations?: number}} [opts]
- * @returns {{address: string, attest: Function, invalidate: Function}}
+ * Attester writes (UCL-01):
+ *  - a plain Wallet: the nonce is read from the node for every transaction (the queue is serial), so a failure
+ *    never leaves a local nonce gap;
+ *  - every call is simulated first (staticCall): a revert becomes SIMULATION_REVERTED without sending anything;
+ *  - the receipt is awaited with a timeout: TX_TIMEOUT carries the hash, the caller decides (the queue moves on).
+ * `onSent(hash)` is called as soon as the transaction is broadcast, before waiting (UCL-04).
+ * @param {{confirmations?: number, timeoutMs?: number}} [opts]
  */
-export function createMinter(provider, address, attesterPrivateKey, { confirmations = 1 } = {}) {
-  const signer = new NonceManager(new Wallet(attesterPrivateKey, provider));
+export function createMinter(provider, address, attesterPrivateKey, { confirmations = 1, timeoutMs = 180_000 } = {}) {
+  const signer = new Wallet(attesterPrivateKey, provider);
   const c = new Contract(address, BADGE_ABI, signer);
-  const send = async (txPromise) => {
-    const tx = await txPromise;
-    const receipt = await tx.wait(confirmations);
-    if (!receipt || receipt.status !== 1) throw Object.assign(new Error("transaction failed"), { code: "MINT_FAILED" });
+  const send = async (fn, args, onSent) => {
+    try {
+      await c[fn].staticCall(...args);
+    } catch {
+      throw new MintError("SIMULATION_REVERTED");
+    }
+    let tx;
+    try {
+      // nonce read directly from the node (ethers caches identical requests for a short time)
+      const nonce = Number(await provider.send("eth_getTransactionCount", [signer.address, "pending"]));
+      tx = await c[fn](...args, { nonce });
+    } catch {
+      throw new MintError("SEND_FAILED");
+    }
+    onSent?.(tx.hash);
+    let receipt;
+    try {
+      receipt = await tx.wait(confirmations, timeoutMs);
+    } catch (e) {
+      throw new MintError(e?.code === "TIMEOUT" ? "TX_TIMEOUT" : "TX_FAILED", tx.hash);
+    }
+    if (!receipt || receipt.status !== 1) throw new MintError("TX_FAILED", tx.hash);
     return receipt.hash;
   };
   return {
-    address: new Wallet(attesterPrivateKey).address,
-    attest: (up, expiresAtSec, primary) => send(c.attest(up, SOURCE_CIE, expiresAtSec, primary)),
-    invalidate: (up, reason) => send(c.invalidate(up, encodeBytes32String(reason))),
+    address: signer.address,
+    attest: (up, expiresAtSec, primary, { onSent } = {}) => send("attest", [up, SOURCE_CIE, expiresAtSec, primary], onSent),
+    invalidate: (up, reason, { onSent } = {}) => send("invalidate", [up, encodeBytes32String(reason)], onSent),
   };
 }
