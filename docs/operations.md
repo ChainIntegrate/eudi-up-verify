@@ -18,6 +18,7 @@ servizio. I file in `deploy/` usano già questi valori.
 | Processo backend | PM2 dell'utente `up-cie-link` (`pm2-up-cie-link.service`), app `up-cie-link` |
 | Monitor | timer systemd `up-cie-link-monitor.timer` (ogni ora), configurazione `backend/monitor.env` |
 | nginx | `/etc/nginx/sites-available/up-cie-link`, log `/var/log/nginx/up-cie-link.*.log` |
+| HTTP/2 | **non attivato** (decisione del 2026-10-15): con nginx 1.18 l'opzione `http2` su `listen 443` vale per tutti i siti del server; si rivaluta con nginx ≥ 1.25.1 (`http2 on;` per singolo sito) |
 | Rotazione log nginx | giornaliera, 14 file (`/etc/logrotate.d/nginx`, verificato il 2026-10-15) — coerente con l'informativa |
 | Rete | LUKSO testnet (4201), RPC pubblico `https://rpc.testnet.lukso.network` |
 | Contratto | `0x6A525B5662EF905f3DD90F7139DC3a702b1371BA`, blocco 8745039 (`contracts/deployments/luksoTestnet.json`) |
