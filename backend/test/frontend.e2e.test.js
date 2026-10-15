@@ -267,6 +267,35 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     assert.ok(!logs.includes("RSSMRA80A01H501U"));
   });
 
+  it("UCL-02: earlier deadlines do not end later steps (fake clock)", async () => {
+    const { page, problems } = await newPage();
+    await page.clock.install({ time: new Date() });
+    await page.goto(site + "/collega");
+    await page.getByRole("button", { name: "Estensione UP Browser" }).click();
+    await page.getByRole("button", { name: "Avanti" }).click();
+    await page.check("#consentRead");
+    await page.check("#consentAgree");
+    await page.getByRole("button", { name: "Prepara l'enunciato" }).click();
+    const text = await page.locator("pre.statement").textContent();
+    await page.getByRole("button", { name: "Firma con la UP" }).click();
+    await page.locator("#p7m").waitFor();
+
+    // past the 5-minute UP deadline: the CIE step stays (the backend still accepts the file)
+    await page.clock.fastForward("05:10");
+    assert.equal(await page.getByText("Enunciato scaduto").isVisible(), false);
+    assert.equal(await page.locator("#p7m").isVisible(), true);
+
+    await page.setInputFiles("#p7m", { name: "s.p7m", mimeType: "application/pkcs7-mime", buffer: pki.signCades(Buffer.from(text, "ascii")) });
+    await page.getByRole("button", { name: "Invia il file firmato" }).click();
+    await page.getByText("Fatto: la UP ha il bollino").waitFor({ timeout: 30_000 });
+
+    // past the 15-minute statement expiry: the result stays
+    await page.clock.fastForward("10:00");
+    assert.equal(await page.getByText("Fatto: la UP ha il bollino").isVisible(), true);
+    assert.equal(await page.getByText("Enunciato scaduto").isVisible(), false);
+    assert.deepEqual(problems, []);
+  });
+
   it("shows clear errors: no extension, wrong file", async () => {
     // without the extension
     const plain = await browser.newPage();

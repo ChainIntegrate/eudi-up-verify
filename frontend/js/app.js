@@ -348,9 +348,10 @@ function viewLink() {
     let stop = false;
     onLeave(() => (stop = true));
     const tick = async () => {
-      if (stop) return;
+      if (stop || !line.isConnected) return; // UCL-02: this step is no longer shown
       try {
         const s = await api.statement(flow.statement.id);
+        if (!line.isConnected) return;
         flow.statement = { ...flow.statement, ...s };
         if (["done", "failed", "expired"].includes(s.status)) return stepResult();
         const key = { verifying: "waitVerifying", queued: "waitQueued", minting: "waitMinting" }[s.status] ?? "waitVerifying";
@@ -413,23 +414,29 @@ function ticketBox(ticket) {
   return h("div", { class: "notice" }, h("strong", {}, t("ticketTitle")), h("pre", { class: "statement", id: "ticket" }, ticket), h("p", { class: "small", html: t("ticketText") }), btn);
 }
 
-/** Live countdown to an ISO date; calls onEnd once at zero. */
+/**
+ * Live countdown to an ISO date; calls onEnd once at zero.
+ * UCL-02: it stops by itself as soon as its element leaves the page (another step was drawn), so the deadline of
+ * an earlier step can never end a later one.
+ */
 function countdown(iso, onEnd) {
   const el = h("span", { class: "countdown" });
   const end = Date.parse(iso);
-  let timer = null;
-  const tick = () => {
+  const render = () => {
     const left = Math.max(0, Math.floor((end - Date.now()) / 1000));
     el.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
     el.classList.toggle("low", left < 120);
-    if (left === 0) {
+    return left;
+  };
+  const timer = setInterval(() => {
+    if (!el.isConnected) return clearInterval(timer);
+    if (render() === 0) {
       clearInterval(timer);
       onEnd?.();
     }
-  };
-  timer = setInterval(tick, 1000);
+  }, 1000);
   onLeave(() => clearInterval(timer));
-  tick();
+  render();
   return el;
 }
 
