@@ -8,6 +8,7 @@ import { kvGet, openDb } from "./db.js";
 import { runIndexer } from "./indexer.js";
 import { createMailer, flushNotifications } from "./notify.js";
 import { runCleanup, runRevocationCheck } from "./revocation.js";
+import { processInvalidations, reconcileMints } from "./mints.js";
 import { createSerialQueue } from "./queue.js";
 import { createProvider, createUpChecker } from "./up.js";
 
@@ -69,7 +70,13 @@ const DAY = 86_400_000;
 every("indexer", 60_000, () =>
   runIndexer({ db, provider, address: cfg.deployment.address, deployBlock: cfg.deployment.deployBlock, maxRange: cfg.indexerMaxRange }));
 every("notifications", 60_000, () => flushNotifications(db, mailer, { label: `up-cie-link ${cfg.network}` }), 5_000);
-every("revocation", DAY, () => runRevocationCheck({ db, trust, certRefKey: cfg.certRefKey, queue, minter }), 10 * 60_000);
+every("revocation", DAY, () => runRevocationCheck({ db, trust, certRefKey: cfg.certRefKey, queue, minter, badge }), 10 * 60_000);
+// UCL-04 / UCL-20: close mints left open (timeout, restart) and send pending invalidations; first run at start-up
+every("chain", 60_000, () =>
+  queue.push(async () => {
+    await reconcileMints({ db, provider, badge });
+    await processInvalidations({ db, minter, badge });
+  }));
 every("cleanup", DAY, () => runCleanup(db), 15 * 60_000);
 const server = app.listen(cfg.port, "127.0.0.1", () => {
   console.log(`up-cie-link backend on 127.0.0.1:${cfg.port} (${cfg.network}, contract ${cfg.deployment.address})`);

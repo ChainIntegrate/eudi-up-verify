@@ -75,6 +75,33 @@ const MIGRATIONS = [
   `,
   // v4: last chain block applied to a link by the indexer (older events are ignored)
   `ALTER TABLE links ADD COLUMN last_event_block INTEGER;`,
+  // v5 (UCL-04, UCL-20, UCL-07):
+  //  - mints: a mint in flight, written BEFORE the transaction is sent, so a restart never loses the person key;
+  //  - pending_invalidations: invalidations to send (migration, revoked certificate, erasure), retried until done;
+  //  - persons.last_migration_at: at most one migration per period.
+  `
+  CREATE TABLE mints (
+    statement_id TEXT PRIMARY KEY,
+    up TEXT NOT NULL,
+    person_key BLOB NOT NULL,
+    is_primary INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    cert_ref_enc BLOB,
+    replaces_up TEXT,
+    ticket TEXT,
+    tx_hash TEXT,
+    created_at INTEGER NOT NULL,
+    alerted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX mints_person ON mints(person_key);
+  CREATE TABLE pending_invalidations (
+    up TEXT PRIMARY KEY,
+    reason TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  );
+  ALTER TABLE persons ADD COLUMN last_migration_at INTEGER;
+  `,
 ];
 
 export const kvGet = (db, key, fallback = null) => {

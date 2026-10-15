@@ -12,16 +12,21 @@ export class LinkError extends Error {
 }
 
 const isActive = (link, nowMs) => link.status === "valid" && link.expires_at > nowMs;
+export const MIGRATION_INTERVAL_MS = 30 * 86_400_000; // UCL-07: at most one migration per person in 30 days
 
 /**
  * Decides what to do for a verified (UP, person) pair.
  * @returns {Promise<{primary: boolean, invalidate: string|null, ticket: string|null}>}
- * @throws LinkError with codes UP_REVOKED, UP_LINKED_TO_ANOTHER_PERSON, MIGRATION_OR_EXCEPTION_REQUIRED,
+ * @throws LinkError with codes MINT_IN_PROGRESS, MIGRATION_TOO_SOON, UP_REVOKED, UP_LINKED_TO_ANOTHER_PERSON, MIGRATION_OR_EXCEPTION_REQUIRED,
  *         NO_PRIMARY_LINK, EXCEPTION_REQUIRED, EXCEPTION_PENDING, EXCEPTION_LIMIT_REACHED, EXCEPTION_WITHDRAWN
  */
 export async function decide(db, badge, { up, mode, personKey }, nowMs = Date.now()) {
+  // UCL-04: a mint still open (timeout, restart) for this person or this UP must be closed first
+  if (db.prepare("SELECT 1 FROM mints WHERE person_key = ? OR up = ?").get(personKey, up)) throw new LinkError("MINT_IN_PROGRESS");
   const linkOfUp = db.prepare("SELECT * FROM links WHERE up = ?").get(up);
   if (linkOfUp?.status === "revoked") throw new LinkError("UP_REVOKED");
+  // the chain is the source of truth for revocations (local rows are deleted after the retention period)
+  if (badge.getAttestation && Number((await badge.getAttestation(up)).status) === 3) throw new LinkError("UP_REVOKED");
   if (linkOfUp && isActive(linkOfUp, nowMs) && !linkOfUp.person_key.equals(personKey)) {
     throw new LinkError("UP_LINKED_TO_ANOTHER_PERSON");
   }
@@ -45,6 +50,10 @@ export async function decide(db, badge, { up, mode, personKey }, nowMs = Date.no
 
   if (mode === "migrate") {
     // Moves the primary link here; without an active primary elsewhere it is just a first link.
+    if (primaryElsewhere) {
+      const person = db.prepare("SELECT last_migration_at FROM persons WHERE person_key = ?").get(personKey);
+      if (person?.last_migration_at && nowMs - person.last_migration_at < MIGRATION_INTERVAL_MS) throw new LinkError("MIGRATION_TOO_SOON");
+    }
     return { primary: true, invalidate: primaryElsewhere?.up ?? null, ticket: null };
   }
 

@@ -86,9 +86,11 @@ describe("revocation recheck and cleanup", () => {
     } finally {
       pki.setStatus("good");
     }
-    assert.deepEqual(minter.calls, [[UP, "CERT_REVOKED"]]);
-    assert.equal(db.prepare("SELECT status FROM links").get().status, "invalidated");
-    assert.equal(db.prepare("SELECT kind FROM notifications").get().kind, "cert_revoked");
+    assert.deepEqual(minter.calls, [[UP, "INVALIDATED"]]); // UCL-03: generic reason on-chain
+    assert.equal(db.prepare("SELECT status, cert_ref_enc FROM links").get().status, "invalidated");
+    assert.equal(db.prepare("SELECT cert_ref_enc c FROM links").get().c, null); // UCL-10
+    assert.equal(db.prepare("SELECT kind FROM notifications").get().kind, "invalidated_cert_revoked");
+    assert.equal(db.prepare("SELECT detail FROM audit WHERE event = 'invalidated'").get().detail, "CERT_REVOKED");
   });
 
   it("OCSP unreachable: never invalidates; one problem after 3 consecutive days", async () => {
@@ -116,7 +118,7 @@ describe("revocation recheck and cleanup", () => {
       .run(UP, now - 10 * DAY, now - 9 * DAY);
     db.prepare("INSERT INTO statements (id, up, mode, nonce, text_sha256, issued_at, expires_at, status) VALUES ('b', ?, 'link', 'n2', 'h', ?, ?, 'pending_up')")
       .run(UP, now, now + DAY);
-    db.prepare("INSERT INTO persons VALUES (?, ?)").run(Buffer.alloc(32, 1), now);
+    db.prepare("INSERT INTO persons (person_key, created_at) VALUES (?, ?)").run(Buffer.alloc(32, 1), now);
     db.prepare("INSERT INTO exception_requests VALUES ('0xt', ?, 'pending', ?)").run(Buffer.alloc(32, 1), now - 40 * DAY);
     assert.deepEqual(runCleanup(db, now), { statements: 1, exceptions: 1, notifications: 0 });
     assert.equal(db.prepare("SELECT status FROM exception_requests").get().status, "abandoned");
@@ -133,7 +135,7 @@ describe("backup and restore", () => {
   it("encrypted backup restores to an identical, consistent database", async () => {
     const dbPath = path.join(dir, "live.db");
     const db = openDb(dbPath);
-    db.prepare("INSERT INTO persons VALUES (?, ?)").run(randomBytes(32), Date.now());
+    db.prepare("INSERT INTO persons (person_key, created_at) VALUES (?, ?)").run(randomBytes(32), Date.now());
     const identity = await generateX25519Identity();
     const recipient = await identityToRecipient(identity);
     const backupDir = path.join(dir, "backups");
@@ -149,7 +151,7 @@ describe("backup and restore", () => {
     writeFileSync(keyFile, `# test key\n${identity}\n`);
     const out = path.join(dir, "restored.db");
     const r = await restore({ file: path.join(backupDir, s.file), identity: keyFile, out });
-    assert.equal(r.schemaVersion, 4);
+    assert.equal(r.schemaVersion, 5);
     const restored = new Database(out, { readonly: true });
     assert.equal(restored.prepare("SELECT COUNT(*) n FROM persons").get().n, 1);
     restored.close();

@@ -1,11 +1,13 @@
 // CIE submission flow for a statement already signed by the UP:
 //   verify CIE (sync, in the request) -> person key + encrypted cert ref -> serial queue:
-//   uniqueness decision -> [invalidate old primary] -> attest -> record.
+//   uniqueness decision -> record the mint (mints) -> attest -> record the link -> [invalidate the old primary].
+// UCL-20: on a migration the new UP is attested first; the old primary is invalidated afterwards (retried).
 // The tax code returned by the verifier is used once to derive the person key and then dropped.
 import { audit } from "./db.js";
 import { CieError } from "./cie/pki.js";
 import { verifyCieCades, verifyCieRaw } from "./cie/verify.js";
-import { LinkError, applyLink, decide } from "./linking.js";
+import { LinkError, decide } from "./linking.js";
+import { badgeExpiry, failMint, finishMint, processInvalidations, recordMintTx, startMint } from "./mints.js";
 import { notify } from "./notify.js";
 import { encryptCertRef, personKey as derivePersonKey } from "./secrets.js";
 import { getStatement, statementText } from "./statements.js";
@@ -59,7 +61,7 @@ export function createCieFlow(deps) {
     const job = {
       personKey: derivePersonKey(pepper, result.taxCode),
       certRefEnc: encryptCertRef(certRefKey, result.certRef),
-      expiresAtSec: Math.floor(result.notAfter.getTime() / 1000),
+      expiresAtSec: badgeExpiry(result.notAfter), // UCL-03
     };
     result.taxCode = undefined; // drop personal data as soon as the key is derived
     setStatus(db, row.id, { status: "queued" });
@@ -107,59 +109,64 @@ export function createCieFlow(deps) {
       }
       return;
     }
-    setStatus(db, row.id, { status: "minting" });
-    let invalidateTxHash = null;
+    // UCL-04: the mint is recorded before anything is sent
+    const mint = {
+      statementId: row.id,
+      up: row.up,
+      personKey: job.personKey,
+      primary: plan.primary,
+      expiresAt: job.expiresAtSec * 1000,
+      certRefEnc: job.certRefEnc,
+      replacesUp: plan.invalidate,
+      ticket: plan.ticket,
+    };
+    db.transaction(() => {
+      startMint(db, mint, clock());
+      setStatus(db, row.id, { status: "minting" });
+    })();
+    const mintRow = () => db.prepare("SELECT * FROM mints WHERE statement_id = ?").get(row.id);
+    let txHash;
     try {
-      if (plan.invalidate) {
-        invalidateTxHash = await minter.invalidate(plan.invalidate, "MIGRATED");
-        db.prepare("UPDATE links SET status = 'invalidated', is_primary = 0, tx_hash = ?, updated_at = ? WHERE up = ?").run(
-          invalidateTxHash,
-          clock(),
-          plan.invalidate,
-        );
-        audit(db, "invalidated", { up: plan.invalidate, txHash: invalidateTxHash, detail: "MIGRATED" }, clock());
+      txHash = await minter.attest(row.up, job.expiresAtSec, plan.primary, { onSent: (h) => recordMintTx(db, row.id, h) });
+    } catch (e) {
+      if (e?.code === "TX_TIMEOUT" || e?.code === "SEND_FAILED") {
+        // the transaction may still be mined: the mint stays open and reconcileMints() closes it
+        audit(db, "mint_pending", { up: row.up, txHash: e.txHash ?? null, detail: e.code }, clock());
+        return;
       }
-      const txHash = await minter.attest(row.up, job.expiresAtSec, plan.primary);
-      applyLink(
-        db,
-        {
-          up: row.up,
-          personKey: job.personKey,
-          primary: plan.primary,
-          expiresAtMs: job.expiresAtSec * 1000,
-          certRefEnc: job.certRefEnc,
-          txHash,
-        },
-        clock(),
-      );
-      setStatus(db, row.id, { status: "done", tx_hash: txHash, exception_ticket: plan.ticket });
-      audit(db, "attested", { up: row.up, txHash, detail: plan.primary ? "primary" : "additional" }, clock());
-      if (cfg.notifyEachLink) {
-        notify(db, {
-          kind: "attested",
-          severity: "info",
-          subject: `badge ${plan.primary ? "primary" : "additional"} for ${row.up}`,
-          body: `Badge minted for ${row.up} (${plan.primary ? "primary" : "additional"}, mode ${row.mode}), tx ${txHash}.`,
-        }, clock());
-      }
-    } catch {
-      setStatus(db, row.id, { status: "failed", error_code: "MINT_FAILED" });
-      audit(db, "mint_failed", { up: row.up }, clock());
+      failMint(db, mintRow(), "MINT_FAILED", clock());
       notify(db, {
         kind: "mint_failed",
         severity: "problem",
         subject: `minting failed for ${row.up}`,
-        body: `attest()/invalidate() failed for ${row.up} (mode ${row.mode}). Check the attester balance and the RPC. The holder has to link again.`,
+        body: `attest() failed for ${row.up} (mode ${row.mode}, ${e?.code ?? "error"}). Check the attester balance and the RPC. The holder has to link again.`,
+      }, clock());
+      return;
+    }
+    finishMint(db, mintRow(), txHash, clock());
+    if (cfg.notifyEachLink) {
+      notify(db, {
+        kind: "attested",
+        severity: "info",
+        subject: `badge ${plan.primary ? "primary" : "additional"} for ${row.up}`,
+        body: `Badge minted for ${row.up} (${plan.primary ? "primary" : "additional"}, mode ${row.mode}), tx ${txHash}.`,
       }, clock());
     }
+    if (plan.invalidate) await processInvalidations({ db, minter, badge, now: clock });
   }
 
   return { submit };
 }
 
-/** After a restart, statements caught mid-flight cannot resume (the person key was only in memory). */
+/**
+ * After a restart, statements caught before the mint was recorded cannot resume (the person key was only in
+ * memory). Statements with a recorded mint are left to reconcileMints().
+ */
 export function failInterrupted(db) {
   return db
-    .prepare("UPDATE statements SET status = 'failed', error_code = 'INTERRUPTED' WHERE status IN ('verifying','queued','minting')")
+    .prepare(
+      `UPDATE statements SET status = 'failed', error_code = 'INTERRUPTED'
+       WHERE status IN ('verifying','queued','minting') AND id NOT IN (SELECT statement_id FROM mints)`,
+    )
     .run().changes;
 }

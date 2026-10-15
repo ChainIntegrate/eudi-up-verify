@@ -57,8 +57,12 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     minter = {
       calls: [],
       fail: false,
-      async attest(up, expiresAtSec, primary) {
+      async attest(up, expiresAtSec, primary, { onSent } = {}) {
         if (this.fail) throw new Error("rpc down");
+        if (this.timeout) {
+          onSent?.(`0x${"cd".repeat(32)}`);
+          throw Object.assign(new Error("timeout"), { code: "TX_TIMEOUT", txHash: `0x${"cd".repeat(32)}` });
+        }
         this.calls.push(["attest", up, primary]);
         return `0x${randomBytes(32).toString("hex")}`;
       },
@@ -182,10 +186,13 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     await link(UP1);
     const st = await link(UP2, "migrate");
     assert.equal(st.status, "done");
-    assert.deepEqual(minter.calls.slice(1), [["invalidate", UP1, "MIGRATED"], ["attest", UP2, true]]);
+    // UCL-20: the new UP first, then the old primary; UCL-03: generic reason on-chain
+    assert.deepEqual(minter.calls.slice(1), [["attest", UP2, true], ["invalidate", UP1, "INVALIDATED"]]);
     assert.equal(db.prepare("SELECT status FROM links WHERE up = ?").get(UP1).status, "invalidated");
     // the old UP can no longer be renewed with mode link: the person has a primary elsewhere
     assert.equal((await link(UP1)).errorCode, "MIGRATION_OR_EXCEPTION_REQUIRED");
+    // UCL-07: a second migration within 30 days is refused
+    assert.equal((await link(UP1, "migrate")).errorCode, "MIGRATION_TOO_SOON");
   });
 
   it("exception: ticket first, then approval on-chain, then limited additional UPs", async () => {
@@ -221,6 +228,16 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     assert.equal(st.errorCode, "UP_LINKED_TO_ANOTHER_PERSON");
     // the other person can link a different UP
     assert.equal((await link(UP4, "link", other)).status, "done");
+  });
+
+  it("UCL-04: a transaction not mined in time leaves the statement minting, with the mint recorded", async () => {
+    minter.timeout = true;
+    const st = await link(UP1);
+    assert.equal(st.status, "minting");
+    assert.equal(st.txHash, `0x${"cd".repeat(32)}`);
+    const m = db.prepare("SELECT up, tx_hash, is_primary FROM mints").get();
+    assert.deepEqual({ ...m }, { up: UP1, tx_hash: `0x${"cd".repeat(32)}`, is_primary: 1 });
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM links").get().n, 0);
   });
 
   it("minting failure is reported and leaves no link", async () => {

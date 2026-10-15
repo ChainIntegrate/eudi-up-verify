@@ -54,7 +54,10 @@ describe("API: statements and UP signature", () => {
     const s = await res.json();
     assert.equal(s.status, "pending_up");
     assert.equal(s.up, UP);
-    assert.match(s.text, /^up-cie-link statement v1\n/);
+    assert.match(s.text, /^up-cie-link statement v2\n/);
+    // UCL-07: the warning names the site and the UP
+    assert.ok(s.text.includes(`WARNING: sign only if you started this request yourself on ${cfg.statementOrigin} to link YOUR OWN Universal Profile ${UP}.`));
+    assert.ok(s.text.includes(`ATTENZIONE: firma solo se hai avviato tu questa richiesta su ${cfg.statementOrigin} per collegare la TUA Universal Profile ${UP}.`));
     assert.ok(s.text.includes(`Universal-Profile: ${UP}\n`));
     assert.ok(s.text.includes("Chain-Id: 4201\n"));
     assert.ok(s.text.includes(`Contract: ${cfg.deployment.address}\n`));

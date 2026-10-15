@@ -1,19 +1,20 @@
 // Periodic revocation recheck (D5.2): for every valid, unexpired link, OCSP with the stored (encrypted) certificate
-// reference. A revoked certificate invalidates the badge on-chain ("CERT_REVOKED") and notifies.
+// reference. A revoked certificate invalidates the badge on-chain (generic reason, see mints.js) and notifies.
 // OCSP unreachable during the recheck does NOT invalidate anything (B2): after 3 consecutive days without a usable
 // answer a problem is notified.
-import { kvGet, kvSet, audit } from "./db.js";
+import { kvGet, kvSet } from "./db.js";
 import { CieError, certSha256 } from "./cie/pki.js";
 import { ocspStatus } from "./cie/ocsp.js";
 import { notify } from "./notify.js";
 import { decryptCertRef } from "./secrets.js";
+import { processInvalidations, scheduleInvalidation } from "./mints.js";
 
 const DAY = 86_400_000;
 
 /**
- * @param {{db, trust, certRefKey: Buffer, queue, minter, transport?: Function, now?: () => number, unavailableDaysAlert?: number}} p
+ * @param {{db, trust, certRefKey: Buffer, queue, minter, badge, transport?: Function, now?: () => number, unavailableDaysAlert?: number}} p
  */
-export async function runRevocationCheck({ db, trust, certRefKey, queue, minter, transport, now = Date.now, unavailableDaysAlert = 3 }) {
+export async function runRevocationCheck({ db, trust, certRefKey, queue, minter, badge, transport, now = Date.now, unavailableDaysAlert = 3 }) {
   const t = now();
   const issuers = new Map([...trust.intermediates, ...trust.roots].map((c) => [certSha256(c), c]));
   const links = db.prepare("SELECT up, cert_ref_enc FROM links WHERE status = 'valid' AND expires_at > ? AND cert_ref_enc IS NOT NULL").all(t);
@@ -36,28 +37,9 @@ export async function runRevocationCheck({ db, trust, certRefKey, queue, minter,
     else if (status === "unavailable") result.unavailable++;
     else if (status === "revoked") {
       result.revoked++;
-      await queue.push(async () => {
-        const current = db.prepare("SELECT status FROM links WHERE up = ?").get(link.up);
-        if (current?.status !== "valid") return;
-        try {
-          const txHash = await minter.invalidate(link.up, "CERT_REVOKED");
-          db.prepare("UPDATE links SET status = 'invalidated', is_primary = 0, tx_hash = ?, updated_at = ? WHERE up = ?").run(txHash, now(), link.up);
-          audit(db, "invalidated", { up: link.up, txHash, detail: "CERT_REVOKED" }, now());
-          notify(db, {
-            kind: "cert_revoked",
-            severity: "event",
-            subject: `CIE certificate revoked: badge of ${link.up} invalidated`,
-            body: `The CIE certificate linked to ${link.up} is revoked (OCSP). The badge was invalidated on-chain (tx ${txHash}).`,
-          }, now());
-        } catch {
-          notify(db, {
-            kind: "invalidate_failed",
-            severity: "problem",
-            subject: `could not invalidate ${link.up} (certificate revoked)`,
-            body: `OCSP says the CIE certificate linked to ${link.up} is revoked, but invalidate() failed. It will be retried at the next check.`,
-          }, now());
-        }
-      });
+      // the local link stops counting now; the on-chain invalidation goes through the queue (retried)
+      scheduleInvalidation(db, link.up, "CERT_REVOKED", t);
+      await queue.push(() => processInvalidations({ db, minter, badge, now }));
     } else result.errors++;
   }
 

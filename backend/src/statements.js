@@ -3,7 +3,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { getAddress } from "ethers";
 
-export const STATEMENT_VERSION = "v1";
+export const STATEMENT_VERSION = "v2"; // v2: anti-phishing warning (UCL-07)
 export const MODES = ["link", "migrate", "additional"];
 
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -21,6 +21,8 @@ export function buildStatementText({ origin, chainId, contract, up, mode, nonce,
     `Expires-At: ${iso(expiresAt)}`,
     "I declare that I control this Universal Profile and that I hold the CIE used to sign this statement.",
     "Dichiaro di controllare questo Universal Profile e di essere titolare della CIE con cui firmo questo enunciato.",
+    `WARNING: sign only if you started this request yourself on ${origin} to link YOUR OWN Universal Profile ${up}. Never sign it for someone else.`,
+    `ATTENZIONE: firma solo se hai avviato tu questa richiesta su ${origin} per collegare la TUA Universal Profile ${up}. Non firmarlo mai per conto di altri.`,
   ].join("\n");
   if (!/^[\x0a\x20-\x7e]*$/.test(text)) throw new Error("statement must be ASCII");
   return text;

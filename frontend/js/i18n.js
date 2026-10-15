@@ -36,7 +36,7 @@ const T = {
     </ol>`,
     chainTitle: "Cosa resta sulla blockchain",
     chain: `<ul>
-      <li>Che quella UP ha un bollino "CIE verificata", con data di verifica e scadenza (la scadenza della carta).</li>
+      <li>Che quella UP ha un bollino "CIE verificata", con data di verifica e scadenza (il primo giorno del mese dopo la scadenza della carta: non la data esatta).</li>
       <li>Se è la UP principale della persona.</li>
       <li><strong>Nessun</strong> nome, codice fiscale o dato della carta.</li>
     </ul>`,
@@ -182,6 +182,8 @@ const T = {
       EXCEPTION_PENDING: "La richiesta di eccezione è in attesa di approvazione.",
       EXCEPTION_LIMIT_REACHED: "Hai raggiunto il numero di UP consentito dall'eccezione.",
       EXCEPTION_WITHDRAWN: "L'eccezione per le UP aggiuntive è stata ritirata da ChainIntegrate.",
+      MINT_IN_PROGRESS: "C'è già un bollino in corso di emissione per questa CIE o questa UP. Riprova tra qualche minuto.",
+      MIGRATION_TOO_SOON: "Hai già spostato la UP principale negli ultimi 30 giorni. Riprova più avanti.",
       MINT_FAILED: "Il conio del bollino non è riuscito. ChainIntegrate è stata avvisata: riprova più tardi.",
       INTERRUPTED: "Il servizio si è riavviato durante la verifica. Ricomincia.",
       CHAIN_READ_FAILED: "Lettura dalla blockchain non riuscita. Riprova.",
@@ -275,7 +277,7 @@ const T = {
     </ol>`,
     chainTitle: "What stays on the blockchain",
     chain: `<ul>
-      <li>That this UP has a "CIE verified" badge, with verification date and expiry (the card's expiry).</li>
+      <li>That this UP has a "CIE verified" badge, with verification date and expiry (the first day of the month after the card's expiry: not the exact date).</li>
       <li>Whether it is the person's primary UP.</li>
       <li><strong>No</strong> name, tax code or card data.</li>
     </ul>`,
@@ -417,6 +419,8 @@ const T = {
       EXCEPTION_PENDING: "The exception request is waiting for approval.",
       EXCEPTION_LIMIT_REACHED: "You have reached the number of UPs allowed by the exception.",
       EXCEPTION_WITHDRAWN: "The exception for additional UPs was withdrawn by ChainIntegrate.",
+      MINT_IN_PROGRESS: "A badge is already being issued for this CIE or this UP. Try again in a few minutes.",
+      MIGRATION_TOO_SOON: "You already moved your primary UP in the last 30 days. Try again later.",
       MINT_FAILED: "Minting the badge failed. ChainIntegrate has been notified: try again later.",
       INTERRUPTED: "The service restarted during the check. Start again.",
       CHAIN_READ_FAILED: "Reading from the blockchain failed. Try again.",
