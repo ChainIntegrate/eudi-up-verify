@@ -231,7 +231,7 @@ function viewLink() {
         option("link", "modeLink", "modeLinkText"),
         option("migrate", "modeMigrate", "modeMigrateText"),
         option("additional", "modeAdditional", "modeAdditionalText"),
-        h("div", { class: "actions" }, h("button", { type: "button", class: "btn", onclick: stepConsent }, t("next"))),
+        h("div", { class: "actions" }, h("button", { type: "button", class: "btn", onclick: () => stepConsent() }, t("next"))),
       ),
     );
   }
@@ -260,7 +260,7 @@ function viewLink() {
         h("label", { class: "check" }, read, h("span", {}, t("consentRead"))),
         h("label", { class: "check" }, agree, h("span", {}, t("consentAgree"))),
         err ? errorNotice(err) : null,
-        h("div", { class: "actions" }, h("button", { type: "button", class: "btn secondary", onclick: stepMode }, t("back")), go),
+        h("div", { class: "actions" }, h("button", { type: "button", class: "btn secondary", onclick: () => stepMode() }, t("back")), go),
       ),
     );
   }

@@ -213,6 +213,8 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await shot(page, "03-mode");
     await page.getByRole("button", { name: "Avanti" }).click();
     const create = page.getByRole("button", { name: "Prepara l'enunciato" });
+    await create.waitFor();
+    assert.equal(await page.locator(".notice.err").count(), 0, "no error notice on the consent step");
     assert.equal(await create.isDisabled(), true, "consent is required");
     await page.check("#consentRead");
     assert.equal(await create.isDisabled(), true);
