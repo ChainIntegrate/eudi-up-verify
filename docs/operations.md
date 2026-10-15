@@ -7,7 +7,7 @@ servizio. I file in `deploy/` usano già questi valori.
 
 | Voce | Valore |
 |---|---|
-| Server | VPS `Simone1`, IP 31.14.140.170 (nginx davanti a tutti i progetti) |
+| Server | VPS di ChainIntegrate (indirizzo e accesso SSH nel gestore di password, non nel repository) |
 | Dominio | `up-cie-link.chainintegrate.it` (DNS già sul server) |
 | Porta interna del backend | **3015** (solo 127.0.0.1; 3014 è di traceability-registry) |
 | Codice | **`/var/www/up-cie-link`** (come gli altri progetti web) |
@@ -105,7 +105,7 @@ Il backend non parte se `.env` è leggibile da altri utenti.
 Dal PC, copiare il `.p7m` firmato con CieSign (contiene dati personali: si cancella subito dopo):
 
 ```bash
-scp <file>.p7m ubuntu@31.14.140.170:/tmp/cie.p7m
+scp <file>.p7m <utente>@<server>:/tmp/cie.p7m
 ```
 
 Sul server:

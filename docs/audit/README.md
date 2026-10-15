@@ -58,3 +58,20 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
   certificati CIE (CP/CPS) consente a un privato di basarsi sul certificato di autenticazione fuori da "Entra con CIE".
 - **WalletConnect (futuro):** prima di includere il bundle, verificare la licenza (non open source) e aggiungere Reown
   all'informativa.
+
+## Seconda revisione (2026-10-15, revisione `64ec68d`)
+
+Report: [`AUDIT-2026-10-15.md`](AUDIT-2026-10-15.md), conservato senza modifiche. Conferma le correzioni della prima
+revisione. Nuovi punti, tutti **aperti** salvo dove indicato:
+
+| ID | Sev. | Titolo | Stato |
+|---|---|---|---|
+| UCL-31 | Medium | Richieste di export/cancellazione dei dati non autenticate | aperto (prima di invitare altri utenti) |
+| UCL-32 | Low | Login admin bloccabile riempiendo la cache delle sfide | aperto |
+| UCL-33 | Low | Ripristino dell'attestatore in emergenza passa dal server compromesso | aperto |
+| UCL-34 | Low | Scadenza arrotondata per eccesso: il bollino supera la carta fino a un mese | aperto |
+| UCL-35 | Low | Riferimento al certificato conservato dopo rinuncia o revoca | aperto |
+| UCL-36 | Low | Dettagli operativi e dati dell'operatore nel repository pubblico | parziale: IP del server rimosso il 2026-10-15 (resta nella cronologia git) |
+| UCL-37 | Low | `.p7m` reale copiato in `/tmp` leggibile da tutti | aperto |
+| UCL-38 | Low | Contratti testnet sostituiti con l'attestatore ancora attivo | aperto |
+| UCL-39 … UCL-43 | Info | Avviso spurio dell'indicizzatore, rinforzi minori, cooldown eccezioni, CRLF locale, nginx 1.18 | aperti |
