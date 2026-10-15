@@ -18,7 +18,7 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 | UCL-02 | High | Conti alla rovescia vecchi interrompono la firma CIE | timer e polling si fermano quando il loro passo non è più in pagina; test con orologio finto (fallisce sul codice vecchio) | `817d369` | risolto |
 | UCL-03 | Medium | `expiresAt` rivela il compleanno e collega le UP | scadenza on-chain = primo giorno del mese successivo alla scadenza della carta; motivo on-chain sempre `INVALIDATED`; informativa: migrazione collegabile, cosa dice il bollino | `bad21d1`, `8d59cab` | risolto (residuo sotto) |
 | UCL-04 | Medium | Conio non registrato rompe l'unicità | tabella `mints` scritta prima dell'invio, hash salvato subito, `reconcileMints()` all'avvio e ogni minuto; un conio aperto blocca nuove richieste della stessa persona/UP | `bad21d1` | risolto |
-| UCL-05 | Medium | Contratti "simil-UP", `renounce()` rientrante | contratto: `nonReentrant`, `Attested` prima del mint; backend: `owner()` deve essere un Key Manager LSP6 con `target()` = la UP; test con i contratti dell'audit | `cd36843` | risolto nel codice — **deploy testnet da fare** |
+| UCL-05 | Medium | Contratti "simil-UP", `renounce()` rientrante | contratto: `nonReentrant`, `Attested` prima del mint; backend: `owner()` deve essere un Key Manager LSP6 con `target()` = la UP; test con i contratti dell'audit | `cd36843`, deploy `6b0982a` | risolto (testnet `0x6A52…71BA`) |
 | UCL-06 | Medium | Ricontrollo revoche silenzioso; OCSP reale non provato | errori in due giri consecutivi → problema; monitor: ricontrollo vecchio o con errori; conteggi nel riepilogo | `3c57cf9` | parziale: **manca la prova con un `.p7m` reale e l'OCSP reale** |
 | UCL-07 | Medium | Firma CIE non legata alla sessione (phishing) | enunciato v2 con avviso che nomina sito e UP; massimo una migrazione ogni 30 giorni | `bad21d1` | risolto |
 | UCL-08 | Medium | Segreti e dati sullo stesso host | umask 077, `.env` leggibile da altri → il backend non parte, DB a 600, utente dedicato (`deploy/README.md`), monitor senza chiave | `abca9c9`, `3c57cf9` | parziale: processo separato per HMAC/firma **rinviato al mainnet** |
@@ -34,7 +34,7 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 | UCL-18 | Low | PKI | niente SHA-1 in CMS e OCSP (`OCSP_ALLOW_SHA1` solo d'emergenza), nonce OCSP verificato (test di replay), freschezza 24 h, catena di al massimo due anelli | `abca9c9` | risolto (estensioni EKU e revoca della sub CA non controllate) |
 | UCL-19 | Low | OCSP quotidiano informa il Ministero | dichiarato nell'informativa | `8d59cab` | risolto (CRL valutate più avanti) |
 | UCL-20 | Low | Migrazione non atomica | prima `attest` della nuova UP, poi invalidazione della vecchia con nuovi tentativi | `bad21d1` | risolto |
-| UCL-21 | Low | Eccezioni non revocabili | `approveException` accetta valori più bassi e 0 (ritirata); backend `EXCEPTION_WITHDRAWN` | `cd36843` | risolto nel codice — **deploy testnet da fare** |
+| UCL-21 | Low | Eccezioni non revocabili | `approveException` accetta valori più bassi e 0 (ritirata); backend `EXCEPTION_WITHDRAWN` | `cd36843`, deploy `6b0982a` | risolto (testnet `0x6A52…71BA`) |
 | UCL-22 | Low | Monitor | controlli su conii, coda, invalidazioni, conii falliti, ricontrollo revoche; `monitor.env` senza chiave privata | `3c57cf9` | risolto |
 | UCL-23 | Low | `/api/health` pubblico | dettagli solo da 127.0.0.1; 404 da nginx | `abca9c9` | risolto |
 | UCL-24 | Low | Fine riga CRLF | `.gitattributes` | `a5b79a5` | risolto |
@@ -50,9 +50,8 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 - **UCL-03, residuo:** la carta scade il giorno del compleanno, quindi "primo giorno del mese successivo" rivela ancora
   il **mese** di nascita (non il giorno). Anche il tipo di validità della carta (3/5/10 anni) resta deducibile in parte.
   Scelta dell'owner; arrotondare a trimestre o a "verifica + 12 mesi" lo ridurrebbe.
-- **UCL-05:** il nuovo contratto va deployato in testnet (`REDEPLOY=yes npm run deploy:testnet`, poi
-  `npm run verify:testnet`) e il record `deployments/luksoTestnet.json` committato; poi `setData` dei metadati.
-  La verifica "è una UP" accetta qualsiasi Key Manager che dichiari LSP6 e punti alla UP: un contratto costruito
+- **UCL-05:** nuovo contratto in testnet il 2026-10-15: `0x6A525B5662EF905f3DD90F7139DC3a702b1371BA`, blocco
+  8745039, dal commit `90ed066`, verificato su Blockscout, metadati LSP4 impostati dall'owner. La verifica "è una UP" accetta qualsiasi Key Manager che dichiari LSP6 e punti alla UP: un contratto costruito
   apposta può ancora farlo, ma il conio viene comunque simulato e il contratto non è più rientrabile.
 - **UCL-06:** prima di aprire il servizio va eseguita una verifica completa con un `.p7m` reale di CieSign e l'OCSP
   reale del Ministero (algoritmo di firma della risposta, certificato del responder, nonce, freschezza).
