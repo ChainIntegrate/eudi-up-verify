@@ -28,7 +28,7 @@ servizio. I file in `deploy/` usano già questi valori.
 | Sub CA | SUBCA003, SHA-256 `8f3cce1555f96594d294f00fec381fda9d8bac7271fcbdc8bb8f7766b0e27eee`, valida fino al 2039-05-13 (`backend/trust/` sul server) |
 | Installazione | 2026-10-15: backend online (PM2 `pm2-up-cie-link.service` abilitato), timer attivi, primo backup ok, mail ok (`smtps.aruba.it`), HTTPS con certbot (scadenza 2027-01-13, rinnovo automatico) |
 | Primo collegamento reale | 2026-10-15: UP `0xC014c2cAd97F3D5d5fdBD6E09DA1e856E0659927` + CIE reale via CieSign → bollino principale valido, scadenza 2034-03-01 (primo giorno del mese dopo la scadenza della carta) |
-| Metadati del bollino | serviti dal nostro dominio (`/metadata/badge.json`, `/metadata/badge-icon.png`), **niente IPFS** (decisione del 2026-10-15: un solo file, sempre uguale; integrità garantita dagli hash on-chain). Non modificarli senza "Aggiorna i metadati" dalla pagina admin; mantenere il dominio finché esistono bollini |
+| Metadati del bollino | serviti dal nostro dominio (`/metadata/badge.json`, `/metadata/badge-icon.png`), **niente IPFS** (decisione del 2026-10-15: un solo file, sempre uguale; integrità garantita dagli hash on-chain). Non modificarli senza "Aggiorna i metadati" dalla pagina admin; mantenere il dominio finché esistono bollini. Ultimo aggiornamento on-chain: 2026-10-15 (testo "No name, tax code or card data on-chain") |
 | Prova OCSP reale | `check-p7m` con una CIE reale: **CHECK OK** il 2026-10-15 (audit UCL-06) |
 
 Comandi come utente del servizio: `sudo -u up-cie-link -H <comando>`.
