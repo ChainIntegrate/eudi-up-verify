@@ -24,13 +24,21 @@ export async function collectFindings({ cfg, provider, db, fetchHealth, now }) {
   const add = (id, level, text) => findings.push({ id, level, text });
 
   // backend process
+  // two attempts, as for the RPC: a restart (pm2 reload) takes a few seconds and must not raise an alarm
   let health = null;
-  try {
-    health = await fetchHealth();
-    if (!health?.ok) add("backend_unhealthy", "problem", "backend /api/health does not report ok");
-  } catch {
-    add("backend_down", "problem", `backend not answering on 127.0.0.1:${cfg.port}`);
+  let healthError = false;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      health = await fetchHealth();
+      healthError = false;
+      break;
+    } catch {
+      healthError = true;
+      if (attempt === 0) await new Promise((r) => setTimeout(r, cfg.healthRetryDelayMs ?? 15_000));
+    }
   }
+  if (healthError) add("backend_down", "problem", `backend not answering on 127.0.0.1:${cfg.port}`);
+  else if (!health?.ok) add("backend_unhealthy", "problem", "backend /api/health does not report ok");
   if (health?.indexer?.at && now - health.indexer.at > 15 * 60_000) {
     add("indexer_stuck", "problem", `event indexer has not run for ${Math.round((now - health.indexer.at) / 60_000)} minutes`);
   }

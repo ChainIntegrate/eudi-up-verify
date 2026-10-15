@@ -111,6 +111,7 @@ describe("indexer and monitor on a real chain", { skip: !contractsAvailable && "
       minAttesterBalance: parseEther("1"),
       digestHourUtc: 0,
       retryDelayMs: 10,
+      healthRetryDelayMs: 1,
     };
     const stateFile = path.join(dir, "monitor-state.json");
     const sent = [];

@@ -10,13 +10,22 @@ import { collectFindings, monitorConfig } from "../src/monitor.js";
 const UP = "0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C";
 const HOUR = 3_600_000;
 const now = Date.parse("2026-10-15T12:00:00Z");
-const cfg = { port: 1, deployment: { chainId: 4201, address: UP }, attesterAddress: UP, minAttesterBalance: 0n, backupDir: null, trustDir: null, retryDelayMs: 1 };
+const cfg = { port: 1, deployment: { chainId: 4201, address: UP }, attesterAddress: UP, minAttesterBalance: 0n, backupDir: null, trustDir: null, retryDelayMs: 1, healthRetryDelayMs: 1 };
 // RPC down on purpose: only the database-side findings matter here
 const provider = { send: async () => { throw new Error("down"); } };
 const fetchHealth = async () => ({ ok: true, indexer: { at: now } });
 const ids = async (db) => (await collectFindings({ cfg, provider, db, fetchHealth, now })).map((f) => f.id);
 
 describe("monitor: database-side findings", () => {
+  it("a backend restarting during the check is not an alarm (second attempt)", async () => {
+    let calls = 0;
+    const flaky = async () => { if (calls++ === 0) throw new Error("ECONNREFUSED"); return { ok: true, indexer: { at: now } }; };
+    const found = (await collectFindings({ cfg, provider, db: null, fetchHealth: flaky, now })).map((f) => f.id);
+    assert.ok(!found.includes("backend_down"));
+    const down = async () => { throw new Error("ECONNREFUSED"); };
+    assert.ok((await collectFindings({ cfg, provider, db: null, fetchHealth: down, now })).some((f) => f.id === "backend_down"));
+  });
+
   it("revocation recheck: never run, stale, with errors", async () => {
     const db = openDb(":memory:");
     applyLink(db, { up: UP, personKey: randomBytes(32), primary: true, expiresAtMs: now + 1e10, certRefEnc: null, txHash: "0x1" }, now);
