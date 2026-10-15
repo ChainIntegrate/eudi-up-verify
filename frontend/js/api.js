@@ -33,4 +33,17 @@ export const api = {
   upSignature: (id, signature) => call(`/api/statements/${encodeURIComponent(id)}/up-signature`, { method: "POST", json: { signature } }),
   cieCades: (id, bytes) => call(`/api/statements/${encodeURIComponent(id)}/cie-cades`, { method: "POST", body: bytes }),
   badge: (up) => call(`/api/badge/${encodeURIComponent(up)}`),
+  // admin (session cookie, same origin)
+  admin: {
+    session: () => call("/api/admin/session"),
+    challenge: (up) => call("/api/admin/challenge", { method: "POST", json: { up } }),
+    login: (id, signature) => call("/api/admin/login", { method: "POST", json: { id, signature } }),
+    logout: () => call("/api/admin/logout", { method: "POST", json: {} }),
+    status: () => call("/api/admin/status"),
+    exceptions: () => call("/api/admin/exceptions"),
+    reject: (ticket) => call(`/api/admin/exceptions/${encodeURIComponent(ticket)}/reject`, { method: "POST", json: {} }),
+    badge: (up) => call(`/api/admin/badge/${encodeURIComponent(up)}`),
+    tx: (action, args) => call("/api/admin/tx", { method: "POST", json: { action, args } }),
+    log: (action, txHash, detail) => call("/api/admin/log", { method: "POST", json: { action, txHash, detail } }),
+  },
 };

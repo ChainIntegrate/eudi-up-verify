@@ -71,7 +71,16 @@ export function signStatement(p, up, text) {
   });
 }
 
+/** A transaction sent by the UP (the wallet executes it through the UP); returns the transaction hash. */
+export function sendFromUp(p, up, to, data) {
+  return wrap(async () => {
+    const hash = await p.request({ method: "eth_sendTransaction", params: [{ from: up, to, data, value: "0x0" }] });
+    if (typeof hash !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new WalletError("WALLET_ERROR");
+    return hash;
+  });
+}
+
 /** The UP calls renounce() on the badge contract; returns the transaction hash. */
 export function renounce(p, up, contract) {
-  return wrap(() => p.request({ method: "eth_sendTransaction", params: [{ from: up, to: contract, data: RENOUNCE_SELECTOR, value: "0x0" }] }));
+  return sendFromUp(p, up, contract, RENOUNCE_SELECTOR);
 }

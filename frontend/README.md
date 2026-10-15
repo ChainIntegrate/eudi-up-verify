@@ -11,8 +11,9 @@ A strict Content-Security-Policy (see `../deploy/nginx/up-cie-link.conf`) allows
 | `/verifica/<up>` | public badge status of any UP (read on-chain by the backend) |
 | `/il-mio-bollino` | badge of the connected UP: renew, renounce (`renounce()` sent by the UP) |
 | `/privacy`, `/note-legali` | privacy notice and legal notes |
+| `/admin` | contract owner only (not in the menu): login signed by the owner UP, service status, exception requests, revoke/reinstate, badge metadata, emergency stop. Every transaction is prepared by the backend and signed by the owner UP in the wallet; on mainnet `MAINNET` must be typed to confirm |
 
-- `js/app.js` router and pages; `js/i18n.js` all texts (Italian and English); `js/up.js` wallet connectors
+- `js/app.js` router and pages; `js/admin.js` the admin page; `js/i18n.js` all texts (Italian and English); `js/up.js` wallet connectors
   (UP Browser Extension now; UP Wallet for Android through WalletConnect to come); `js/api.js` backend calls;
   `js/theme.js` light/dark theme before the first paint.
 - The browser never calls an RPC node: on-chain reads go through the backend. Data from the network is always

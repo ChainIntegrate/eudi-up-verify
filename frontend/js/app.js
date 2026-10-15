@@ -1,9 +1,10 @@
 // UP CIE Link frontend: static ES modules, no third-party code, no build step.
 // Routes: / · /collega · /verifica[/<up>] · /il-mio-bollino · /privacy · /note-legali
 import { ApiError, api } from "./api.js";
-import { h, shortAddr, storage } from "./dom.js";
+import { fill, h, shortAddr, storage } from "./dom.js";
 import { errorText, formatDate, getLang, setLang, t } from "./i18n.js";
 import { WalletError, connectUp, extensionWallet, renounce, signStatement } from "./up.js";
+import { viewAdmin } from "./admin.js";
 
 const EXPLORERS = { 42: "https://explorer.execution.mainnet.lukso.network", 4201: "https://explorer.execution.testnet.lukso.network" };
 const MAX_P7M_BYTES = 64 * 1024;
@@ -73,6 +74,8 @@ const routes = [
   [/^\/il-mio-bollino\/?$/, viewMine],
   [/^\/privacy\/?$/, () => viewStatic("privacyTitle", "privacy", t("privacySubtitle"))],
   [/^\/note-legali\/?$/, () => viewStatic("legalTitle", "legal")],
+  // owner only, not in the menu: the backend checks the owner on-chain and the signed login
+  [/^\/admin\/?$/, () => viewAdmin({ state, walletPanel, notice, errorNotice, explorerTx })],
 ];
 
 export function navigate(path) {
@@ -140,7 +143,7 @@ function walletPanel(onConnected) {
     }
     const ext = extensionWallet();
     const extButton = h("button", { type: "button", class: "btn", onclick: () => connect(ext) }, t("connectExtension"));
-    box.replaceChildren(
+    fill(box,
       h("p", { class: "dim" }, t("connectText")),
       h("div", { class: "actions" },
         extButton,

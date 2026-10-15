@@ -53,7 +53,8 @@ Work in progress (phase 2). Implemented so far:
 | POST | `/api/statements/:id/up-signature` | `{signature}` (EIP-191 by a UP controller), within 5 minutes, single use |
 | POST | `/api/statements/:id/cie-cades` | CieSign `.p7m` as the raw body (only with `ALLOW_CADES_UPLOAD=true`) |
 | POST | `/api/statements/:id/cie-raw` | `{certificate, signature}` base64, from the Android app |
-| GET | `/api/badge/:up` | badge state read on-chain (`verified`, `verifiedPrimary`, status, dates) |
+| GET | `/api/badge/:up` | badge state read on-chain (`verified`, `verifiedPrimary`, status, dates), cached 10 s |
+| | `/api/admin/*` | owner only (`src/admin.js`): `POST challenge`, `POST login` (ERC-1271, session cookie), `GET session`, `GET status`, `GET exceptions`, `POST exceptions/:ticket/reject`, `GET badge/:up`, `POST tx` (calldata for the owner UP), `POST log`, `POST logout` |
 
 Statement statuses: `pending_up` → `pending_cie` → `verifying` → `queued` → `minting` → `done`, or `failed` with an
 `errorCode` (and an `exceptionTicket` for `EXCEPTION_REQUIRED` / `EXCEPTION_PENDING`), or `expired`.

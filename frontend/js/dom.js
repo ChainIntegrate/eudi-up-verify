@@ -17,6 +17,12 @@ export function h(tag, attrs = {}, ...children) {
   return el;
 }
 
+/** replaceChildren that skips null/false and flattens arrays (replaceChildren itself would print "null"). */
+export function fill(el, ...children) {
+  el.replaceChildren(...children.flat().filter((c) => c != null && c !== false));
+  return el;
+}
+
 export const shortAddr = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 
 export function storage(kind) {

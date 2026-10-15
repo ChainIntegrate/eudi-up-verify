@@ -55,11 +55,15 @@ function serveFrontend(port, apiBase) {
       for await (const c of req) chunks.push(c);
       const r = await fetch(apiBase + req.url, {
         method: req.method,
-        headers: { "content-type": req.headers["content-type"] ?? "application/octet-stream" },
+        headers: {
+          "content-type": req.headers["content-type"] ?? "application/octet-stream",
+          ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
+          ...(req.headers.origin ? { origin: req.headers.origin } : {}),
+        },
         body: ["GET", "HEAD"].includes(req.method) ? undefined : Buffer.concat(chunks),
       });
       const headers = {};
-      for (const k of ["content-type", "content-disposition"]) if (r.headers.get(k)) headers[k] = r.headers.get(k);
+      for (const k of ["content-type", "content-disposition", "set-cookie"]) if (r.headers.get(k)) headers[k] = r.headers.get(k);
       res.writeHead(r.status, headers);
       return res.end(Buffer.from(await r.arrayBuffer()));
     }
@@ -73,7 +77,7 @@ function serveFrontend(port, apiBase) {
 }
 
 describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "contracts not built") || (!browserAvailable && "playwright not installed") }, () => {
-  let node, pki, stopOcsp, server, web, dir, site, up, profile, controller, badgeAddress, browser, logs = "";
+  let node, pki, stopOcsp, server, web, dir, site, up, profile, controller, ownerProfile, ownerController, badgeAddress, browser, logs = "";
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
@@ -86,7 +90,9 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
       await c.waitForDeployment();
       return c.getAddress();
     };
-    const ownerUp = await deployUp(Wallet.createRandom().address);
+    ownerController = new NonceManager(new Wallet(node.keys[2], node.provider));
+    ownerProfile = await deployProfile(deployer, ownerController);
+    const ownerUp = ownerProfile.up;
     profile = await deployProfile(deployer, controller);
     up = profile.up;
     const b = artifact("badge");
@@ -147,7 +153,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
   });
 
   /** A page with the UP Browser Extension stub, backed by the controller key in Node. */
-  async function newPage() {
+  async function newPage(who = { up: () => up, profile: () => profile, controller: () => controller }) {
     const page = await browser.newPage({ acceptDownloads: true });
     const problems = [];
     page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
@@ -156,17 +162,17 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
       switch (method) {
         case "eth_requestAccounts":
         case "eth_accounts":
-          return [up];
+          return [who.up()];
         case "eth_chainId":
           return "0x1069";
         case "personal_sign": {
-          assert.equal(params[1], up);
-          return controller.signMessage(getBytes(params[0]));
+          assert.equal(params[1], who.up());
+          return who.controller().signMessage(getBytes(params[0]));
         }
         case "eth_sendTransaction": {
           const [tx] = params;
-          assert.equal(tx.from, up);
-          const receipt = await profile.execute(tx.to, tx.data);
+          assert.equal(tx.from, who.up());
+          const receipt = await who.profile().execute(tx.to, tx.data);
           return receipt.hash;
         }
         default:
@@ -201,6 +207,8 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
 
     // link flow
     await page.getByRole("link", { name: "Collega la UP" }).click();
+    await page.getByRole("button", { name: "Estensione UP Browser" }).waitFor();
+    assert.ok(!/\bnull\b|\bundefined\b/.test(await page.locator("main").innerText()), "no stray null/undefined in the connect panel");
     await page.getByRole("button", { name: "Estensione UP Browser" }).click();
     await shot(page, "03-mode");
     await page.getByRole("button", { name: "Avanti" }).click();
@@ -292,6 +300,75 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.clock.fastForward("10:00");
     assert.equal(await page.getByText("Fatto: la UP ha il bollino").isVisible(), true);
     assert.equal(await page.getByText("Enunciato scaduto").isVisible(), false);
+    assert.deepEqual(problems, []);
+  });
+
+  it("admin: only the owner logs in; status, exception, revoke/reinstate, metadata, emergency stop", async () => {
+    // a holder UP is refused
+    const holder = await newPage();
+    await holder.page.goto(site + "/admin");
+    await holder.page.getByRole("button", { name: "Estensione UP Browser" }).click();
+    await holder.page.getByRole("button", { name: "Accedi come owner" }).click();
+    await holder.page.getByText("Questa UP non è l'owner del contratto").waitFor();
+    await holder.page.close();
+
+    const owner = { up: () => ownerProfile.up, profile: () => ownerProfile, controller: () => ownerController };
+    const { page, problems } = await newPage(owner);
+    page.on("dialog", (d) => d.accept());
+    const badge = new Contract(badgeAddress, artifact("badge").abi, node.provider);
+
+    // an exception request in the backend database (as created by a second link of the same person)
+    const Database = (await import("better-sqlite3")).default;
+    const ticket = `0x${"5a".repeat(32)}`;
+    const sql = new Database(path.join(dir, "fe2e.db"));
+    sql.prepare("INSERT OR IGNORE INTO persons (person_key, created_at) VALUES (?, ?)").run(Buffer.alloc(32, 9), Date.now());
+    sql.prepare("INSERT INTO exception_requests VALUES (?, ?, 'pending', ?)").run(ticket, Buffer.alloc(32, 9), Date.now());
+    sql.close();
+
+    await page.goto(site + "/admin");
+    assert.ok(await page.getByText("TESTNET", { exact: true }).isVisible());
+    await page.getByRole("button", { name: "Estensione UP Browser" }).click();
+    await page.getByRole("button", { name: "Accedi come owner" }).click();
+    await page.getByText("Stato del servizio").waitFor();
+    assert.equal(await page.locator('[data-fact="adminOwner"]').textContent(), ownerProfile.up);
+    await shot(page, "10-admin");
+
+    // approve the exception for 3 UPs
+    const row = page.locator(`[data-ticket="${ticket}"]`);
+    await row.locator("input").fill("3");
+    await row.getByRole("button", { name: "Approva" }).click();
+    await row.getByText("Transazione inviata.").waitFor({ timeout: 30_000 });
+    assert.equal(Number(await badge.exceptionOf(ticket)), 3);
+
+    // revoke and reinstate the holder's UP
+    await page.fill("#adminUp", up);
+    await page.getByRole("button", { name: "Cerca" }).click();
+    await page.locator("#adminRevoke").click();
+    await page.locator("#adminReinstate").waitFor({ timeout: 30_000 });
+    assert.equal(Number((await badge.getAttestation(up)).status), 3);
+    await page.locator("#adminReinstate").click();
+    await page.locator("#adminRevoke").waitFor({ timeout: 30_000 });
+    assert.equal(Number((await badge.getAttestation(up)).status), 2);
+
+    // metadata: not set yet -> update -> up to date
+    assert.equal(await page.locator("#adminMetadataState").textContent(), "da aggiornare");
+    await page.locator("#adminSetMetadata").click();
+    await page.waitForFunction(() => document.querySelector("#adminMetadataState")?.textContent === "aggiornati", null, { timeout: 30_000 });
+
+    // emergency stop and restore
+    await page.locator("#adminStop").click();
+    await page.locator("#adminStopped").waitFor({ timeout: 30_000 });
+    assert.equal(await badge.attester(), "0x0000000000000000000000000000000000000000");
+    await page.locator("#adminRestore").click();
+    await page.locator("#adminStop").waitFor({ timeout: 30_000 });
+    assert.notEqual(await badge.attester(), "0x0000000000000000000000000000000000000000");
+
+    // every action is in the audit log
+    const db = new Database(path.join(dir, "fe2e.db"), { readonly: true });
+    const events = db.prepare("SELECT event FROM audit WHERE event LIKE 'admin_%' ORDER BY id").all().map((r) => r.event);
+    db.close();
+    assert.ok(!/\bnull\b|\bundefined\b/.test(await page.locator("main").innerText()), "no stray null/undefined in the page");
+    assert.deepEqual(events, ["admin_login", "admin_approveException", "admin_revoke", "admin_reinstate", "admin_setMetadata", "admin_stopMinting", "admin_restoreAttester"]);
     assert.deepEqual(problems, []);
   });
 
