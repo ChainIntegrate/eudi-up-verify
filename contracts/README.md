@@ -1,7 +1,8 @@
 # UP CIE Link — contracts
 
 `UpCieBadge` is a soulbound LSP8 badge (one token per Universal Profile) stating that the UP was linked to a valid
-Italian CIE. No personal data on-chain: only source, verification time, expiry and status.
+Italian CIE. No name, tax code or card data on-chain: only source, verification time, expiry (first day of the month
+after the card's expiry) and status.
 Design and decisions: [`../docs/01-contratto.md`](../docs/01-contratto.md).
 
 - Solidity 0.8.28, viaIR, optimizer 200 runs, EVM `paris`; Hardhat 3, ethers v6.
@@ -88,7 +89,12 @@ npx hardhat run scripts/export-standard-json.ts --network luksoTestnet
 
 ## After deployment
 
-- The owner UP can set the LSP4 metadata (name, description EN/IT, icon ≤ 800 px) with `setData`.
+- The owner UP can set the LSP4 metadata (name, description EN/IT, icon ≤ 800 px) with `setData`:
+  `node scripts/lsp4-metadata.mjs --network <net>` builds `frontend/metadata/badge.json` and prints the value and the
+  calldata (serve the JSON unchanged: the on-chain value contains its hash).
+- Exceptions: `approveException(ticket, n)`; `n` can be lowered later, `0` withdraws it.
+- State-changing functions are non-reentrant (audit UCL-05): a recipient that calls back into the badge while it is
+  being minted makes the whole `attest` revert.
 - To rotate the attester: `setAttester(newAddress)` from the owner UP; `setAttester(0x0)` stops all new badges.
 
 ## Commands

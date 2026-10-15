@@ -1,6 +1,8 @@
 # Fase 0 (v2) — Collegare una Universal Profile a una CIE
 
-> Stato: **bozza da approvare**. Nessun codice applicativo.
+> Stato: **approvata** (decisioni D1-D10 confermate il 2026-10-14). Lo schema dati e il flusso qui sotto sono quelli
+> iniziali: lo stato attuale è in `docs/02-backend.md`, `docs/03-frontend.md` e, per le modifiche dopo l'audit,
+> `docs/audit/README.md`.
 > Data: 2026-10-14. Sostituisce la v1 (archiviata in `docs/archivio/00-analisi-v1-eudi.md`), che partiva dall'assunto
 > "usiamo l'EUDI Wallet" e per questo non confrontava le alternative.
 > Legenda: **[V]** verificato (sorgente letto o comando eseguito) · **[D]** dedotto dai sorgenti, non provato end-to-end ·

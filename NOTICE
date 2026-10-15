@@ -1,0 +1,8 @@
+UP CIE Link
+Copyright 2026 ChainIntegrate
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes Solidity sources from the LUKSO standards (@lukso/*-contracts, Apache-2.0) and
+OpenZeppelin Contracts (MIT), compiled into the UpCieBadge contract; their licence headers are kept in the
+verified source.

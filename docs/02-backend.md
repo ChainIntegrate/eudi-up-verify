@@ -111,7 +111,7 @@ tentativo il giorno dopo, avviso nei log dopo 3 giorni consecutivi (decisione B2
 
 **Cosa:** solo il database SQLite. I segreti (`.env`) **non** finiscono nel backup automatico.
 
-**Script** `backend/scripts/backup.sh` (lanciato da cron o da PM2):
+**Script** `backend/scripts/backup.js` (lanciato dal timer systemd `deploy/systemd/up-cie-link-backup.*`):
 1. copia consistente del DB mentre il servizio gira, con l'API di backup di SQLite
    (`better-sqlite3` `db.backup()`), su file temporaneo;
 2. controllo d'integrità della copia (`PRAGMA integrity_check`);
@@ -122,7 +122,7 @@ tentativo il giorno dopo, avviso nei log dopo 3 giorni consecutivi (decisione B2
 6. copia **fuori dal server** (destinazione da decidere: B5);
 7. esito nei log; uscita con errore se un passo fallisce (PM2/cron lo segnalano).
 
-**Script** `backend/scripts/restore.sh`: decifra con la chiave privata, verifica l'hash e l'integrità, ripristina su
+**Script** `backend/scripts/restore.js`: decifra con la chiave privata, verifica l'hash e l'integrità, ripristina su
 un file nuovo (mai sopra il DB attivo senza conferma esplicita).
 
 **Prova di ripristino** documentata, da fare una volta al mese.
