@@ -5,7 +5,7 @@ modifiche. Qui lo stato di ogni punto. Stati: **aperto**, **risolto** (con commi
 **da fare dall'owner**, **accettato** (rischio accettato, con motivo), **rinviato** (con quando).
 
 Decisioni dell'owner del 2026-10-15: Gruppo 1 tutto come proposto; UCL-03 scadenza al primo giorno del mese successivo
-alla scadenza della carta; UCL-05/21 nuovo deploy; UCL-07, 08, 10, 11, 19 come proposto; UCL-25 al mainnet; UCL-27
+alla scadenza della carta; UCL-05/21 nuovo deploy; UCL-07, 08, 10, 11, 19 come proposto; UCL-25 rinviato (copia esterna quando gli utenti saranno in numero discreto); UCL-27
 "ChainIntegrate"; UCL-30 Telegram più e-mail; UCL-13 e UCL-14 vedi sotto.
 
 Ogni correzione porta nel messaggio di commit l'ID del punto.
@@ -29,7 +29,7 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 | UCL-13 | Medium | Termini CieSign e policy dei certificati CIE | owner: i termini di CieSign li accetta ogni utente per conto suo | — | accettato (vedi nota) |
 | UCL-14 | Low | Informativa incompleta | titolare indicato come "ChainIntegrate, servizi di Simone Cavalletti" (decisione del 2026-10-15); il resto dell'informativa resta parziale come quella di Cross_Chain | — | parziale (completare prima del mainnet) |
 | UCL-15 | Low | Rate limit | IPv6 per /64, mappa limitata, cache di 10 s di `/api/badge`, `limit_req` in nginx | `abca9c9`, `6cd0cd6` | risolto |
-| UCL-16 | Low | nginx | header ripetuti in ogni location, HSTS, Permissions-Policy, `server_tokens off`, log senza query string, sorgenti SVG non serviti; provato con nginx reale | `abca9c9` | risolto (controllare logrotate sul server) |
+| UCL-16 | Low | nginx | header ripetuti in ogni location, HSTS, Permissions-Policy, `server_tokens off`, log senza query string, sorgenti SVG non serviti; provato con nginx reale | `abca9c9` | risolto (logrotate verificato sul server: giornaliero, 14 file) |
 | UCL-17 | Low | SMTP | `requireTLS` con `SMTP_SECURE=false` | `abca9c9` | risolto |
 | UCL-18 | Low | PKI | niente SHA-1 in CMS e OCSP (`OCSP_ALLOW_SHA1` solo d'emergenza), nonce OCSP verificato (test di replay), freschezza 24 h, catena di al massimo due anelli | `abca9c9` | risolto (estensioni EKU e revoca della sub CA non controllate) |
 | UCL-19 | Low | OCSP quotidiano informa il Ministero | dichiarato nell'informativa | `8d59cab` | risolto (CRL valutate più avanti) |

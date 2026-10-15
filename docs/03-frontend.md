@@ -1,8 +1,9 @@
-# UP CIE Link — Fase 3: frontend (proposta, da confermare)
+# UP CIE Link — Fase 3: frontend
 
-Stato: proposta del 2026-10-14, **decisioni F1-F8 confermate lo stesso giorno** (§4); frontend implementato con
-l'estensione UP Browser. Restano da confermare la connessione con UP Wallet per Android (§5) e la scrittura dei
-metadati on-chain (§6).
+Stato (2026-10-15): **in funzione in testnet** su `up-cie-link.chainintegrate.it`. Decisioni F1-F8 (§4), pagina
+admin A1-A5 (§6) confermate e implementate; primo collegamento reale (UP + CIE con CieSign) riuscito il 2026-10-15.
+La connessione con UP Wallet per Android (WalletConnect, §5) è rinviata al mainnet. I §1-3 sono la proposta
+originale, conservata come storia delle decisioni.
 
 Obiettivo: il frontend definitivo (o quasi) su `up-cie-link.chainintegrate.it`, con cui fare subito i test online
 con UP e CIE reali via CieSign; l'app Android (Fase 4) si aggiungerà come secondo canale di firma CIE senza rifare le
@@ -37,7 +38,7 @@ pagine.
    transazione `renounce()` inviata dalla UP tramite l'estensione: il backend la vede con l'indicizzatore.
 5. **Informativa privacy** e **note legali**.
 
-## 3. Proposte da confermare
+## 3. Proposte (confermate il 2026-10-14, vedi §4)
 
 - **F1, tecnologia:** Vite + TypeScript + React, build statica servita da nginx sullo stesso dominio (nessun CORS
   in produzione). Dipendenze minime e fissate; ethers solo per gli indirizzi e la codifica di `renounce()`.

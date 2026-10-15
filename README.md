@@ -30,11 +30,13 @@ our server.
 |---|---|---|
 | 0 | Analysis, options, decisions (`docs/00-analisi.md`) | done |
 | Spike | Verify a real CIE signature (`spike/`) | done, all checks passed on a real CIE |
-| 1 | Attester contract, tests, deployment (`contracts/`) | done; testnet redeploy needed after the audit fixes |
+| 1 | Attester contract, tests, deployment (`contracts/`) | done; redeployed on testnet after the audit (`0x6A52…71BA`), verified, LSP4 metadata set |
 | 2 | Backend (Node/Express): statements, ERC-1271, CIE verification, minting, jobs, monitor, backups | done |
 | 3 | Frontend: connect UP, sign, show badge, admin page | done on testnet (live at up-cie-link.chainintegrate.it; first real UP + CIE link on 2026-10-15); UP Wallet for Android (WalletConnect) at mainnet |
 | 4 | Android app (NFC signature), end-to-end demo | to do |
-| Audit | Security/privacy audit of 2026-10-14 and its fixes (`docs/audit/`) | fixes in progress |
+| Server | Testnet service on the VPS: PM2, monitor and backup timers, nginx + TLS (`docs/operations.md`) | done (2026-10-15) |
+| Mainnet | Contract on mainnet, WalletConnect, complete privacy notice, off-site backups (`docs/operations.md` §6) | to do |
+| Audit | Security/privacy audit of 2026-10-14 and its fixes (`docs/audit/`) | done: all findings fixed or decided; a few deferred to mainnet (see `docs/audit/README.md`) |
 
 ## Repository layout
 

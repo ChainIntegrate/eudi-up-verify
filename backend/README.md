@@ -3,7 +3,7 @@
 Node.js service that links a Universal Profile to a CIE: statements, UP signature (ERC-1271), CIE signature
 verification, uniqueness, badge minting. Design: [`../docs/02-backend.md`](../docs/02-backend.md).
 
-Work in progress (phase 2). Implemented so far:
+Running on testnet since 2026-10-15 (`docs/operations.md`). Contents:
 
 - `src/cie/`: CIE signature verification
   - `verify.js`: CAdES from CieSign (`verifyCieCades`) and raw PKCS#1 signature from the Android app (`verifyCieRaw`);

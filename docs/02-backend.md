@@ -150,7 +150,7 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
 - Privacy: test che falliscono se CF o nome finti compaiono in log, risposte o DB.
 - Backup/restore: ciclo completo su un DB di prova.
 
-## 10. Decisioni che servono da te
+## 10. Decisioni che servivano (risposte nei §11 e §13)
 
 - **B1** Finestre temporali: firma UP entro 5 min dall'emissione, firma CIE entro 15 min. Ok?
 - **B2** OCSP irraggiungibile nel ricontrollo periodico: nessuna invalidazione, avviso dopo 3 giorni. Ok?
