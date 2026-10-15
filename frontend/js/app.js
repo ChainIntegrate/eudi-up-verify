@@ -498,6 +498,11 @@ function viewMine() {
     let b;
     try {
       b = await api.badge(up);
+      // after a renunciation the backend's short cache may still answer "valid": re-read for up to 30 s
+      for (let i = 0; sentTx && b.status === "valid" && i < 10 && out.isConnected; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        b = await api.badge(up);
+      }
     } catch (e) {
       return out.replaceChildren(errorNotice(e));
     }
