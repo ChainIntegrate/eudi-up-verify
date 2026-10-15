@@ -1,6 +1,7 @@
 // Entry point: binds to 127.0.0.1 only (nginx in front). Refuses to start if the port is busy.
 import { chmodSync, existsSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createAdmin } from "./admin.js";
 import { createApp } from "./app.js";
 import { createBadgeReader, createMinter } from "./chain.js";
 import { loadTrustStore } from "./cie/trust.js";
@@ -54,7 +55,9 @@ if (interrupted) console.warn(`${interrupted} statement(s) interrupted by the pr
 const queue = createSerialQueue();
 const cieFlow = createCieFlow({ db, cfg, trust, pepper: cfg.uniqPepper, certRefKey: cfg.certRefKey, badge, minter, queue });
 const healthInfo = () => ({ indexer: kvGet(db, "indexer"), queue: queue.size });
-const app = createApp({ db, cfg, upChecker: createUpChecker(provider), cieFlow, badge, healthInfo });
+const upChecker = createUpChecker(provider);
+const admin = createAdmin({ db, cfg, upChecker, chain: badge, minterAddress: minter.address, healthInfo, metadataFile: cfg.metadataFile });
+const app = createApp({ db, cfg, upChecker, cieFlow, badge, admin, healthInfo });
 
 // --- periodic jobs (errors are counted, never crash the process; codes only in the logs) ---
 const mailer = createMailer();

@@ -50,6 +50,9 @@ export function loadConfig(env = process.env) {
     allowCadesUpload: env.ALLOW_CADES_UPLOAD === "true", // B7
     indexerMaxRange: int("INDEXER_MAX_RANGE", env, 2000),
     notifyEachLink: env.NOTIFY_EACH_LINK === "true", // one email per successful link: on during tests, then off
+    backupDir: env.BACKUP_DIR || null, // shown on the admin page
+    // the badge metadata JSON served by the site (admin page: compare with / write to the contract)
+    metadataFile: env.METADATA_FILE || fileURLToPath(new URL("../../frontend/metadata/badge.json", import.meta.url)),
     // secrets (never logged)
     attesterPrivateKey: required("ATTESTER_PRIVATE_KEY", env),
     uniqPepper: parseKey("UNIQ_PEPPER", required("UNIQ_PEPPER", env)),

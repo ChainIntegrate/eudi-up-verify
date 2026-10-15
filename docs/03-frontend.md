@@ -107,7 +107,7 @@ controller e invia transazioni dalla UP. Per farlo la pagina deve includere il l
   questa sessione).
 - Informativa: va aggiunto Reown (vede indirizzo della UP, rete e IP durante la connessione).
 
-## 6. Pagina admin (decisione del 2026-10-14; dettagli da confermare)
+## 6. Pagina admin (decisione del 2026-10-14; A1-A5 e pulsante di emergenza confermati il 2026-10-15)
 
 Decisione: le operazioni dell'owner si fanno da una pagina admin che funziona **solo se la UP collegata è quella di
 ChainIntegrate (owner del contratto) e ha firmato l'accesso**; predisposta per testnet e mainnet.
@@ -119,9 +119,11 @@ Proposta di dettaglio:
   `HttpOnly`, `Secure`, `SameSite=Strict`, solo in memoria). Senza sessione le API admin rispondono 401 e la pagina
   non mostra nulla.
 - **A2, contenuto:**
-  - stato del servizio: rete, contratto, attestatore e saldo, indicizzatore, coda, ultimo backup, OCSP;
-  - richieste di eccezione in attesa (ticket, UP, data; nessun dato personale): "Approva per n UP" →
-    `approveException(ticket, n)`; "Rifiuta" → chiusa nel backend;
+  - stato del servizio: rete, contratto, attestatore e saldo, indicizzatore, coda, conii in corso, ultimo backup,
+    ricontrollo delle revoche;
+  - richieste di eccezione (ticket, UP, data; nessun dato personale): "Approva per n UP" →
+    `approveException(ticket, n)`, "Riduci / Ritira" (n più basso o 0), "Rifiuta" → chiusa nel backend (per 30 giorni
+    la persona non può chiedere un nuovo ticket);
   - cerca una UP: `revoke(up, motivo)` / `reinstate(up)`;
   - metadati del bollino: confronto tra il valore on-chain e `metadata/badge.json`, "Aggiorna" → `setData`;
   - emergenza: "Ferma i conii" → `setAttester(0x0)`, e ripristino dell'attestatore.

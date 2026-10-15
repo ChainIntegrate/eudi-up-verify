@@ -7,6 +7,8 @@ export const BADGE_ABI = [
   "function isVerified(address up) view returns (bool)",
   "function isVerifiedPrimary(address up) view returns (bool)",
   "function attester() view returns (address)",
+  "function owner() view returns (address)",
+  "function getData(bytes32 dataKey) view returns (bytes)",
   "function getAttestation(address up) view returns (tuple(bytes32 source, uint64 verifiedAt, uint64 expiresAt, uint8 status, bool primary))",
   "function attest(address up, bytes32 source, uint64 expiresAt, bool primary)",
   "function invalidate(address up, bytes32 reason)",
@@ -26,6 +28,9 @@ export function createBadgeReader(provider, address) {
     isVerifiedPrimary: (up) => c.isVerifiedPrimary(up),
     getAttestation: (up) => c.getAttestation(up),
     attester: () => c.attester(),
+    owner: () => c.owner(),
+    getData: (key) => c.getData(key),
+    balance: (address) => provider.getBalance(address),
   };
 }
 

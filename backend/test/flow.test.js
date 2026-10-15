@@ -218,6 +218,15 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     assert.equal((await link(UP3, "additional")).errorCode, "EXCEPTION_WITHDRAWN");
   });
 
+  it("an exception rejected from the admin page blocks new requests for 30 days", async () => {
+    await link(UP1);
+    const first = await link(UP2, "additional");
+    db.prepare("UPDATE exception_requests SET status = 'rejected' WHERE ticket = ?").run(first.exceptionTicket);
+    assert.equal((await link(UP2, "additional")).errorCode, "EXCEPTION_REJECTED");
+    db.prepare("UPDATE exception_requests SET created_at = created_at - ?").run(31 * 86_400_000);
+    assert.equal((await link(UP2, "additional")).errorCode, "EXCEPTION_REQUIRED"); // a new ticket after 30 days
+  });
+
   it("additional without a primary link is refused", async () => {
     assert.equal((await link(UP1, "additional")).errorCode, "NO_PRIMARY_LINK");
   });

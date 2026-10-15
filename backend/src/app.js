@@ -2,6 +2,7 @@
 // Error responses carry stable codes only: never stack traces, never personal data.
 import express from "express";
 import { getAddress, isAddress } from "ethers";
+import { AdminError, adminRouter } from "./admin.js";
 import { FlowError } from "./cieFlow.js";
 import { audit } from "./db.js";
 import { MODES, STATEMENT_VERSION, createStatement, getStatement, publicStatus, sha256Hex, statementText } from "./statements.js";
@@ -66,7 +67,7 @@ function badgeCache(ttlMs = 10_000, maxEntries = 10_000) {
  * @param {{db: any, cfg: any, upChecker: {isUniversalProfile: Function, isValidUpSignature: Function},
  *          cieFlow?: {submit: Function}, badge?: any, clock?: () => number}} deps
  */
-export function createApp({ db, cfg, upChecker, cieFlow, badge, healthInfo = () => ({}), clock = Date.now }) {
+export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, healthInfo = () => ({}), clock = Date.now }) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", "loopback"); // behind nginx on the same host
@@ -236,11 +237,14 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, healthInfo = () 
     }
   });
 
+  // admin (owner of the contract only): docs/03-frontend.md §6
+  if (admin) app.use("/api/admin", adminRouter(admin, cfg, { limiter: rateLimiter({ windowMs: 60_000, max: 60, clock }) }));
+
   app.use((_req, _res, next) => next(new HttpError(404, "NOT_FOUND")));
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
-    if (err instanceof HttpError) return res.status(err.status).json({ error: err.code });
+    if (err instanceof HttpError || err instanceof AdminError) return res.status(err.status).json({ error: err.code });
     if (err?.type === "entity.too.large") return res.status(413).json({ error: "PAYLOAD_TOO_LARGE" });
     if (err?.type === "entity.parse.failed") return res.status(400).json({ error: "INVALID_JSON" });
     console.error(`[error] ${err?.code ?? err?.name ?? "unknown"}`); // no message: it could carry input data
