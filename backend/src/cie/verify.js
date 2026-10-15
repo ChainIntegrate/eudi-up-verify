@@ -8,6 +8,9 @@
 // The returned object contains the tax code (personal data): the caller must derive the uniqueness key
 // and discard it. Nothing here logs or stores personal data.
 import { X509Certificate, constants, verify as cryptoVerify } from "node:crypto";
+
+// SHA-1 and SHA-1 with RSA (UCL-18)
+const WEAK_ALGORITHMS = new Set(["1.3.14.3.2.26", "1.2.840.113549.1.1.5"]);
 import { validateChain } from "./chain.js";
 import { ocspStatus } from "./ocsp.js";
 import {
@@ -51,6 +54,11 @@ export async function verifyCieCades(p7m, statement, ctx) {
     throw new CieError("CMS_INVALID");
   }
   if (signedData.signerInfos.length !== 1) throw new CieError("CMS_INVALID", "expected exactly one signer");
+  // UCL-18: no SHA-1 (digest or signature algorithm)
+  const si = signedData.signerInfos[0];
+  if (WEAK_ALGORITHMS.has(si.digestAlgorithm.algorithmId) || WEAK_ALGORITHMS.has(si.signatureAlgorithm.algorithmId)) {
+    throw new CieError("CMS_INVALID", "weak algorithm");
+  }
 
   const eContent = signedData.encapContentInfo.eContent;
   let detached = true;

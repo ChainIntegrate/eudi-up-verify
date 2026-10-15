@@ -158,6 +158,22 @@ describe("CIE verification", () => {
     });
   });
 
+  describe("UCL-18: PKI hardening", () => {
+    it("refuses a CMS signature with SHA-1", async () => {
+      await assert.rejects(verifyCieCades(pki.signCades(statement, { md: "sha1" }), statement, ctx), (e) => e.code === "CMS_INVALID");
+    });
+
+    it("refuses a replayed OCSP response (nonce of another request)", async () => {
+      const r = await verifyCieCades(pki.signCades(statement), statement, ctx);
+      const issuer = parseCertificate(pki.subPem);
+      let first = null;
+      const replay = async (url, req) => (first ??= await pki.ocspTransport(url, req));
+      const args = { issuer, serialHex: r.certRef.serialHex, url: r.certRef.ocspUrl, transport: replay };
+      assert.equal(await ocspStatus(args), "good"); // first answer: its own nonce
+      await assert.rejects(ocspStatus(args), (e) => e.code === "OCSP_INVALID"); // same answer again: nonce mismatch
+    });
+  });
+
   describe("trust store from files", () => {
     it("loads only pinned roots and CA intermediates", () => {
       const dir = mkdtempSync(path.join(tmpdir(), "trust-"));

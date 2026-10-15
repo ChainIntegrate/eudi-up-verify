@@ -7,7 +7,8 @@
 import { X509Certificate } from "node:crypto";
 import { CieError, certDer, certSha256 } from "./pki.js";
 
-const MAX_DEPTH = 4;
+// CIE path: holder -> sub CA -> root. At most two links (UCL-18: no longer paths, whatever pathLen says).
+const MAX_DEPTH = 2;
 
 const x509 = (cert) => new X509Certificate(certDer(cert));
 const validAt = (x, now) => new Date(x.validFrom) <= now && now <= new Date(x.validTo);

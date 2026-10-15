@@ -14,20 +14,51 @@ class HttpError extends Error {
   }
 }
 
-/** Fixed-window rate limiter in memory, per IP and bucket. IPs are never stored on disk. */
-export function rateLimiter({ windowMs, max, clock }) {
+/** Client key for rate limits: the IPv4 address, or the /64 prefix of an IPv6 address (UCL-15). */
+export function clientKey(ip = "") {
+  const v4 = ip.startsWith("::ffff:") ? ip.slice(7) : ip;
+  if (!v4.includes(":")) return v4;
+  // expand "::" and keep the first four groups
+  const [head, tail = ""] = v4.split("::");
+  const h = head ? head.split(":") : [];
+  const t = tail ? tail.split(":") : [];
+  const groups = [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill("0"), ...t];
+  return `${groups.slice(0, 4).map((g) => g.toLowerCase().replace(/^0+(?=.)/, "")).join(":")}::/64`;
+}
+
+/**
+ * Fixed-window rate limiter in memory, per client key and bucket. IPs are never stored on disk.
+ * The map is bounded (UCL-15): when full, expired entries are dropped; if still full, new clients get 429.
+ */
+export function rateLimiter({ windowMs, max, clock, maxEntries = 50_000 }) {
   const hits = new Map();
   return (req, _res, next) => {
     const now = clock();
-    const key = `${req.ip}`;
+    const key = clientKey(req.ip);
     const entry = hits.get(key);
     if (!entry || now - entry.start >= windowMs) {
+      if (!entry && hits.size >= maxEntries) {
+        for (const [k, v] of hits) if (now - v.start >= windowMs) hits.delete(k);
+        if (hits.size >= maxEntries) return next(new HttpError(429, "RATE_LIMITED"));
+      }
       hits.set(key, { start: now, count: 1 });
-      if (hits.size > 10_000) for (const [k, v] of hits) if (now - v.start >= windowMs) hits.delete(k);
       return next();
     }
     if (++entry.count > max) return next(new HttpError(429, "RATE_LIMITED"));
     next();
+  };
+}
+
+/** Short in-memory cache of badge reads (UCL-15: limits RPC calls caused by public requests). */
+function badgeCache(ttlMs = 10_000, maxEntries = 10_000) {
+  const cache = new Map();
+  return async (key, now, load) => {
+    const hit = cache.get(key);
+    if (hit && now - hit.at < ttlMs) return hit.value;
+    const value = await load();
+    if (cache.size >= maxEntries) cache.clear();
+    cache.set(key, { at: now, value });
+    return value;
   };
 }
 
@@ -62,10 +93,13 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, healthInfo = () 
   app.use(express.json({ limit: "64kb" }));
 
   const general = rateLimiter({ windowMs: 60_000, max: 120, clock });
+  const cachedBadge = badgeCache();
   const creation = rateLimiter({ windowMs: 60_000, max: 10, clock });
 
-  app.get("/api/health", general, (_req, res) => {
-    res.json({ ok: true, network: cfg.network, ...healthInfo() });
+  // UCL-23: details (indexer, queue) only for local callers such as the monitor; through nginx just "ok"
+  app.get("/api/health", general, (req, res) => {
+    const local = req.ip === "127.0.0.1" || req.ip === "::1" || req.ip === "::ffff:127.0.0.1";
+    res.json(local ? { ok: true, network: cfg.network, ...healthInfo() } : { ok: true });
   });
 
   app.get("/api/config", general, (_req, res) => {
@@ -183,17 +217,20 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, healthInfo = () 
       if (!badge) throw new HttpError(503, "CHAIN_UNAVAILABLE");
       if (!isAddress(req.params.up)) throw new HttpError(400, "INVALID_UP");
       const up = getAddress(req.params.up);
-      const [verified, verifiedPrimary, a] = await Promise.all([badge.isVerified(up), badge.isVerifiedPrimary(up), badge.getAttestation(up)]);
-      const STATUS = ["none", "valid", "invalidated", "revoked"];
-      res.json({
-        up,
-        verified,
-        verifiedPrimary,
-        status: STATUS[Number(a.status)] ?? "unknown",
-        primary: a.primary,
-        verifiedAt: Number(a.verifiedAt) ? new Date(Number(a.verifiedAt) * 1000).toISOString() : null,
-        expiresAt: Number(a.expiresAt) ? new Date(Number(a.expiresAt) * 1000).toISOString() : null,
+      const body = await cachedBadge(up, clock(), async () => {
+        const [verified, verifiedPrimary, a] = await Promise.all([badge.isVerified(up), badge.isVerifiedPrimary(up), badge.getAttestation(up)]);
+        const STATUS = ["none", "valid", "invalidated", "revoked"];
+        return {
+          up,
+          verified,
+          verifiedPrimary,
+          status: STATUS[Number(a.status)] ?? "unknown",
+          primary: a.primary,
+          verifiedAt: Number(a.verifiedAt) ? new Date(Number(a.verifiedAt) * 1000).toISOString() : null,
+          expiresAt: Number(a.expiresAt) ? new Date(Number(a.expiresAt) * 1000).toISOString() : null,
+        };
       });
+      res.json(body);
     } catch (e) {
       next(e instanceof HttpError ? e : new HttpError(502, "CHAIN_READ_FAILED"));
     }

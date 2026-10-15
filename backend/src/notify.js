@@ -22,6 +22,8 @@ export function createMailer(env = process.env) {
     host: env.SMTP_HOST,
     port: Number(env.SMTP_PORT || 465),
     secure: env.SMTP_SECURE !== "false",
+    // UCL-17: on port 587 (secure=false) STARTTLS is mandatory, never a fallback to clear text
+    requireTLS: env.SMTP_SECURE === "false",
     auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
   });
   return {

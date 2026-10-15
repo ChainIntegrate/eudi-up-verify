@@ -1,4 +1,6 @@
 // Entry point: binds to 127.0.0.1 only (nginx in front). Refuses to start if the port is busy.
+import { chmodSync, existsSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { createBadgeReader, createMinter } from "./chain.js";
 import { loadTrustStore } from "./cie/trust.js";
@@ -12,8 +14,17 @@ import { processInvalidations, reconcileMints } from "./mints.js";
 import { createSerialQueue } from "./queue.js";
 import { createProvider, createUpChecker } from "./up.js";
 
+// UCL-08: files created by this process are private (database, -wal/-shm, backups made in-process)
+process.umask(0o077);
+const envFile = fileURLToPath(new URL("../.env", import.meta.url));
+if (existsSync(envFile) && (statSync(envFile).mode & 0o077) !== 0) {
+  console.error("backend/.env is readable by other users: run `chmod 600 backend/.env` (it holds the secrets)");
+  process.exit(1);
+}
+
 const cfg = loadConfig();
 const db = openDb(cfg.dbPath);
+for (const f of [cfg.dbPath, `${cfg.dbPath}-wal`, `${cfg.dbPath}-shm`]) if (existsSync(f)) chmodSync(f, 0o600);
 const provider = createProvider(cfg.rpcUrl, cfg.deployment.chainId);
 
 // Ask the RPC itself: the provider uses a static network and would not detect a wrong endpoint.

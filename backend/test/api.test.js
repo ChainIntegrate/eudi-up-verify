@@ -164,6 +164,38 @@ describe("API: statements and UP signature", () => {
   });
 });
 
+describe("UCL-15 / UCL-23: limits and health", () => {
+  it("rate-limit keys group IPv6 by /64 and keep IPv4 as is", async () => {
+    const { clientKey } = await import("../src/app.js");
+    assert.equal(clientKey("203.0.113.7"), "203.0.113.7");
+    assert.equal(clientKey("::ffff:203.0.113.7"), "203.0.113.7");
+    assert.equal(clientKey("2001:db8:1:2:aaaa::1"), "2001:db8:1:2::/64");
+    assert.equal(clientKey("2001:db8:1:2:bbbb:cccc:dddd:eeee"), "2001:db8:1:2::/64");
+    assert.equal(clientKey("2001:db8::1"), "2001:db8:0:0::/64");
+  });
+
+  it("the limiter map is bounded: when full, new clients are refused", async () => {
+    const { rateLimiter } = await import("../src/app.js");
+    const limit = rateLimiter({ windowMs: 1000, max: 5, clock: () => 0, maxEntries: 2 });
+    const run = (ip) => new Promise((r) => limit({ ip }, {}, (err) => r(err?.code ?? "ok")));
+    assert.equal(await run("1.1.1.1"), "ok");
+    assert.equal(await run("2.2.2.2"), "ok");
+    assert.equal(await run("3.3.3.3"), "RATE_LIMITED");
+    assert.equal(await run("1.1.1.1"), "ok"); // known clients keep working
+  });
+
+  it("/api/health gives details only to local callers", async () => {
+    const db = openDb(":memory:");
+    const srv = createApp({ db, cfg, upChecker, healthInfo: () => ({ queue: 3 }) }).listen(0, "127.0.0.1");
+    await new Promise((r) => srv.once("listening", r));
+    const url = `http://127.0.0.1:${srv.address().port}/api/health`;
+    assert.equal((await (await fetch(url)).json()).queue, 3);
+    // through nginx (X-Forwarded-For set by the loopback proxy): only "ok"
+    assert.deepEqual(await (await fetch(url, { headers: { "X-Forwarded-For": "203.0.113.7" } })).json(), { ok: true });
+    srv.close();
+  });
+});
+
 describe("statement status", () => {
   it("UCL-12: expires only while waiting for a signature", async () => {
     const { publicStatus } = await import("../src/statements.js");

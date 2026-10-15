@@ -107,9 +107,9 @@ extendedKeyUsage = OCSPSigning
     issueHolder,
     holderFiles: (name = "holder") => ({ pem: file(`${name}.pem`), keyPem: file(`${name}.key`) }),
     /** CAdES attached (default) or detached signature of `content`, with sub CA and root embedded. */
-    signCades(content, { detached = false, embedChain = true, holder = "holder" } = {}) {
+    signCades(content, { detached = false, embedChain = true, holder = "holder", md = "sha256" } = {}) {
       writeFileSync(path.join(dir, "content.bin"), content);
-      const args = ["cms", "-sign", "-binary", "-cades", "-md", "sha256", "-signer", `${holder}.pem`, "-inkey", `${holder}.key`,
+      const args = ["cms", "-sign", "-binary", "-cades", "-md", md, "-signer", `${holder}.pem`, "-inkey", `${holder}.key`,
         "-in", "content.bin", "-outform", "DER"];
       if (!detached) args.push("-nodetach");
       if (embedChain) args.push("-certfile", "chain.pem");
