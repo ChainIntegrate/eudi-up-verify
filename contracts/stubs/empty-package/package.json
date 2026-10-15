@@ -1,0 +1,7 @@
+{
+  "name": "@truffle/hdwallet-provider",
+  "version": "0.0.0-stub",
+  "description": "Empty stand-in (UCL-09): solidity-bytes-utils@0.8.0 declares @truffle/hdwallet-provider as a runtime dependency by mistake, which pulls web3 1.x and ~560 packages. Only Solidity sources are used here.",
+  "license": "Apache-2.0",
+  "main": "index.js"
+}

@@ -1,7 +1,7 @@
 {
   "name": "up-cie-link",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
-  "postCreateCommand": "cd contracts && npm ci && npx hardhat build",
+  "postCreateCommand": "cd contracts && npm ci --ignore-scripts && npx hardhat build",
   "customizations": {
     "vscode": {
       "extensions": ["NomicFoundation.hardhat-solidity"]
