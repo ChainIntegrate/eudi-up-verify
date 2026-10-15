@@ -32,7 +32,7 @@ our server.
 | Spike | Verify a real CIE signature (`spike/`) | done, all checks passed on a real CIE |
 | 1 | Attester contract, tests, deployment (`contracts/`) | done; testnet redeploy needed after the audit fixes |
 | 2 | Backend (Node/Express): statements, ERC-1271, CIE verification, minting, jobs, monitor, backups | done |
-| 3 | Frontend: connect UP, sign, show badge | in progress (UP Browser extension done; UP Wallet for Android to do) |
+| 3 | Frontend: connect UP, sign, show badge, admin page | done on testnet (live at up-cie-link.chainintegrate.it; first real UP + CIE link on 2026-10-15); UP Wallet for Android (WalletConnect) at mainnet |
 | 4 | Android app (NFC signature), end-to-end demo | to do |
 | Audit | Security/privacy audit of 2026-10-14 and its fixes (`docs/audit/`) | fixes in progress |
 
