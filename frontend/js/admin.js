@@ -7,7 +7,7 @@ import { fill, h } from "./dom.js";
 import { errorText, formatDate, t } from "./i18n.js";
 import { WalletError, sendFromUp, signStatement } from "./up.js";
 
-const codeOf = (e) => (e instanceof ApiError || e instanceof WalletError ? e.code : "DEFAULT");
+const codeOf = (e) => (e instanceof ApiError || e instanceof WalletError ? e.code : `JS_${e?.name ?? "Error"}`);
 
 /** @param ctx {{state, walletPanel, notice, errorNotice, explorerTx}} */
 export function viewAdmin(ctx) {

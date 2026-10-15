@@ -28,7 +28,8 @@ function leavePage() {
 
 const main = () => document.getElementById("main");
 const isAddress = (a) => typeof a === "string" && /^0x[0-9a-fA-F]{40}$/.test(a);
-const codeOf = (e) => (e instanceof ApiError || e instanceof WalletError ? e.code : "DEFAULT");
+// a JavaScript error (not from the API or the wallet) is shown as JS_<name>
+const codeOf = (e) => (e instanceof ApiError || e instanceof WalletError ? e.code : `JS_${e?.name ?? "Error"}`);
 const notice = (kind, ...children) => h("div", { class: `notice ${kind}`, role: kind === "err" ? "alert" : "status" }, ...children);
 const errorNotice = (e) => notice("err", errorText(codeOf(e)));
 const explorerTx = (hash) => `${EXPLORERS[state.config?.chainId] ?? EXPLORERS[4201]}/tx/${hash}`;

@@ -621,7 +621,8 @@ export function setLang(l) {
   document.documentElement.lang = lang;
 }
 export const t = (key) => T[lang][key] ?? T.it[key] ?? key;
-export const errorText = (code) => T[lang].errors[code] ?? T[lang].errors.DEFAULT;
+// Unknown codes show the generic message followed by the technical code, so a screenshot is enough to diagnose.
+export const errorText = (code) => T[lang].errors[code] ?? `${T[lang].errors.DEFAULT} (${code ?? "?"})`;
 export const hasErrorText = (code) => code in T.it.errors;
 export const allKeys = () => ({ it: T.it, en: T.en });
 export const formatDate = (iso) =>
