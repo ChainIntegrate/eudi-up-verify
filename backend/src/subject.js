@@ -3,8 +3,10 @@
 // needs only the UP address. Erasure also forgets the person key: "one person, one primary UP" no longer applies
 // to them (accepted trade-off, stated in the privacy notice). On-chain history cannot be erased; valid badges
 // are invalidated through the pending-invalidation queue processed by the running backend.
-import { getAddress } from "ethers";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { getAddress, isAddress } from "ethers";
 import { audit } from "./db.js";
+import { notify } from "./notify.js";
 
 function personOf(db, up) {
   const link = db.prepare("SELECT person_key FROM links WHERE up = ?").get(getAddress(up));
@@ -87,4 +89,87 @@ export function eraseSubject(db, up, now = Date.now()) {
     audit(db, "subject_erased", { detail: `${ups.length} UP(s), ${invalidations} invalidation(s) queued` }, now);
   })();
   return { ups, invalidations };
+}
+
+// UCL-31: self-service requests, authenticated by a signature of the UP. The challenge is stateless (HMAC with a
+// per-process key, 5 minutes), so unauthenticated callers cannot fill server memory (compare UCL-32); only the
+// tags of executed requests are remembered, until they expire, to make each signature single use.
+const REQUEST_TTL_MS = 5 * 60_000;
+export const SUBJECT_ACTIONS = ["export", "erase"];
+
+export class SubjectError extends Error {
+  constructor(status, code) {
+    super(code);
+    this.status = status;
+    this.code = code;
+  }
+}
+
+const isoSec = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
+
+export function createSubjectRequests({ db, cfg, upChecker, clock = Date.now, key = randomBytes(32) }) {
+  const used = new Map(); // tag -> expires
+  const tagOf = (text) => createHmac("sha256", key).update(text).digest("hex");
+
+  function challenge(upInput, action) {
+    if (typeof upInput !== "string" || !isAddress(upInput)) throw new SubjectError(400, "INVALID_UP");
+    if (!SUBJECT_ACTIONS.includes(action)) throw new SubjectError(400, "INVALID_ACTION");
+    const now = clock();
+    const text = [
+      "up-cie-link data request v1",
+      `Origin: ${cfg.statementOrigin ?? cfg.publicOrigin}`,
+      `Chain-Id: ${cfg.deployment.chainId}`,
+      `Universal-Profile: ${getAddress(upInput)}`,
+      `Request: ${action}`,
+      `Nonce: ${randomBytes(16).toString("base64url")}`,
+      `Issued-At: ${isoSec(now)}`,
+      `Expires-At: ${isoSec(now + REQUEST_TTL_MS)}`,
+      action === "erase"
+        ? "I ask to erase the data kept about the person linked to this UP and to invalidate their badges. / Chiedo di cancellare i dati conservati sulla persona collegata a questa UP e di invalidarne i bollini."
+        : "I ask for a copy of the data kept about the person linked to this UP. / Chiedo una copia dei dati conservati sulla persona collegata a questa UP.",
+    ].join("\n");
+    return { text, tag: tagOf(text) };
+  }
+
+  /** Verifies the signed challenge and runs it: {action: "export", data} or {action: "erase", ups, invalidations}. */
+  async function execute(text, tag, signature) {
+    if (typeof text !== "string" || typeof tag !== "string" || typeof signature !== "string") throw new SubjectError(400, "INVALID_REQUEST");
+    const expected = Buffer.from(tagOf(text), "hex");
+    const given = Buffer.from(tag, "hex");
+    if (given.length !== expected.length || !timingSafeEqual(given, expected)) throw new SubjectError(400, "INVALID_REQUEST");
+    const field = (name) => text.match(new RegExp(`^${name}: (.+)$`, "m"))?.[1];
+    const up = field("Universal-Profile");
+    const action = field("Request");
+    const expires = Date.parse(field("Expires-At"));
+    const now = clock();
+    for (const [k, v] of used) if (v < now) used.delete(k);
+    if (!(expires >= now) || used.has(tag)) throw new SubjectError(410, "REQUEST_EXPIRED");
+    if (!(await upChecker.isValidUpSignature(up, text, signature))) throw new SubjectError(400, "INVALID_UP_SIGNATURE");
+    if (used.has(tag)) throw new SubjectError(410, "REQUEST_EXPIRED"); // a concurrent copy got here first
+    used.set(tag, expires);
+
+    if (action === "export") {
+      const data = exportSubject(db, up);
+      if (!data) throw new SubjectError(404, "NO_DATA");
+      audit(db, "subject_exported", { up, detail: "self-service, UP signature" }, now);
+      return { action, data };
+    }
+    let r;
+    try {
+      r = eraseSubject(db, up, now);
+    } catch (e) {
+      if (e.code === "MINT_IN_PROGRESS") throw new SubjectError(409, "MINT_IN_PROGRESS");
+      throw e;
+    }
+    if (!r) throw new SubjectError(404, "NO_DATA");
+    notify(db, {
+      kind: "subject_erased",
+      severity: "event",
+      subject: "data erased on request of the holder",
+      body: `Self-service erasure signed by the UP: ${r.ups.length} UP(s), ${r.invalidations} on-chain invalidation(s) queued.`,
+    }, now);
+    return { action, ups: r.ups, invalidations: r.invalidations };
+  }
+
+  return { challenge, execute };
 }

@@ -27,10 +27,11 @@ const chain = ({ receipt = null, pending = null, attestation = { status: 0n, ver
 });
 const statusOf = (db) => db.prepare("SELECT status, error_code FROM statements WHERE id = 's1'").get();
 
-describe("UCL-03: badge expiry", () => {
-  it("is the first day of the month after the card expiry", () => {
-    assert.equal(badgeExpiry(new Date("2033-03-14T10:20:30Z")), Date.UTC(2033, 3, 1) / 1000);
-    assert.equal(badgeExpiry(new Date("2033-12-31T23:59:59Z")), Date.UTC(2034, 0, 1) / 1000);
+describe("UCL-03/34: badge expiry", () => {
+  it("is the first day of the month of the card expiry", () => {
+    assert.equal(badgeExpiry(new Date("2033-03-14T10:20:30Z")), Date.UTC(2033, 2, 1) / 1000);
+    assert.equal(badgeExpiry(new Date("2033-12-31T23:59:59Z")), Date.UTC(2033, 11, 1) / 1000);
+    assert.equal(badgeExpiry(new Date("2034-01-01T00:00:00Z")), Date.UTC(2034, 0, 1) / 1000);
     // two people with different birthdays in the same month get the same value
     assert.equal(badgeExpiry(new Date("2030-07-02T00:00:00Z")), badgeExpiry(new Date("2030-07-29T00:00:00Z")));
   });

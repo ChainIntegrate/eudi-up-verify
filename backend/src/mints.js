@@ -12,13 +12,14 @@ const STATUS_VALID = 1;
 const STATUS_REVOKED = 3;
 
 /**
- * UCL-03: the badge expiry is the first day (00:00 UTC) of the month after the card expiry, so it does not carry
- * the holder's birthday (Italian identity documents expire on it) nor a per-person timestamp.
+ * UCL-03/34: the badge expiry is the first day (00:00 UTC) of the month of the card expiry, so it does not carry
+ * the holder's birthday (Italian identity documents expire on it) nor a per-person timestamp, and never outlives
+ * the card.
  * @param {Date} notAfter certificate expiry
  * @returns {number} unix seconds
  */
 export function badgeExpiry(notAfter) {
-  return Date.UTC(notAfter.getUTCFullYear(), notAfter.getUTCMonth() + 1, 1) / 1000;
+  return Date.UTC(notAfter.getUTCFullYear(), notAfter.getUTCMonth(), 1) / 1000;
 }
 
 export function startMint(db, m, nowMs) {

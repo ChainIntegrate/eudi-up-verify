@@ -66,10 +66,10 @@ revisione. Nuovi punti, tutti **aperti** salvo dove indicato:
 
 | ID | Sev. | Titolo | Stato |
 |---|---|---|---|
-| UCL-31 | Medium | Richieste di export/cancellazione dei dati non autenticate | aperto (prima di invitare altri utenti) |
+| UCL-31 | Medium | Richieste di export/cancellazione dei dati non autenticate | risolto: export e cancellazione da "Il mio bollino" con una firma della UP (sfida senza stato, HMAC, 5 minuti, monouso; `/api/subject/*`); informativa e procedura aggiornate; test API ed end-to-end |
 | UCL-32 | Low | Login admin bloccabile riempiendo la cache delle sfide | aperto |
 | UCL-33 | Low | Ripristino dell'attestatore in emergenza passa dal server compromesso | aperto |
-| UCL-34 | Low | Scadenza arrotondata per eccesso: il bollino supera la carta fino a un mese | aperto |
+| UCL-34 | Low | Scadenza arrotondata per eccesso: il bollino supera la carta fino a un mese | risolto: scadenza = primo giorno del mese in cui scade la carta; carta che scade nel mese corrente rifiutata (`CARD_EXPIRING`); testi aggiornati. I bollini già emessi mantengono la vecchia scadenza |
 | UCL-35 | Low | Riferimento al certificato conservato dopo rinuncia o revoca | aperto |
 | UCL-36 | Low | Dettagli operativi e dati dell'operatore nel repository pubblico | parziale: IP del server rimosso il 2026-10-15 (resta nella cronologia git) |
 | UCL-37 | Low | `.p7m` reale copiato in `/tmp` leggibile da tutti | aperto |

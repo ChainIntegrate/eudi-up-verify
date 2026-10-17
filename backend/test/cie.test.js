@@ -91,7 +91,7 @@ describe("CIE verification", () => {
     });
 
     it("rejects an expired certificate", async () => {
-      const later = { ...ctx, now: new Date(Date.now() + 40 * 86400_000) };
+      const later = { ...ctx, now: new Date(Date.now() + 410 * 86400_000) };
       await rejectsWith(verifyCieCades(pki.signCades(statement), statement, later), "CERT_EXPIRED");
     });
 

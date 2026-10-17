@@ -2,7 +2,7 @@
 // local chain + UpCieBadge + real LSP0 UP, the real backend process, a fake CIE PKI with an HTTP OCSP responder,
 // the static frontend served with the same Content-Security-Policy as nginx, and a stub of the UP Browser
 // Extension (window.lukso) whose signatures and transactions come from the UP's real controller key.
-// Flow: link (UP signature, statement download, .p7m upload, mint) → verify page → renounce from "my badge".
+// Flow: link (UP signature, statement download, .p7m upload, mint) → verify page → renounce, export and erase from "my badge".
 import assert from "node:assert/strict";
 import { execSync, spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -258,6 +258,17 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.getByText("Transazione inviata.").waitFor({ timeout: 30_000 });
     assert.equal(await page.locator("#badgeState").textContent(), "Bollino invalidato");
     await shot(page, "08-mine-renounced");
+
+    // UCL-31: data export and erasure, signed by the UP
+    const [dataFile] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Scarica i miei dati" }).click()]);
+    const exported = JSON.parse(readFileSync(await dataFile.path(), "utf8"));
+    assert.deepEqual(exported.links.map((l) => l.up), [up]); // status: "valid" until the indexer sees the renunciation
+    await page.getByText("Ecco i tuoi dati.").waitFor();
+    page.once("dialog", (d) => d.accept());
+    await page.getByRole("button", { name: "Cancella i miei dati" }).click();
+    await page.getByText("Dati cancellati (1 UP).").waitFor();
+    await page.getByRole("button", { name: "Scarica i miei dati" }).click();
+    await page.getByText("Non conserviamo dati collegati a questa UP.").waitFor();
 
     // a direct visit to a deep link works (SPA fallback) and shows the same state
     await page.goto(`${site}/verifica/${up}`);

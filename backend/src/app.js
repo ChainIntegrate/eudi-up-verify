@@ -5,6 +5,7 @@ import { getAddress, isAddress } from "ethers";
 import { AdminError, adminRouter } from "./admin.js";
 import { FlowError } from "./cieFlow.js";
 import { audit } from "./db.js";
+import { SubjectError } from "./subject.js";
 import { MODES, STATEMENT_VERSION, createStatement, getStatement, publicStatus, sha256Hex, statementText } from "./statements.js";
 
 class HttpError extends Error {
@@ -65,9 +66,10 @@ function badgeCache(ttlMs = 10_000, maxEntries = 10_000) {
 
 /**
  * @param {{db: any, cfg: any, upChecker: {isUniversalProfile: Function, isValidUpSignature: Function},
- *          cieFlow?: {submit: Function}, badge?: any, clock?: () => number}} deps
+ *          cieFlow?: {submit: Function}, badge?: any, subject?: {challenge: Function, execute: Function},
+ *          clock?: () => number}} deps
  */
-export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, healthInfo = () => ({}), clock = Date.now }) {
+export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, healthInfo = () => ({}), clock = Date.now }) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", "loopback"); // behind nginx on the same host
@@ -237,6 +239,26 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, healthInf
     }
   });
 
+  // UCL-31: data-subject requests (export / erase), signed by the UP from the "Il mio bollino" page
+  if (subject) {
+    app.post("/api/subject/challenge", creation, (req, res, next) => {
+      try {
+        const { up, action } = req.body ?? {};
+        res.json(subject.challenge(up, action));
+      } catch (e) {
+        next(e);
+      }
+    });
+    app.post("/api/subject/request", creation, async (req, res, next) => {
+      try {
+        const { text, tag, signature } = req.body ?? {};
+        res.json(await subject.execute(text, tag, signature));
+      } catch (e) {
+        next(e);
+      }
+    });
+  }
+
   // admin (owner of the contract only): docs/03-frontend.md §6
   if (admin) app.use("/api/admin", adminRouter(admin, cfg, { limiter: rateLimiter({ windowMs: 60_000, max: 60, clock }) }));
 
@@ -244,7 +266,7 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, healthInf
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
-    if (err instanceof HttpError || err instanceof AdminError) return res.status(err.status).json({ error: err.code });
+    if (err instanceof HttpError || err instanceof AdminError || err instanceof SubjectError) return res.status(err.status).json({ error: err.code });
     if (err?.type === "entity.too.large") return res.status(413).json({ error: "PAYLOAD_TOO_LARGE" });
     if (err?.type === "entity.parse.failed") return res.status(400).json({ error: "INVALID_JSON" });
     console.error(`[error] ${err?.code ?? err?.name ?? "unknown"}`); // no message: it could carry input data

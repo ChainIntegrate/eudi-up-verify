@@ -13,6 +13,7 @@ import { createMailer, flushNotifications } from "./notify.js";
 import { runCleanup, runRevocationCheck } from "./revocation.js";
 import { processInvalidations, reconcileMints } from "./mints.js";
 import { createSerialQueue } from "./queue.js";
+import { createSubjectRequests } from "./subject.js";
 import { createProvider, createUpChecker } from "./up.js";
 
 // UCL-08: files created by this process are private (database, -wal/-shm, backups made in-process)
@@ -61,7 +62,8 @@ const cieFlow = createCieFlow({ db, cfg, trust, pepper: cfg.uniqPepper, certRefK
 const healthInfo = () => ({ indexer: kvGet(db, "indexer"), queue: queue.size });
 const upChecker = createUpChecker(provider);
 const admin = createAdmin({ db, cfg, upChecker, chain: badge, minterAddress: minter.address, healthInfo, metadataFile: cfg.metadataFile });
-const app = createApp({ db, cfg, upChecker, cieFlow, badge, admin, healthInfo });
+const subject = createSubjectRequests({ db, cfg, upChecker });
+const app = createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, healthInfo });
 
 // --- periodic jobs (errors are counted, never crash the process; codes only in the logs) ---
 const mailer = createMailer();

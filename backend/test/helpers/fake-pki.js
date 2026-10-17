@@ -13,7 +13,7 @@ export const FAKE_SURNAME = "ROSSI";
 
 const run = (dir, args, input) => execFileSync("openssl", args, { cwd: dir, input, stdio: ["pipe", "pipe", "pipe"] });
 
-export function createFakePki({ holderDays = 30, policy = "1.3.76.47.4", cn, ocspUrl = "http://ocsp.fake-cie.invalid/" } = {}) {
+export function createFakePki({ holderDays = 400, policy = "1.3.76.47.4", cn, ocspUrl = "http://ocsp.fake-cie.invalid/" } = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), "fake-cie-pki-"));
   const cnf = `
 [v3_root]
@@ -85,12 +85,12 @@ extendedKeyUsage = OCSPSigning
   };
   let holders = 0;
   /** Issues another holder certificate (another "person") under the same sub CA. */
-  const issueHolder = (taxCode) => {
+  const issueHolder = (taxCode, { days = holderDays } = {}) => {
     const name = `holder${++holders}`;
     run(dir, ["genrsa", "-out", `${name}.key`, "2048"]);
     run(dir, ["req", "-new", "-key", `${name}.key`, "-out", `${name}.csr`, "-subj", `/CN=${taxCode}/123456789012/C=IT`]);
     run(dir, ["x509", "-req", "-in", `${name}.csr`, "-CA", "sub.pem", "-CAkey", "sub.key", "-CAcreateserial", "-out", `${name}.pem`,
-      "-days", String(holderDays), "-extfile", "ext.cnf", "-extensions", "v3_holder"]);
+      "-days", String(days), "-extfile", "ext.cnf", "-extensions", "v3_holder"]);
     register(name);
     return name;
   };

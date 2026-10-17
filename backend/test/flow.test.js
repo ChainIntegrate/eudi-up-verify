@@ -249,6 +249,19 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     assert.equal(db.prepare("SELECT COUNT(*) n FROM links").get().n, 0);
   });
 
+  it("UCL-34: a card expiring this month is refused (the badge would already be expired)", async (t) => {
+    const today = new Date();
+    const days = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0)).getUTCDate() - today.getUTCDate();
+    if (days === 0) return t.skip("last day of the month: no certificate can expire later this month");
+    const expiring = pki.issueHolder("RSSMRA80A01H501X", { days });
+    const s = await signedStatement(UP1);
+    const r = await cades(s, expiring);
+    assert.equal(r.status, 400);
+    assert.equal((await r.json()).error, "CARD_EXPIRING");
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM persons").get().n, 0);
+    assert.equal(minter.calls.length, 0);
+  });
+
   it("UCL-11: a minor's CIE is refused with a neutral code and nothing about the person is stored", async () => {
     const minor = pki.issueHolder("BNCLRA15M50H501X");
     const s = await signedStatement(UP1);

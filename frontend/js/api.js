@@ -33,6 +33,9 @@ export const api = {
   upSignature: (id, signature) => call(`/api/statements/${encodeURIComponent(id)}/up-signature`, { method: "POST", json: { signature } }),
   cieCades: (id, bytes) => call(`/api/statements/${encodeURIComponent(id)}/cie-cades`, { method: "POST", body: bytes }),
   badge: (up) => call(`/api/badge/${encodeURIComponent(up)}`),
+  // UCL-31: data-subject requests signed by the UP
+  subjectChallenge: (up, action) => call("/api/subject/challenge", { method: "POST", json: { up, action } }),
+  subjectRequest: (text, tag, signature) => call("/api/subject/request", { method: "POST", json: { text, tag, signature } }),
   // admin (session cookie, same origin)
   admin: {
     session: () => call("/api/admin/session"),

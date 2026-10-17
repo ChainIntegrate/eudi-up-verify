@@ -69,10 +69,18 @@ export function createCieFlow(deps) {
       throw new FlowError(400, "AGE_NOT_ELIGIBLE");
     }
 
+    // UCL-34: the badge expires on the first day of the card's expiry month, so a card expiring this month is too late
+    if (badgeExpiry(result.notAfter) * 1000 <= now) {
+      result.taxCode = undefined;
+      setStatus(db, row.id, { status: "failed", error_code: "CARD_EXPIRING" });
+      audit(db, "cie_rejected", { up: row.up, detail: "CARD_EXPIRING" }, clock());
+      throw new FlowError(400, "CARD_EXPIRING");
+    }
+
     const job = {
       personKey: derivePersonKey(pepper, result.taxCode),
       certRefEnc: encryptCertRef(certRefKey, result.certRef),
-      expiresAtSec: badgeExpiry(result.notAfter), // UCL-03
+      expiresAtSec: badgeExpiry(result.notAfter), // UCL-03/34
     };
     result.taxCode = undefined; // drop personal data as soon as the key is derived
     setStatus(db, row.id, { status: "queued" });

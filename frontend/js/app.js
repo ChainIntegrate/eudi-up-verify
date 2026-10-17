@@ -517,6 +517,7 @@ function viewMine() {
     const parts = [badgeCard(b), actions];
     if (sentTx) parts.push(notice("ok", t("renounceSent"), " ", h("a", { href: explorerTx(sentTx), target: "_blank", rel: "noopener" }, t("viewTx"))));
     if (valid) parts.push(renouncePanel(up, (tx) => show(up, tx)));
+    parts.push(dataPanel(up));
     out.replaceChildren(...parts);
   };
   return h("div", {},
@@ -543,6 +544,44 @@ function renouncePanel(up, done) {
     }
   });
   return h("section", { class: "panel" }, h("h2", {}, t("renounceTitle")), h("p", {}, t("renounceText")), errBox, btn);
+}
+
+// UCL-31: export / erasure of the data kept about the person, asked by signing with the UP
+function dataPanel(up) {
+  const result = h("div");
+  const run = async (action, btn) => {
+    if (action === "erase" && !window.confirm(t("dataEraseConfirm"))) return;
+    btn.disabled = true;
+    result.replaceChildren();
+    try {
+      const c = await api.subjectChallenge(up, action);
+      const signature = await signStatement(state.wallet, up, c.text);
+      const r = await api.subjectRequest(c.text, c.tag, signature);
+      if (action === "export") {
+        const url = URL.createObjectURL(new Blob([JSON.stringify(r.data, null, 2)], { type: "application/json" }));
+        const a = h("a", { href: url, download: `up-cie-link-data-${up.slice(2, 10)}.json` }, t("dataDownload"));
+        result.replaceChildren(notice("ok", t("dataExportReady"), " ", a));
+        a.click();
+        onLeave(() => URL.revokeObjectURL(url));
+      } else {
+        result.replaceChildren(notice("ok", t("dataErased").replace("{n}", String(r.ups.length))));
+      }
+    } catch (e) {
+      result.replaceChildren(codeOf(e) === "NO_DATA" ? notice("ok", t("dataNone")) : errorNotice(e));
+    } finally {
+      btn.disabled = false;
+    }
+  };
+  const exportBtn = h("button", { type: "button", class: "btn secondary" }, t("dataExportButton"));
+  const eraseBtn = h("button", { type: "button", class: "btn danger" }, t("dataEraseButton"));
+  exportBtn.addEventListener("click", () => run("export", exportBtn));
+  eraseBtn.addEventListener("click", () => run("erase", eraseBtn));
+  return h("section", { class: "panel" },
+    h("h2", {}, t("dataTitle")),
+    h("p", {}, t("dataText")),
+    result,
+    h("div", { class: "actions" }, exportBtn, eraseBtn),
+  );
 }
 
 // ---------------------------------------------------------------- start

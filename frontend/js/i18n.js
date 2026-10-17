@@ -2,8 +2,8 @@
 // Strings used with { html } may contain markup and must stay static.
 import { storage } from "./dom.js";
 
-const PRIVACY_DATE_IT = "15 ottobre 2026";
-const PRIVACY_DATE_EN = "15 October 2026";
+const PRIVACY_DATE_IT = "17 ottobre 2026";
+const PRIVACY_DATE_EN = "17 October 2026";
 const CONTACTS_IT = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> oppure una segnalazione su <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 const CONTACTS_EN = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> or an issue on <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 
@@ -36,7 +36,7 @@ const T = {
     </ol>`,
     chainTitle: "Cosa resta sulla blockchain",
     chain: `<ul>
-      <li>Che quella UP ha un bollino "CIE verificata", con data di verifica e scadenza (il primo giorno del mese dopo la scadenza della carta: non la data esatta).</li>
+      <li>Che quella UP ha un bollino "CIE verificata", con data di verifica e scadenza (il primo giorno del mese in cui scade la carta: non la data esatta).</li>
       <li>Se è la UP principale della persona.</li>
       <li><strong>Nessun</strong> nome, codice fiscale o dato della carta.</li>
     </ul>`,
@@ -48,7 +48,7 @@ const T = {
     </ul>`,
     rulesTitle: "Una persona, una UP principale",
     rules: `<p>Ogni CIE può collegare <strong>una sola UP principale</strong>. Puoi spostarla su una nuova UP (migrazione: la vecchia viene invalidata). UP aggiuntive solo con un'eccezione approvata da ChainIntegrate.</p>
-      <p>Il bollino scade con la carta e si invalida se il certificato della carta viene revocato. Puoi rinunciarvi quando vuoi.</p>`,
+      <p>Il bollino scade all'inizio del mese in cui scade la carta e si invalida se il certificato della carta viene revocato. Puoi rinunciarvi quando vuoi.</p>`,
 
     // link flow
     linkTitle: "Collega la UP alla CIE",
@@ -136,7 +136,7 @@ const T = {
 
     // mine
     mineTitle: "Il mio bollino",
-    mineLead: "Collega la tua UP per vedere il bollino, rinnovarlo o rinunciarvi.",
+    mineLead: "Collega la tua UP per vedere il bollino, rinnovarlo o rinunciarvi, e per scaricare o cancellare i tuoi dati.",
     renewButton: "Rinnova",
     linkButton: "Collega questa UP",
     renounceTitle: "Rinuncia al bollino",
@@ -144,6 +144,15 @@ const T = {
     renounceButton: "Rinuncia",
     renounceConfirm: "Confermi la rinuncia? Firmerai la transazione con la UP.",
     renounceSent: "Transazione inviata. Lo stato si aggiorna appena la transazione è confermata.",
+    dataTitle: "I tuoi dati",
+    dataText: "Puoi scaricare una copia dei dati che conserviamo su di te, oppure cancellarli. In entrambi i casi firmi la richiesta con la UP: solo chi la controlla può farlo. I dati riguardano tutte le UP collegate alla tua CIE.",
+    dataExportButton: "Scarica i miei dati",
+    dataEraseButton: "Cancella i miei dati",
+    dataEraseConfirm: "Confermi la cancellazione? Tutti i bollini collegati alla tua CIE verranno invalidati e i dati cancellati. Non si annulla. Firmerai la richiesta con la UP.",
+    dataDownload: "Scarica il file",
+    dataExportReady: "Ecco i tuoi dati.",
+    dataErased: "Dati cancellati ({n} UP). I bollini ancora validi vengono invalidati sulla blockchain entro qualche minuto.",
+    dataNone: "Non conserviamo dati collegati a questa UP.",
 
 
     // admin (owner only)
@@ -236,6 +245,7 @@ const T = {
       EXCEPTION_LIMIT_REACHED: "Hai raggiunto il numero di UP consentito dall'eccezione.",
       EXCEPTION_WITHDRAWN: "L'eccezione per le UP aggiuntive è stata ritirata da ChainIntegrate.",
       AGE_NOT_ELIGIBLE: "Il servizio è riservato ai maggiorenni.",
+      CARD_EXPIRING: "La carta scade questo mese: il bollino scadrebbe subito. Usa la nuova carta quando l'avrai.",
       NOT_OWNER: "Questa UP non è l'owner del contratto: accesso negato.",
       ADMIN_LOGIN_REQUIRED: "Sessione scaduta: accedi di nuovo.",
       CHALLENGE_EXPIRED: "Il messaggio di accesso è scaduto o già usato: riprova.",
@@ -243,6 +253,8 @@ const T = {
       INVALID_ARGS: "Valori non validi.",
       METADATA_FILE_MISSING: "Il file dei metadati non è sul server.",
       EXCEPTION_REJECTED: "La richiesta di eccezione è stata respinta da ChainIntegrate. Potrai fare una nuova richiesta tra 30 giorni.",
+      REQUEST_EXPIRED: "La richiesta è scaduta o è già stata usata. Riprova.",
+      INVALID_REQUEST: "Richiesta non valida. Riprova.",
       MINT_IN_PROGRESS: "C'è già un bollino in corso di emissione per questa CIE o questa UP. Riprova tra qualche minuto.",
       MIGRATION_TOO_SOON: "Hai già spostato la UP principale negli ultimi 30 giorni. Riprova più avanti.",
       MINT_FAILED: "Il conio del bollino non è riuscito. ChainIntegrate è stata avvisata: riprova più tardi.",
@@ -294,7 +306,7 @@ const T = {
       <h2>6 · Cosa resta nel tuo browser</h2>
       <p>La lingua e il tema scelti, e il numero dell'enunciato in corso (solo per la sessione). Nient'altro.</p>
       <h2>7 · I tuoi diritti</h2>
-      <p>Secondo il Regolamento UE 2016/679 (GDPR) puoi chiedere l'accesso, la rettifica o la cancellazione dei dati che ti riguardano, o revocare il consenso, scrivendo ai contatti del punto 2 con l'indirizzo della UP. La cancellazione invalida i bollini e cancella anche l'impronta del codice fiscale: dopo potresti collegare di nuovo la CIE come se fosse la prima volta. Puoi anche rinunciare al bollino da solo, dalla pagina "Il mio bollino". Puoi presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). Quello che sta sulla blockchain (il bollino e la sua storia) non può essere cancellato da nessuno.</p>
+      <p>Secondo il Regolamento UE 2016/679 (GDPR) puoi chiedere l'accesso, la rettifica o la cancellazione dei dati che ti riguardano, o revocare il consenso, dalla pagina "Il mio bollino", firmando la richiesta con la UP (solo chi controlla la UP può farlo). Puoi anche scrivere ai contatti del punto 2: ti chiederemo comunque una firma della UP, per essere certi che la richiesta venga da te. La cancellazione invalida i bollini e cancella anche l'impronta del codice fiscale: dopo potresti collegare di nuovo la CIE come se fosse la prima volta. Puoi anche rinunciare al bollino da solo, dalla pagina "Il mio bollino". Puoi presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). Quello che sta sulla blockchain (il bollino e la sua storia) non può essere cancellato da nessuno.</p>
       <h2>8 · Minori e modifiche</h2>
       <p>Il servizio è riservato ai maggiorenni: l'età si ricava dal codice fiscale del certificato, solo durante la verifica. Se questa informativa cambia, cambia la data in alto; le versioni precedenti restano nella <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">cronologia del repository</a>.</p>`,
 
@@ -340,7 +352,7 @@ const T = {
     </ol>`,
     chainTitle: "What stays on the blockchain",
     chain: `<ul>
-      <li>That this UP has a "CIE verified" badge, with verification date and expiry (the first day of the month after the card's expiry: not the exact date).</li>
+      <li>That this UP has a "CIE verified" badge, with verification date and expiry (the first day of the month in which the card expires: not the exact date).</li>
       <li>Whether it is the person's primary UP.</li>
       <li><strong>No</strong> name, tax code or card data.</li>
     </ul>`,
@@ -352,7 +364,7 @@ const T = {
     </ul>`,
     rulesTitle: "One person, one primary UP",
     rules: `<p>Each CIE can link <strong>one primary UP</strong>. You can move it to a new UP (migration: the old one is invalidated). Additional UPs only with an exception approved by ChainIntegrate.</p>
-      <p>The badge expires with the card and is invalidated if the card's certificate is revoked. You can renounce it at any time.</p>`,
+      <p>The badge expires at the start of the month in which the card expires and is invalidated if the card's certificate is revoked. You can renounce it at any time.</p>`,
 
     linkTitle: "Link your UP to your CIE",
     stepConnect: "UP",
@@ -437,7 +449,7 @@ const T = {
     shareLink: "Link to share:",
 
     mineTitle: "My badge",
-    mineLead: "Connect your UP to see your badge, renew it or renounce it.",
+    mineLead: "Connect your UP to see your badge, renew it or renounce it, and to download or erase your data.",
     renewButton: "Renew",
     linkButton: "Link this UP",
     renounceTitle: "Renounce the badge",
@@ -445,6 +457,15 @@ const T = {
     renounceButton: "Renounce",
     renounceConfirm: "Do you confirm? You will sign the transaction with your UP.",
     renounceSent: "Transaction sent. The status updates as soon as it is confirmed.",
+    dataTitle: "Your data",
+    dataText: "You can download a copy of the data we keep about you, or erase it. Either way you sign the request with your UP: only whoever controls it can do so. The data covers every UP linked to your CIE.",
+    dataExportButton: "Download my data",
+    dataEraseButton: "Erase my data",
+    dataEraseConfirm: "Do you confirm the erasure? Every badge linked to your CIE will be invalidated and the data deleted. It cannot be undone. You will sign the request with your UP.",
+    dataDownload: "Download the file",
+    dataExportReady: "Here is your data.",
+    dataErased: "Data erased ({n} UP). The badges still valid are invalidated on the blockchain within a few minutes.",
+    dataNone: "We keep no data linked to this UP.",
 
     adminTitle: "Administration",
     adminMainnetBanner: "main network: transactions are real and public.",
@@ -534,6 +555,7 @@ const T = {
       EXCEPTION_LIMIT_REACHED: "You have reached the number of UPs allowed by the exception.",
       EXCEPTION_WITHDRAWN: "The exception for additional UPs was withdrawn by ChainIntegrate.",
       AGE_NOT_ELIGIBLE: "The service is for adults only.",
+      CARD_EXPIRING: "The card expires this month: the badge would expire at once. Use the new card when you have it.",
       NOT_OWNER: "This UP is not the owner of the contract: access denied.",
       ADMIN_LOGIN_REQUIRED: "Session expired: log in again.",
       CHALLENGE_EXPIRED: "The login message expired or was already used: try again.",
@@ -541,6 +563,8 @@ const T = {
       INVALID_ARGS: "Invalid values.",
       METADATA_FILE_MISSING: "The metadata file is not on the server.",
       EXCEPTION_REJECTED: "The exception request was rejected by ChainIntegrate. You can ask again in 30 days.",
+      REQUEST_EXPIRED: "The request has expired or was already used. Try again.",
+      INVALID_REQUEST: "Invalid request. Try again.",
       MINT_IN_PROGRESS: "A badge is already being issued for this CIE or this UP. Try again in a few minutes.",
       MIGRATION_TOO_SOON: "You already moved your primary UP in the last 30 days. Try again later.",
       MINT_FAILED: "Minting the badge failed. ChainIntegrate has been notified: try again later.",
@@ -591,7 +615,7 @@ const T = {
       <h2>6 · What stays in your browser</h2>
       <p>The language and theme you chose, and the number of the statement in progress (for the session only). Nothing else.</p>
       <h2>7 · Your rights</h2>
-      <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to, rectification or erasure of your data, or withdraw your consent, by writing to the contacts in section 2 with your UP address. Erasure invalidates the badges and also deletes the tax code fingerprint: afterwards you could link the CIE again as if for the first time. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
+      <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to, rectification or erasure of your data, or withdraw your consent, from the "My badge" page, signing the request with your UP (only whoever controls the UP can do so). You can also write to the contacts in section 2: we will still ask for a signature of the UP, to be sure the request comes from you. Erasure invalidates the badges and also deletes the tax code fingerprint: afterwards you could link the CIE again as if for the first time. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
       <h2>8 · Minors and changes</h2>
       <p>The service is for adults only: the age is read from the certificate's tax code, during the check only. If this notice changes, the date at the top changes; previous versions stay in the <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">repository history</a>.</p>`,
 

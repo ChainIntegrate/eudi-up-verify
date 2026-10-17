@@ -211,8 +211,8 @@ sudo -u up-cie-link -H pm2 reload up-cie-link
 | Stato del monitor (senza mail) | `cd /var/www/up-cie-link/backend && sudo -u up-cie-link -H node src/monitor.js --dry-run` |
 | Backup subito | `sudo systemctl start up-cie-link-backup.service` |
 | Ripristino (sul PC o su un altro server) | `npm run restore -- --file <backup.db.gz.age> --identity <chiave age privata> --out restored.db` |
-| Richiesta di accesso ai dati | `sudo -u up-cie-link -H node scripts/data-subject.js export --up 0x…` (in `backend/`) |
-| Richiesta di cancellazione | `… data-subject.js erase --up 0x…`, poi lo stesso con `--yes` |
+| Richiesta di accesso o cancellazione dei dati | la persona la fa da sola da "Il mio bollino", firmando con la UP (UCL-31). Se scrive per e-mail o Telegram, indicarle quella pagina: **mai** eseguire una richiesta senza una firma della UP |
+| Accesso / cancellazione da riga di comando (solo dopo aver verificato la firma) | `sudo -u up-cie-link -H node scripts/data-subject.js export --up 0x…` (in `backend/`); `… erase --up 0x…`, poi lo stesso con `--yes` |
 | Eccezioni, revoche, metadati, emergenza | pagina `https://up-cie-link.chainintegrate.it/admin` con la UP owner |
 
 Emergenza (chiave dell'attestatore o server compromessi):
