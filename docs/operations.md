@@ -233,7 +233,9 @@ Emergenza (chiave dell'attestatore o server compromessi):
 
 ## 6. Passaggio a mainnet (da fare più avanti)
 
-- deploy del contratto in mainnet (`CONFIRM_MAINNET=yes`), verifica, metadati dalla pagina admin;
+- deploy del contratto in mainnet (`CONFIRM_MAINNET=yes`), verifica, metadati dalla pagina admin (valutare la Nick factory `0x4e59…956C` con CREATE2 per avere lo stesso indirizzo su più reti);
+- paternità on-chain: `LSP4Creators` sul contratto e `LSP12IssuedAssets` sulla UP owner (oggi Universal Everything
+  mostra ChainIntegrate come creatore e "Asset Maintainer", probabilmente perché la UP è `owner`);
 - `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
 - WalletConnect per UP Wallet Android (docs/03-frontend.md §5);
 - copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto; processo separato
