@@ -24,7 +24,12 @@ const iface = new Interface([
 
 const cfg = {
   network: "luksoTestnet",
-  deployment: { address: "0x6A525B5662EF905f3DD90F7139DC3a702b1371BA", deployBlock: 8745039, chainId: 4201 },
+  deployment: {
+    address: "0x6A525B5662EF905f3DD90F7139DC3a702b1371BA",
+    deployBlock: 8745039,
+    chainId: 4201,
+    superseded: ["0x056a7e721fbd727862d767CC44C48Bf2a7177892", "0x329DF2F4FE3585757BAFb549E465a4215fb64C2f"],
+  },
   publicOrigin: "https://up-cie-link.example",
   statementOrigin: "https://up-cie-link.example",
   upSignatureWindowSec: 300,
@@ -49,6 +54,7 @@ describe("admin API", () => {
       ownerAddr: OWNER,
       owner: async () => chain.ownerAddr,
       attester: async () => ATTESTER,
+      attesterOf: async (a) => (a === cfg.deployment.superseded[0] ? ATTESTER : "0x0000000000000000000000000000000000000000"),
       getData: async () => "0x",
       getAttestation: async () => ({ status: 1n, primary: true, verifiedAt: 1n, expiresAt: 2n }),
       exceptionOf: async () => 0n,
@@ -148,6 +154,11 @@ describe("admin API", () => {
     assert.equal(s.attester, ATTESTER);
     assert.equal(s.mintingStopped, false);
     assert.equal(s.attesterBalance, "5.0");
+    // UCL-38: superseded contracts with their attester
+    assert.deepEqual(s.superseded, [
+      { address: cfg.deployment.superseded[0], attester: ATTESTER, stopped: false },
+      { address: cfg.deployment.superseded[1], attester: "0x0000000000000000000000000000000000000000", stopped: true },
+    ]);
     assert.equal(s.metadata.upToDate, false);
     assert.equal(s.metadata.expected, metadataValue('{"LSP4Metadata":{"name":"UP CIE Link"}}\n', "https://up-cie-link.example/metadata/badge.json"));
     await close();
@@ -176,6 +187,12 @@ describe("admin API", () => {
     assert.deepEqual([p.name, p.args[0]], ["setAttester", ATTESTER]);
     p = await decode(await tx("setMetadata"));
     assert.deepEqual([p.name, p.args[0]], ["setData", LSP4_METADATA_KEY]);
+    // UCL-38: setAttester(0) on a superseded contract, and only on those
+    const old = await (await tx("stopSuperseded", { address: cfg.deployment.superseded[0].toLowerCase() })).json();
+    assert.equal(old.to, cfg.deployment.superseded[0]);
+    p = iface.parseTransaction({ data: old.data });
+    assert.deepEqual([p.name, p.args[0]], ["setAttester", "0x0000000000000000000000000000000000000000"]);
+    assert.equal((await tx("stopSuperseded", { address: cfg.deployment.address })).status, 400);
     for (const [action, args] of [["revoke", { up: OTHER, reason: "WHATEVER" }], ["approveException", { ticket: "0x12", maxUps: 2 }], ["approveException", { ticket, maxUps: 300 }], ["transferOwnership", {}]]) {
       assert.equal((await tx(action, args)).status, 400, action);
     }

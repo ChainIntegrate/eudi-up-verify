@@ -28,6 +28,7 @@ export function createBadgeReader(provider, address) {
     isVerifiedPrimary: (up) => c.isVerifiedPrimary(up),
     getAttestation: (up) => c.getAttestation(up),
     attester: () => c.attester(),
+    attesterOf: (other) => new Contract(other, BADGE_ABI, provider).attester(), // UCL-38: superseded contracts
     owner: () => c.owner(),
     getData: (key) => c.getData(key),
     balance: (address) => provider.getBalance(address),

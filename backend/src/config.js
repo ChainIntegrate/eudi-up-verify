@@ -28,7 +28,9 @@ export function loadDeployment(network, deploymentsDir) {
   if (!existsSync(file)) throw new Error(`Deployment record not found: ${file}`);
   const d = JSON.parse(readFileSync(file, "utf8"));
   if (d.chainId !== CHAIN_IDS[network]) throw new Error(`Deployment ${file} has chainId ${d.chainId}`);
-  return { address: d.address, deployBlock: d.deployBlock, chainId: d.chainId };
+  // UCL-38: earlier contracts of the same network, whose attester the owner sets to zero from the admin page
+  const superseded = (d.superseded ?? []).map((s) => s.address);
+  return { address: d.address, deployBlock: d.deployBlock, chainId: d.chainId, superseded };
 }
 
 /** @param {Record<string,string|undefined>} env */

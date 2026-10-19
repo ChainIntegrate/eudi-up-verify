@@ -106,3 +106,5 @@ dl.facts dd { margin: 0; overflow-wrap: anywhere; }
 .mt { margin-top: 20px; }
 input.narrow { width: 4.5em; }
 select { padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--field); color: var(--text); font-size: 14px; }
+ul.plain { list-style: none; padding: 0; }
+ul.plain li { margin: 0.4rem 0; }

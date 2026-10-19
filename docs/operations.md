@@ -228,11 +228,22 @@ sudo -u up-cie-link -H pm2 reload up-cie-link
 Emergenza (chiave dell'attestatore o server compromessi):
 
 1. pagina admin → **Ferma i conii** (attestatore a zero: nessun nuovo bollino, il monitor segnala `attester_zero`);
-2. se serve una chiave nuova: `npm run new-key` in `contracts/` sul PC, nuova chiave privata in `backend/.env`,
+2. se il **server** era compromesso: reinstallarlo da zero (o su una macchina nuova) seguendo il §2, con segreti
+   nuovi; non fidarsi di nulla di ciò che c'era;
+3. nuova chiave dell'attestatore: `npm run new-key` in `contracts/` sul PC. **Annotare l'indirizzo fuori dal server**
+   (gestore di password): è il riferimento per il passo 5. Chiave privata in `backend/.env`, poi
    `sudo -u up-cie-link -H pm2 reload up-cie-link` (con l'attestatore a zero il backend parte comunque, in modalità
    "conii fermati");
-3. pagina admin → **Ripristina l'attestatore**: imposta come attestatore la chiave ora configurata sul server;
-4. aggiornare l'indirizzo dell'attestatore in questo file e in `backend/monitor.env`.
+4. pagina admin → **Ripristina l'attestatore**;
+5. **prima di firmare** (audit UCL-33): la pagina è servita dal server, quindi se il server fosse ancora compromesso
+   potrebbe proporre un altro indirizzo. Confrontare con l'indirizzo annotato al passo 3 sia quello scritto nella
+   pagina sia quello nei dati della transazione mostrati dall'estensione UP (`setAttester`: le ultime 40 cifre
+   esadecimali dei dati). Firmare solo se coincidono;
+6. aggiornare l'indirizzo dell'attestatore in questo file e in `backend/monitor.env`.
+
+Dopo ogni nuovo deploy del contratto (audit UCL-38): il vecchio indirizzo va in `superseded` nel file della rete in
+`contracts/deployments/`; la pagina admin lo mostra in "Contratti sostituiti" e con **Ferma i conii** gli mette
+l'attestatore a zero.
 
 ## 5. Cosa custodire fuori dal server
 

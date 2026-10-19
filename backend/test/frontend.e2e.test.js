@@ -77,7 +77,7 @@ function serveFrontend(port, apiBase) {
 }
 
 describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "contracts not built") || (!browserAvailable && "playwright not installed") }, () => {
-  let node, pki, stopOcsp, server, web, dir, site, up, profile, controller, ownerProfile, ownerController, badgeAddress, browser, logs = "";
+  let node, pki, stopOcsp, server, web, dir, site, up, profile, controller, ownerProfile, ownerController, badgeAddress, oldBadgeAddress, browser, logs = "";
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
@@ -99,6 +99,10 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     const badge = await new ContractFactory(b.abi, b.bytecode, deployer).deploy(ownerUp, new Wallet(attesterKey).address);
     await badge.waitForDeployment();
     badgeAddress = await badge.getAddress();
+    // UCL-38: an earlier contract of the same network, still with the live attester
+    const oldBadge = await new ContractFactory(b.abi, b.bytecode, deployer).deploy(ownerUp, new Wallet(attesterKey).address);
+    await oldBadge.waitForDeployment();
+    oldBadgeAddress = await oldBadge.getAddress();
     const deployBlock = await node.provider.getBlockNumber();
     // the selector hard-coded in the frontend matches the contract
     assert.ok(new Interface(b.abi).getFunction("renounce"));
@@ -111,7 +115,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     dir = mkdtempSync(path.join(tmpdir(), "fe2e-"));
     mkdirSync(path.join(dir, "deployments"));
     mkdirSync(path.join(dir, "trust"));
-    writeFileSync(path.join(dir, "deployments", "luksoTestnet.json"), JSON.stringify({ chainId: 4201, address: badgeAddress, deployBlock }));
+    writeFileSync(path.join(dir, "deployments", "luksoTestnet.json"), JSON.stringify({ chainId: 4201, address: badgeAddress, deployBlock, superseded: [{ address: oldBadgeAddress }] }));
     writeFileSync(path.join(dir, "trust", "root.pem"), pki.rootPem);
     writeFileSync(path.join(dir, "trust", "sub.pem"), pki.subPem);
 
@@ -376,12 +380,17 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.locator("#adminStop").waitFor({ timeout: 30_000 });
     assert.notEqual(await badge.attester(), "0x0000000000000000000000000000000000000000");
 
+    // UCL-38: the superseded contract gets its attester set to zero
+    await page.locator(`[data-superseded="${oldBadgeAddress}"]`).click();
+    await page.getByText("attestatore a zero", { exact: true }).waitFor({ timeout: 30_000 });
+    assert.equal(await new Contract(oldBadgeAddress, ["function attester() view returns (address)"], node.provider).attester(), "0x0000000000000000000000000000000000000000");
+
     // every action is in the audit log
     const db = new Database(path.join(dir, "fe2e.db"), { readonly: true });
     const events = db.prepare("SELECT event FROM audit WHERE event LIKE 'admin_%' ORDER BY id").all().map((r) => r.event);
     db.close();
     assert.ok(!/\bnull\b|\bundefined\b/.test(await page.locator("main").innerText()), "no stray null/undefined in the page");
-    assert.deepEqual(events, ["admin_login", "admin_approveException", "admin_revoke", "admin_reinstate", "admin_setMetadata", "admin_stopMinting", "admin_restoreAttester"]);
+    assert.deepEqual(events, ["admin_login", "admin_approveException", "admin_revoke", "admin_reinstate", "admin_setMetadata", "admin_stopMinting", "admin_restoreAttester", "admin_stopSuperseded"]);
     assert.deepEqual(problems, []);
   });
 

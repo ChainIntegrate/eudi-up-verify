@@ -125,8 +125,28 @@ export function viewAdmin(ctx) {
       out,
       h("div", { class: "actions" }, refresh, s.metadata.upToDate ? null : metaBtn),
       h("h2", { class: "mt" }, t("adminEmergency")),
-      h("p", { class: "small dim" }, s.mintingStopped ? t("adminRestoreText") : t("adminStopText")),
+      h("p", { class: "small dim" }, s.mintingStopped ? t("adminRestoreText").replace("{address}", s.configuredAttester ?? "—") : t("adminStopText")),
       h("div", { class: "actions" }, stop),
+      supersededList(s.superseded ?? [], box, out),
+    );
+  }
+
+  // UCL-38: earlier contracts of this network must not keep a live attester
+  function supersededList(list, box, out) {
+    if (!list.length) return null;
+    return h("div", {},
+      h("h2", { class: "mt" }, t("adminSuperseded")),
+      h("p", { class: "small dim" }, t("adminSupersededText")),
+      h("ul", { class: "plain" }, ...list.map((c) => {
+        const stop = h("button", { type: "button", class: "btn danger", "data-superseded": c.address }, t("adminStop"));
+        stop.addEventListener("click", async () => {
+          if (await run("stopSuperseded", { address: c.address }, c.address, out)) loadStatus(box).then(() => box.prepend(out));
+        });
+        return h("li", {}, h("code", {}, c.address), " · ",
+          c.stopped ? h("span", { class: "status ok" }, t("adminSupersededStopped"))
+            : c.attester === null ? h("span", { class: "status warn" }, t("adminSupersededUnknown"))
+              : stop);
+      })),
     );
   }
 

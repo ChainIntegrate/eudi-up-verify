@@ -68,10 +68,10 @@ revisione. Nuovi punti, tutti **aperti** salvo dove indicato:
 |---|---|---|---|
 | UCL-31 | Medium | Richieste di export/cancellazione dei dati non autenticate | risolto: export e cancellazione da "Il mio bollino" con una firma della UP (sfida senza stato, HMAC, 5 minuti, monouso; `/api/subject/*`); informativa e procedura aggiornate; test API ed end-to-end |
 | UCL-32 | Low | Login admin bloccabile riempiendo la cache delle sfide | risolto: sfida senza stato (testo + HMAC con chiave di processo), memorizzate solo le sfide usate per un login riuscito; `owner()` in cache per un minuto alla richiesta della sfida, letto sempre al login; test |
-| UCL-33 | Low | Ripristino dell'attestatore in emergenza passa dal server compromesso | aperto |
+| UCL-33 | Low | Ripristino dell'attestatore in emergenza passa dal server compromesso | risolto: procedura (`docs/operations.md` §4) con reinstallazione pulita, indirizzo annotato fuori dal server e confronto con pagina e dati della transazione prima di firmare; la pagina admin lo ricorda e mostra l'indirizzo |
 | UCL-34 | Low | Scadenza arrotondata per eccesso: il bollino supera la carta fino a un mese | risolto: scadenza = primo giorno del mese in cui scade la carta; carta che scade nel mese corrente rifiutata (`CARD_EXPIRING`); testi aggiornati. I bollini già emessi mantengono la vecchia scadenza |
 | UCL-35 | Low | Riferimento al certificato conservato dopo rinuncia o revoca | risolto: cancellato dall'indicizzatore su `Invalidated`/`Revoked` e dalla pulizia per ogni collegamento non più valido; test; informativa precisata |
 | UCL-36 | Low | Dettagli operativi e dati dell'operatore nel repository pubblico | parziale: IP del server rimosso il 2026-10-15 (resta nella cronologia git) |
 | UCL-37 | Low | `.p7m` reale copiato in `/tmp` leggibile da tutti | risolto: `docs/operations.md` §2.4 usa cartelle private (`700`/`600`) e `shred`; in alternativa la prova si fa sul PC |
-| UCL-38 | Low | Contratti testnet sostituiti con l'attestatore ancora attivo | aperto |
+| UCL-38 | Low | Contratti testnet sostituiti con l'attestatore ancora attivo | parziale: la pagina admin elenca i contratti in `superseded` con il loro attestatore e li ferma (`setAttester(0)`), test end-to-end; **da fare dall'owner**: premere "Ferma i conii" sui due contratti di testnet |
 | UCL-39 … UCL-43 | Info | Avviso spurio dell'indicizzatore, rinforzi minori, cooldown eccezioni, CRLF locale, nginx 1.18 | aperti |

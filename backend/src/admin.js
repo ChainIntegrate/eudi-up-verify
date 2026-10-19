@@ -45,7 +45,7 @@ export function metadataValue(json, url) {
 }
 
 /**
- * @param deps {{db, cfg, upChecker, chain: {owner(), attester(), getData(key), getAttestation(up), exceptionOf(t),
+ * @param deps {{db, cfg, upChecker, chain: {owner(), attester(), attesterOf(address), getData(key), getAttestation(up), exceptionOf(t),
  *   balance(addr)}, minterAddress?: string, healthInfo?: Function, metadataFile?: string, clock?: () => number}}
  */
 export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, healthInfo = () => ({}), metadataFile, clock = Date.now }) {
@@ -146,6 +146,14 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
     const expected = json ? metadataValue(json, metadataUrl()) : null;
     const count = (sql, ...a) => db.prepare(sql).get(...a).n;
     const backupFile = cfg.backupDir ? `${cfg.backupDir}/last-backup.json` : null;
+    const superseded = [];
+    for (const address of cfg.deployment.superseded ?? []) {
+      let attester = null;
+      try {
+        attester = getAddress(await chain.attesterOf(address));
+      } catch { /* unknown */ }
+      superseded.push({ address, attester, stopped: attester === ZERO });
+    }
     return {
       network: cfg.network,
       chainId: cfg.deployment.chainId,
@@ -167,6 +175,7 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
         additional: count("SELECT COUNT(*) n FROM links WHERE status = 'valid' AND expires_at > ? AND is_primary = 0", now),
       },
       lastBackup: backupFile && existsSync(backupFile) ? JSON.parse(readFileSync(backupFile, "utf8")).at : null,
+      superseded,
       metadata: { url: metadataUrl(), onChain: onChainMetadata, expected, upToDate: expected !== null && onChainMetadata === expected },
     };
   }
@@ -242,6 +251,13 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
         data = OWNER_IFACE.encodeFunctionData("setAttester", [minterAddress]);
         summary = `restore the attester ${minterAddress}`;
         break;
+      case "stopSuperseded": {
+        // UCL-38: only the earlier contracts listed in the deployment record
+        const target = (cfg.deployment.superseded ?? []).find((a) => isAddress(args.address ?? "") && getAddress(a) === getAddress(args.address));
+        if (!target) throw new AdminError(400, "INVALID_ARGS");
+        const tx = { to: getAddress(target), data: OWNER_IFACE.encodeFunctionData("setAttester", [ZERO]), value: "0x0" };
+        return { ...tx, summary: `superseded contract ${tx.to}: attester set to zero`, mainnet: cfg.deployment.chainId === 42 };
+      }
       case "setMetadata": {
         const json = readMetadataFile();
         if (!json) throw new AdminError(400, "METADATA_FILE_MISSING");
