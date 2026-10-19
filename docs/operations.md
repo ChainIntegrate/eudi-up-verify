@@ -257,6 +257,8 @@ l'attestatore a zero.
 ## 6. Passaggio a mainnet (da fare più avanti)
 
 - deploy del contratto in mainnet (`CONFIRM_MAINNET=yes`), verifica, metadati dalla pagina admin (valutare la Nick factory `0x4e59…956C` con CREATE2 per avere lo stesso indirizzo su più reti);
+- nel sorgente del contratto il commento di `attest` dice ancora "mese dopo la scadenza": correggerlo prima del deploy
+  (oggi la scadenza è il primo giorno del mese della scadenza, UCL-34);
 - paternità on-chain: `LSP4Creators` sul contratto e `LSP12IssuedAssets` sulla UP owner (oggi Universal Everything
   mostra ChainIntegrate come creatore e "Asset Maintainer", probabilmente perché la UP è `owner`);
 - `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
@@ -264,4 +266,6 @@ l'attestatore a zero.
 - copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto; processo separato
   per HMAC e firma (UCL-08);
 - informativa: completare i punti mancanti (UCL-14); il titolare è già "ChainIntegrate, servizi di Simone Cavalletti";
+- verificare se la policy dei certificati CIE (CP/CPS) consente a un privato di basarsi sul certificato (UCL-13);
+- `ALLOW_RAW_CHANNEL=false` finché l'app Android non è pronta (UCL-40);
 - `NOTIFY_EACH_LINK=false`.
