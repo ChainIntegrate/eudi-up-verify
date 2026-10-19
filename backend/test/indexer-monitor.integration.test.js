@@ -60,24 +60,25 @@ describe("indexer and monitor on a real chain", { skip: !contractsAvailable && "
     const minter = createMinter(node.provider, badgeAddress, attesterKey);
     const expires = Math.floor(Date.now() / 1000) + 365 * 86400;
     const tx1 = await minter.attest(up1, expires, true);
-    applyLink(db, { up: up1, personKey: randomBytes(32), primary: true, expiresAtMs: expires * 1000, certRefEnc: null, txHash: tx1 });
+    applyLink(db, { up: up1, personKey: randomBytes(32), primary: true, expiresAtMs: expires * 1000, certRefEnc: Buffer.from("ref"), txHash: tx1 });
     await minter.attest(up2, expires, true); // minted but never recorded locally
 
     await viaUp(up1, holderCtl, "renounce", []);
     await mine(3);
     const r1 = await runIndexer({ db, provider: node.provider, address: badgeAddress, deployBlock, maxRange: 2 });
     assert.ok(r1.events >= 3);
-    assert.equal(db.prepare("SELECT status FROM links WHERE up = ?").get(up1).status, "invalidated");
+    assert.deepEqual({ ...db.prepare("SELECT status, cert_ref_enc FROM links WHERE up = ?").get(up1) }, { status: "invalidated", cert_ref_enc: null }); // UCL-35
     const kinds = db.prepare("SELECT kind, severity FROM notifications ORDER BY id").all();
     assert.deepEqual(kinds.map((k) => k.kind).sort(), ["attested_unrecorded", "renounced"]);
     assert.equal(kinds.find((k) => k.kind === "attested_unrecorded").severity, "problem");
 
-    // owner revokes up1, then reinstates it
+    // owner revokes up1, then reinstates it (UCL-35: the certificate reference is dropped on revocation too)
+    db.prepare("UPDATE links SET cert_ref_enc = ? WHERE up = ?").run(Buffer.from("ref"), up1);
     const ownerData = (fn, args) => viaUp(ownerUp, ownerCtl, fn, args);
     await ownerData("revoke", [up1, "0x" + Buffer.from("ABUSE").toString("hex").padEnd(64, "0")]);
     await mine(3);
     await runIndexer({ db, provider: node.provider, address: badgeAddress, deployBlock });
-    assert.equal(db.prepare("SELECT status FROM links WHERE up = ?").get(up1).status, "revoked");
+    assert.deepEqual({ ...db.prepare("SELECT status, cert_ref_enc FROM links WHERE up = ?").get(up1) }, { status: "revoked", cert_ref_enc: null });
     await ownerData("reinstate", [up1]);
     await mine(3);
     await runIndexer({ db, provider: node.provider, address: badgeAddress, deployBlock });

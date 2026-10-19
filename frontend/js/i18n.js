@@ -288,7 +288,7 @@ const T = {
       <h2>4 · Cosa conserviamo</h2>
       <ul>
         <li><strong>Collegamento</strong>: indirizzo della UP, impronta del codice fiscale, UP principale sì/no, date di verifica e scadenza, stato, transazione. Fino a 12 mesi dopo la fine della validità del bollino (scadenza, rinuncia, invalidazione o revoca), poi si cancella; l'impronta del codice fiscale si cancella quando non resta alcun collegamento.</li>
-        <li><strong>Riferimento al certificato</strong> (numero di serie e autorità emittente, cifrati): serve solo a ricontrollare ogni giorno se il certificato è stato revocato. Si cancella appena il bollino scade o viene invalidato.</li>
+        <li><strong>Riferimento al certificato</strong> (numero di serie e autorità emittente, cifrati): serve solo a ricontrollare ogni giorno se il certificato è stato revocato. Si cancella appena il bollino scade, viene invalidato o revocato, o vi rinunci.</li>
         <li><strong>Enunciati</strong>: indirizzo della UP, modalità, date, esito. Si cancellano 7 giorni dopo la scadenza.</li>
         <li><strong>Richieste di eccezione</strong>: codice, impronta del codice fiscale, stato. Quelle non approvate si chiudono dopo 30 giorni.</li>
         <li><strong>Registro delle operazioni</strong> (data, tipo di operazione, indirizzo della UP, transazione): 12 mesi.</li>
@@ -597,7 +597,7 @@ const T = {
       <h2>4 · What we keep</h2>
       <ul>
         <li><strong>Link</strong>: UP address, tax code fingerprint, primary yes/no, verification and expiry dates, status, transaction. Until 12 months after the badge stops being valid (expiry, renunciation, invalidation or revocation), then deleted; the tax code fingerprint is deleted when no link is left.</li>
-        <li><strong>Certificate reference</strong> (serial number and issuing authority, encrypted): used only for the daily check of the certificate's revocation. Deleted as soon as the badge expires or is invalidated.</li>
+        <li><strong>Certificate reference</strong> (serial number and issuing authority, encrypted): used only for the daily check of the certificate's revocation. Deleted as soon as the badge expires, is invalidated or revoked, or you renounce it.</li>
         <li><strong>Statements</strong>: UP address, mode, dates, outcome. Deleted 7 days after they expire.</li>
         <li><strong>Exception requests</strong>: code, tax code fingerprint, status. Unapproved ones are closed after 30 days.</li>
         <li><strong>Operations log</strong> (date, type of operation, UP address, transaction): 12 months.</li>

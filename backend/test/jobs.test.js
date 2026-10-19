@@ -153,7 +153,7 @@ describe("UCL-10: retention and data-subject requests", () => {
     linked(db, UP2, bob, { status: "invalidated", updated_at: now - YEAR - DAY }); // ended over a year ago
     db.prepare("INSERT INTO audit (ts, event, up) VALUES (?, 'old', ?)").run(now - YEAR - DAY, UP);
     const r = runCleanup(db, now);
-    assert.equal(r.certRefs, 1);
+    assert.equal(r.certRefs, 2); // the expired link and the invalidated one (UCL-35)
     assert.equal(r.links, 1);
     assert.equal(r.persons, 1);
     assert.equal(r.auditRows, 1);
@@ -161,6 +161,15 @@ describe("UCL-10: retention and data-subject requests", () => {
     assert.equal(db.prepare("SELECT COUNT(*) n FROM links WHERE up = ?").get(UP2).n, 0);
     assert.equal(db.prepare("SELECT COUNT(*) n FROM persons WHERE person_key = ?").get(bob).n, 0);
     assert.equal(db.prepare("SELECT COUNT(*) n FROM persons WHERE person_key = ?").get(alice).n, 1);
+  });
+
+  it("UCL-35: deletes the certificate reference of any link that is no longer valid", () => {
+    const db = openDb(":memory:");
+    linked(db, UP, randomBytes(32), { status: "revoked", updated_at: now - DAY });
+    linked(db, UP2, randomBytes(32)); // valid: kept for the revocation recheck
+    assert.equal(runCleanup(db, now).certRefs, 1);
+    assert.equal(db.prepare("SELECT cert_ref_enc FROM links WHERE up = ?").get(UP).cert_ref_enc, null);
+    assert.notEqual(db.prepare("SELECT cert_ref_enc FROM links WHERE up = ?").get(UP2).cert_ref_enc, null);
   });
 
   it("export shows everything kept; erase removes it and queues the on-chain invalidation", async () => {

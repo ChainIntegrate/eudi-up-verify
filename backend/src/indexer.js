@@ -88,7 +88,7 @@ function apply(db, ev, log, nowMs) {
     case "Invalidated": {
       const reason = reasonText(ev.args.reason);
       if (link && fresh) {
-        db.prepare("UPDATE links SET status = 'invalidated', is_primary = 0, tx_hash = ?, updated_at = ? WHERE up = ?").run(tx, nowMs, up);
+        db.prepare("UPDATE links SET status = 'invalidated', is_primary = 0, cert_ref_enc = NULL, tx_hash = ?, updated_at = ? WHERE up = ?").run(tx, nowMs, up); // UCL-35
         mark();
       }
       if (reason === "SELF") {
@@ -104,8 +104,8 @@ function apply(db, ev, log, nowMs) {
     }
     case "Revoked": {
       if (link && fresh) {
-        db.prepare("UPDATE links SET status = 'revoked', is_primary = 0, tx_hash = ?, updated_at = ? WHERE up = ?").run(tx, nowMs, up);
-        mark();
+        db.prepare("UPDATE links SET status = 'revoked', is_primary = 0, cert_ref_enc = NULL, tx_hash = ?, updated_at = ? WHERE up = ?").run(tx, nowMs, up);
+        mark(); // UCL-35: the certificate reference goes with the badge
       }
       audit(db, "revoked", { up, txHash: tx, detail: reasonText(ev.args.reason) }, nowMs);
       notify(db, {

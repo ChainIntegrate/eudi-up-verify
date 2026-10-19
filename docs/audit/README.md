@@ -70,8 +70,8 @@ revisione. Nuovi punti, tutti **aperti** salvo dove indicato:
 | UCL-32 | Low | Login admin bloccabile riempiendo la cache delle sfide | aperto |
 | UCL-33 | Low | Ripristino dell'attestatore in emergenza passa dal server compromesso | aperto |
 | UCL-34 | Low | Scadenza arrotondata per eccesso: il bollino supera la carta fino a un mese | risolto: scadenza = primo giorno del mese in cui scade la carta; carta che scade nel mese corrente rifiutata (`CARD_EXPIRING`); testi aggiornati. I bollini già emessi mantengono la vecchia scadenza |
-| UCL-35 | Low | Riferimento al certificato conservato dopo rinuncia o revoca | aperto |
+| UCL-35 | Low | Riferimento al certificato conservato dopo rinuncia o revoca | risolto: cancellato dall'indicizzatore su `Invalidated`/`Revoked` e dalla pulizia per ogni collegamento non più valido; test; informativa precisata |
 | UCL-36 | Low | Dettagli operativi e dati dell'operatore nel repository pubblico | parziale: IP del server rimosso il 2026-10-15 (resta nella cronologia git) |
-| UCL-37 | Low | `.p7m` reale copiato in `/tmp` leggibile da tutti | aperto |
+| UCL-37 | Low | `.p7m` reale copiato in `/tmp` leggibile da tutti | risolto: `docs/operations.md` §2.4 usa cartelle private (`700`/`600`) e `shred`; in alternativa la prova si fa sul PC |
 | UCL-38 | Low | Contratti testnet sostituiti con l'attestatore ancora attivo | aperto |
 | UCL-39 … UCL-43 | Info | Avviso spurio dell'indicizzatore, rinforzi minori, cooldown eccezioni, CRLF locale, nginx 1.18 | aperti |

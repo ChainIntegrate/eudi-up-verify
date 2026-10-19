@@ -102,17 +102,24 @@ Il backend non parte se `.env` è leggibile da altri utenti.
 
 ### 2.4 Certificati CIE e prova con l'OCSP reale (audit UCL-06)
 
-Dal PC, copiare il `.p7m` firmato con CieSign (contiene dati personali: si cancella subito dopo):
+Il `.p7m` firmato con CieSign contiene nome, codice fiscale e certificato: non deve mai stare in una cartella
+leggibile da altri utenti del server, come `/tmp` (audit UCL-37), e si cancella subito dopo la prova.
+
+Dal PC, in una cartella privata della propria home sul server:
 
 ```bash
-scp <file>.p7m <utente>@<server>:/tmp/cie.p7m
+ssh <utente>@<server> 'install -d -m 700 ~/p7m'
+scp <file>.p7m <utente>@<server>:p7m/cie.p7m
 ```
 
-Sul server:
+Sul server, spostarlo nella home dell'utente del servizio (cartella `700`, file `600`):
 
 ```bash
+sudo install -d -m 700 -o up-cie-link -g up-cie-link /home/up-cie-link/p7m
+sudo install -m 600 -o up-cie-link -g up-cie-link ~/p7m/cie.p7m /home/up-cie-link/p7m/cie.p7m
+shred -u ~/p7m/cie.p7m
 cd /var/www/up-cie-link/backend
-sudo -u up-cie-link -H node scripts/trust-extract.js /tmp/cie.p7m trust
+sudo -u up-cie-link -H node scripts/trust-extract.js /home/up-cie-link/p7m/cie.p7m trust
 ```
 
 Lo script scrive in `trust/` solo i certificati delle CA (mai quello del titolare) e stampa le impronte SHA-256.
@@ -120,9 +127,12 @@ Confrontare l'impronta della root con quella verificata dallo spike sulla Truste
 `CIE_ROOT_SHA256` nel `.env`. Quindi:
 
 ```bash
-sudo -u up-cie-link -H node scripts/check-p7m.js /tmp/cie.p7m
-shred -u /tmp/cie.p7m
+sudo -u up-cie-link -H node scripts/check-p7m.js /home/up-cie-link/p7m/cie.p7m
+sudo -u up-cie-link -H shred -u /home/up-cie-link/p7m/cie.p7m
 ```
+
+In alternativa, `check-p7m.js` si può eseguire sul PC (con `trust/` e `CIE_ROOT_SHA256` in `backend/.env`): il
+`.p7m` non passa dal server.
 
 `CHECK OK` = firma, certificato, catena e risposta OCSP reale del Ministero accettate dal backend. Se esce
 `CHECK FAILED`, mandare il codice (non contiene dati personali) prima di andare avanti.

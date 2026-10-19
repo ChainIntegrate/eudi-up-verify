@@ -97,7 +97,7 @@ export function runCleanup(db, now = Date.now()) {
     const exceptions = db
       .prepare("UPDATE exception_requests SET status = 'abandoned' WHERE status = 'pending' AND created_at < ?")
       .run(now - 30 * DAY).changes;
-    const certRefs = db.prepare("UPDATE links SET cert_ref_enc = NULL WHERE cert_ref_enc IS NOT NULL AND expires_at < ?").run(now).changes;
+    const certRefs = db.prepare("UPDATE links SET cert_ref_enc = NULL WHERE cert_ref_enc IS NOT NULL AND (expires_at < ? OR status IN ('invalidated','revoked'))").run(now).changes; // UCL-35
     const links = db
       .prepare(
         `DELETE FROM links WHERE up NOT IN (SELECT up FROM pending_invalidations) AND (
