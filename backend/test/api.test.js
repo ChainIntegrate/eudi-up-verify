@@ -132,7 +132,8 @@ describe("API: statements and UP signature", () => {
     const bad = await fetch(`${base}/api/config`, { headers: { Origin: "https://evil.example" } });
     assert.equal(bad.headers.get("access-control-allow-origin"), null);
     const c = await good.json();
-    assert.deepEqual(c.cieChannels, ["cades", "raw"]);
+    assert.deepEqual(c.cieChannels, ["cades"]); // UCL-40: raw (Android) channel off by default
+    assert.equal((await post("/api/statements/x/cie-raw", { certificate: "AA==", signature: "AA==" })).status, 404);
     assert.equal(c.contract, cfg.deployment.address);
     await close();
   });

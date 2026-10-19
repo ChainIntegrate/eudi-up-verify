@@ -11,6 +11,7 @@ import { Contract, ContractFactory, Interface, NonceManager, Wallet, parseEther 
 import { createMinter } from "../src/chain.js";
 import { openDb } from "../src/db.js";
 import { runIndexer } from "../src/indexer.js";
+import { startMint } from "../src/mints.js";
 import { applyLink } from "../src/linking.js";
 import { runMonitor } from "../src/monitor.js";
 import { artifact, contractsAvailable, startNode } from "./helpers/hardhat-node.js";
@@ -18,7 +19,7 @@ import { artifact, contractsAvailable, startNode } from "./helpers/hardhat-node.
 const HOUR = 3_600_000;
 
 describe("indexer and monitor on a real chain", { skip: !contractsAvailable && "contracts not built" }, () => {
-  let node, deployer, attesterKey, badgeAddress, deployBlock, ownerUp, ownerCtl, holderCtl, up1, up2, upArt, badgeArt, dir;
+  let node, deployer, attesterKey, badgeAddress, deployBlock, ownerUp, ownerCtl, holderCtl, up1, up2, up3, upArt, badgeArt, dir;
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
@@ -36,6 +37,7 @@ describe("indexer and monitor on a real chain", { skip: !contractsAvailable && "
     ownerUp = await deployUp(ownerCtl);
     up1 = await deployUp(holderCtl);
     up2 = await deployUp(holderCtl);
+    up3 = await deployUp(holderCtl);
     const badge = await new ContractFactory(badgeArt.abi, badgeArt.bytecode, deployer).deploy(ownerUp, new Wallet(attesterKey).address);
     await badge.waitForDeployment();
     badgeAddress = await badge.getAddress();
@@ -62,6 +64,9 @@ describe("indexer and monitor on a real chain", { skip: !contractsAvailable && "
     const tx1 = await minter.attest(up1, expires, true);
     applyLink(db, { up: up1, personKey: randomBytes(32), primary: true, expiresAtMs: expires * 1000, certRefEnc: Buffer.from("ref"), txHash: tx1 });
     await minter.attest(up2, expires, true); // minted but never recorded locally
+    // UCL-39: minted after a timeout, with the mint still open: reconcileMints() closes it, no alert
+    startMint(db, { statementId: "s3", up: up3, personKey: randomBytes(32), primary: true, expiresAt: expires * 1000 }, Date.now());
+    await minter.attest(up3, expires, true);
 
     await viaUp(up1, holderCtl, "renounce", []);
     await mine(3);

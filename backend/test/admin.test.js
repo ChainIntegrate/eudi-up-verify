@@ -202,11 +202,11 @@ describe("admin API", () => {
   it("A2/A5: rejecting an exception and logging an action write the audit and queue an e-mail", async () => {
     const { cookie } = await login();
     db.prepare("INSERT INTO persons (person_key, created_at) VALUES (?, ?)").run(Buffer.alloc(32, 1), now);
-    db.prepare("INSERT INTO exception_requests VALUES ('0xt', ?, 'pending', ?)").run(Buffer.alloc(32, 1), now);
+    db.prepare("INSERT INTO exception_requests (ticket, person_key, status, created_at) VALUES ('0xt', ?, 'pending', ?)").run(Buffer.alloc(32, 1), now);
     const list = await (await fetch(`${base}/exceptions`, { headers: { Cookie: cookie } })).json();
     assert.equal(list[0].ticket, "0xt");
     assert.equal((await post("/exceptions/0xt/reject", {}, { Cookie: cookie })).status, 200);
-    assert.equal(db.prepare("SELECT status FROM exception_requests").get().status, "rejected");
+    assert.deepEqual({ ...db.prepare("SELECT status, rejected_at FROM exception_requests").get() }, { status: "rejected", rejected_at: now }); // UCL-41
     const hash = `0x${"cd".repeat(32)}`;
     assert.equal((await post("/log", { action: "stopMinting", txHash: hash }, { Cookie: cookie })).status, 200);
     const events = db.prepare("SELECT event FROM audit ORDER BY id").all().map((r) => r.event);

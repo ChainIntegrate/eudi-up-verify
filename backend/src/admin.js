@@ -194,7 +194,7 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
   }
 
   function rejectException(ticket, by) {
-    const changed = db.prepare("UPDATE exception_requests SET status = 'rejected' WHERE ticket = ? AND status = 'pending'").run(ticket).changes;
+    const changed = db.prepare("UPDATE exception_requests SET status = 'rejected', rejected_at = ? WHERE ticket = ? AND status = 'pending'").run(clock(), ticket).changes;
     if (!changed) throw new AdminError(404, "NOT_FOUND");
     logAction(by, "exception_rejected", { detail: ticket });
   }

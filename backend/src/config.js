@@ -50,6 +50,7 @@ export function loadConfig(env = process.env) {
     upSignatureWindowSec: int("UP_SIGNATURE_WINDOW_SEC", env, 300), // B1: 5 minutes
     statementTtlSec: int("STATEMENT_TTL_SEC", env, 900), // B1: 15 minutes for the CIE signature
     allowCadesUpload: env.ALLOW_CADES_UPLOAD === "true", // B7
+    allowRawChannel: env.ALLOW_RAW_CHANNEL === "true", // UCL-40: Android app channel, off until the app ships
     indexerMaxRange: int("INDEXER_MAX_RANGE", env, 2000),
     notifyEachLink: env.NOTIFY_EACH_LINK === "true", // one email per successful link: on during tests, then off
     backupDir: env.BACKUP_DIR || null, // shown on the admin page

@@ -88,6 +88,7 @@ PORT=3015
 PUBLIC_ORIGIN=https://up-cie-link.chainintegrate.it
 DB_PATH=/var/lib/up-cie-link/up-cie-link.db
 ALLOW_CADES_UPLOAD=true
+ALLOW_RAW_CHANNEL=false
 NOTIFY_EACH_LINK=true
 ATTESTER_PRIVATE_KEY=<chiave privata di 0x8F42…723a>
 UNIQ_PEPPER=<primo openssl rand>
@@ -223,6 +224,7 @@ sudo -u up-cie-link -H pm2 reload up-cie-link
 | Ripristino (sul PC o su un altro server) | `npm run restore -- --file <backup.db.gz.age> --identity <chiave age privata> --out restored.db` |
 | Richiesta di accesso o cancellazione dei dati | la persona la fa da sola da "Il mio bollino", firmando con la UP (UCL-31). Se scrive per e-mail o Telegram, indicarle quella pagina: **mai** eseguire una richiesta senza una firma della UP |
 | Accesso / cancellazione da riga di comando (solo dopo aver verificato la firma) | `sudo -u up-cie-link -H node scripts/data-subject.js export --up 0x…` (in `backend/`); `… erase --up 0x…`, poi lo stesso con `--yes` |
+| `security.txt` (`frontend/.well-known/`) | rinnovare il campo `Expires` prima del 2027-10-19 |
 | Eccezioni, revoche, metadati, emergenza | pagina `https://up-cie-link.chainintegrate.it/admin` con la UP owner |
 
 Emergenza (chiave dell'attestatore o server compromessi):

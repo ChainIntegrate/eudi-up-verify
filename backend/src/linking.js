@@ -65,7 +65,7 @@ export async function decide(db, badge, { up, mode, personKey }, nowMs = Date.no
     .get(personKey);
   // rejected by the owner from the admin page: no new ticket for 30 days
   if (request?.status === "rejected") {
-    if (nowMs - request.created_at < 30 * 86_400_000) throw new LinkError("EXCEPTION_REJECTED");
+    if (nowMs - (request.rejected_at ?? request.created_at) < 30 * 86_400_000) throw new LinkError("EXCEPTION_REJECTED"); // UCL-41
   }
   if (!request || request.status === "rejected") {
     const ticket = newTicket();

@@ -26,6 +26,7 @@ const cfg = {
   upSignatureWindowSec: 300,
   statementTtlSec: 900,
   allowCadesUpload: true,
+  allowRawChannel: true,
 };
 
 const upChecker = {
@@ -223,7 +224,10 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     const first = await link(UP2, "additional");
     db.prepare("UPDATE exception_requests SET status = 'rejected' WHERE ticket = ?").run(first.exceptionTicket);
     assert.equal((await link(UP2, "additional")).errorCode, "EXCEPTION_REJECTED");
-    db.prepare("UPDATE exception_requests SET created_at = created_at - ?").run(31 * 86_400_000);
+    // UCL-41: counted from the rejection: a request made 40 days ago and rejected 10 days ago still blocks
+    db.prepare("UPDATE exception_requests SET created_at = created_at - ?, rejected_at = ?").run(40 * 86_400_000, Date.now() - 10 * 86_400_000);
+    assert.equal((await link(UP2, "additional")).errorCode, "EXCEPTION_REJECTED");
+    db.prepare("UPDATE exception_requests SET rejected_at = rejected_at - ?").run(21 * 86_400_000);
     assert.equal((await link(UP2, "additional")).errorCode, "EXCEPTION_REQUIRED"); // a new ticket after 30 days
   });
 

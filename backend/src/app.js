@@ -113,7 +113,7 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, 
       statementVersion: STATEMENT_VERSION,
       upSignatureWindowSec: cfg.upSignatureWindowSec,
       statementTtlSec: cfg.statementTtlSec,
-      cieChannels: cfg.allowCadesUpload ? ["cades", "raw"] : ["raw"],
+      cieChannels: [...(cfg.allowCadesUpload ? ["cades"] : []), ...(cfg.allowRawChannel ? ["raw"] : [])],
     });
   });
 
@@ -206,6 +206,7 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, 
   app.post(
     "/api/statements/:id/cie-raw",
     cieLimiter,
+    (req, _res, next) => (cfg.allowRawChannel ? next() : next(new HttpError(404, "CHANNEL_DISABLED"))),
     submitCie("raw", (req) => {
       const { certificate, signature } = req.body ?? {};
       const b64 = (v) => typeof v === "string" && /^[A-Za-z0-9+/=\s]+$/.test(v);

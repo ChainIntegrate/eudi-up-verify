@@ -102,6 +102,8 @@ const MIGRATIONS = [
   );
   ALTER TABLE persons ADD COLUMN last_migration_at INTEGER;
   `,
+  // UCL-41: the 30-day cool-down after a rejection counts from the rejection, not from the request
+  `ALTER TABLE exception_requests ADD COLUMN rejected_at INTEGER;`,
 ];
 
 export const kvGet = (db, key, fallback = null) => {

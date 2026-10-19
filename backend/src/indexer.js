@@ -64,6 +64,8 @@ function apply(db, ev, log, nowMs) {
   switch (ev.name) {
     case "Attested": {
       if (!link) {
+        // UCL-39: a mint still open (e.g. after TX_TIMEOUT) is closed by reconcileMints(), not an anomaly
+        if (db.prepare("SELECT 1 FROM mints WHERE up = ?").get(up)) return;
         // Minted by our attester but not recorded (e.g. restart during minting): the person is unknown here.
         audit(db, "attested_unrecorded", { up, txHash: tx }, nowMs);
         notify(db, {

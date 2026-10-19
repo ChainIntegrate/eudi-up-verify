@@ -128,7 +128,7 @@ describe("revocation recheck and cleanup", () => {
     db.prepare("INSERT INTO statements (id, up, mode, nonce, text_sha256, issued_at, expires_at, status) VALUES ('b', ?, 'link', 'n2', 'h', ?, ?, 'pending_up')")
       .run(UP, now, now + DAY);
     db.prepare("INSERT INTO persons (person_key, created_at) VALUES (?, ?)").run(Buffer.alloc(32, 1), now);
-    db.prepare("INSERT INTO exception_requests VALUES ('0xt', ?, 'pending', ?)").run(Buffer.alloc(32, 1), now - 40 * DAY);
+    db.prepare("INSERT INTO exception_requests (ticket, person_key, status, created_at) VALUES ('0xt', ?, 'pending', ?)").run(Buffer.alloc(32, 1), now - 40 * DAY);
     assert.deepEqual(runCleanup(db, now), { statements: 1, exceptions: 1, notifications: 0, certRefs: 0, links: 0, orphanRequests: 0, persons: 0, auditRows: 0 });
     assert.equal(db.prepare("SELECT status FROM exception_requests").get().status, "abandoned");
   });
@@ -178,7 +178,7 @@ describe("UCL-10: retention and data-subject requests", () => {
     const person = randomBytes(32);
     linked(db, UP, person);
     applyLink(db, { up: UP2, personKey: person, primary: false, expiresAtMs: now + YEAR, certRefEnc: null, txHash: "0x02" }, now);
-    db.prepare("INSERT INTO exception_requests VALUES ('0xt', ?, 'approved', ?)").run(person, now);
+    db.prepare("INSERT INTO exception_requests (ticket, person_key, status, created_at) VALUES ('0xt', ?, 'approved', ?)").run(person, now);
     db.prepare("INSERT INTO audit (ts, event, up) VALUES (?, 'attested', ?)").run(now, UP);
     notify(db, { kind: "k", severity: "event", subject: `badge for ${UP}`, body: "x" }, now);
 
@@ -222,7 +222,7 @@ describe("backup and restore", () => {
     writeFileSync(keyFile, `# test key\n${identity}\n`);
     const out = path.join(dir, "restored.db");
     const r = await restore({ file: path.join(backupDir, s.file), identity: keyFile, out });
-    assert.equal(r.schemaVersion, 5);
+    assert.equal(r.schemaVersion, 6);
     const restored = new Database(out, { readonly: true });
     assert.equal(restored.prepare("SELECT COUNT(*) n FROM persons").get().n, 1);
     restored.close();

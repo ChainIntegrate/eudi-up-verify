@@ -339,7 +339,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     const ticket = `0x${"5a".repeat(32)}`;
     const sql = new Database(path.join(dir, "fe2e.db"));
     sql.prepare("INSERT OR IGNORE INTO persons (person_key, created_at) VALUES (?, ?)").run(Buffer.alloc(32, 9), Date.now());
-    sql.prepare("INSERT INTO exception_requests VALUES (?, ?, 'pending', ?)").run(ticket, Buffer.alloc(32, 9), Date.now());
+    sql.prepare("INSERT INTO exception_requests (ticket, person_key, status, created_at) VALUES (?, ?, 'pending', ?)").run(ticket, Buffer.alloc(32, 9), Date.now());
     sql.close();
 
     await page.goto(site + "/admin");
