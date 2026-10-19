@@ -14,11 +14,11 @@ servizio. I file in `deploy/` usano già questi valori.
 | Utente di sistema | **`up-cie-link`** (dedicato, senza login; home `/home/up-cie-link`) |
 | Database | `/var/lib/up-cie-link/up-cie-link.db` (cartella 700) |
 | Backup | `/var/backups/up-cie-link` (cartella 700), cifrati con age, timer alle 03:15 |
-| Node / PM2 | `/usr/bin/node` v22.23.2, `/usr/bin/pm2` 6.0.14 (verificati il 2026-10-15) |
+| Node / PM2 | `/usr/bin/node` (Node 22) e `/usr/bin/pm2` di sistema; versioni esatte nel gestore di password |
 | Processo backend | PM2 dell'utente `up-cie-link` (`pm2-up-cie-link.service`), app `up-cie-link` |
 | Monitor | timer systemd `up-cie-link-monitor.timer` (ogni ora), configurazione `backend/monitor.env` |
 | nginx | `/etc/nginx/sites-available/up-cie-link`, log `/var/log/nginx/up-cie-link.*.log` |
-| HTTP/2 | **non attivato** (decisione del 2026-10-15): con nginx 1.18 l'opzione `http2` su `listen 443` vale per tutti i siti del server; si rivaluta con nginx ≥ 1.25.1 (`http2 on;` per singolo sito) |
+| HTTP/2 | **non attivato** (decisione del 2026-10-15): con la versione di nginx del server l'opzione `http2` su `listen 443` vale per tutti i siti; si rivaluta con nginx ≥ 1.25.1 (`http2 on;` per singolo sito) |
 | Rotazione log nginx | giornaliera, 14 file (`/etc/logrotate.d/nginx`, verificato il 2026-10-15) — coerente con l'informativa |
 | Rete | LUKSO testnet (4201), RPC pubblico `https://rpc.testnet.lukso.network` |
 | Contratto | `0x6A525B5662EF905f3DD90F7139DC3a702b1371BA`, blocco 8745039 (`contracts/deployments/luksoTestnet.json`) |
@@ -27,7 +27,7 @@ servizio. I file in `deploy/` usano già questi valori.
 | Root CIE fissata (`CIE_ROOT_SHA256`) | `40f425927e8a1e6a297a15c2a9d79e2221bf4fe25b2f21e3bfad53a1ba58b0d7` — "National root CA for the Italian Electronic Identity Card" (Ministero dell'Interno), valida fino al 2044-05-16; presente nella Trusted List AgID (controllo del 2026-10-15) |
 | Sub CA | SUBCA003, SHA-256 `8f3cce1555f96594d294f00fec381fda9d8bac7271fcbdc8bb8f7766b0e27eee`, valida fino al 2039-05-13 (`backend/trust/` sul server) |
 | Installazione | 2026-10-15: backend online (PM2 `pm2-up-cie-link.service` abilitato), timer attivi, primo backup ok, mail ok (`smtps.aruba.it`), HTTPS con certbot (scadenza 2027-01-13, rinnovo automatico) |
-| Primo collegamento reale | 2026-10-15: UP `0xC014c2cAd97F3D5d5fdBD6E09DA1e856E0659927` + CIE reale via CieSign → bollino principale valido, scadenza 2034-03-01 (primo giorno del mese dopo la scadenza della carta) |
+| Primo collegamento reale | 2026-10-15: riuscito (UP + CIE reale via CieSign → bollino principale valido) |
 | Metadati del bollino | serviti dal nostro dominio (`/metadata/badge.json`, `/metadata/badge-icon.png`), **niente IPFS** (decisione del 2026-10-15: un solo file, sempre uguale; integrità garantita dagli hash on-chain). Non modificarli senza "Aggiorna i metadati" dalla pagina admin; mantenere il dominio finché esistono bollini. Ultimo aggiornamento on-chain: 2026-10-15 (testo "No name, tax code or card data on-chain") |
 | Prova OCSP reale | `check-p7m` con una CIE reale: **CHECK OK** il 2026-10-15 (audit UCL-06) |
 
