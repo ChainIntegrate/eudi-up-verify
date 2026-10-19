@@ -109,6 +109,24 @@ describe("admin API", () => {
     await close();
   });
 
+  it("UCL-32: challenges keep no server state, so flooding them does not block the owner; owner() is cached", async () => {
+    let reads = 0;
+    const counting = { ...chain, owner: async () => (reads++, OWNER) };
+    const admin = createAdmin({ db, cfg, upChecker, chain: counting, clock: () => now });
+    for (let i = 0; i < 2000; i++) await admin.createChallenge(OWNER);
+    assert.equal(reads, 1);
+    const c = await admin.createChallenge(OWNER);
+    const s = await admin.login(c.id, await controller.signMessage(c.text));
+    assert.equal(s.up, OWNER);
+    assert.equal(reads, 2); // the login reads the owner fresh
+    // a tampered challenge (another UP, a later expiry) is refused
+    const forged = c.text.replace(/Expires-At: .+/, "Expires-At: 2099-01-01T00:00:00Z");
+    const forgedId = `${Buffer.from(forged).toString("base64url")}.${c.id.split(".")[1]}`;
+    await assert.rejects(admin.login(forgedId, await controller.signMessage(forged)), { code: "CHALLENGE_EXPIRED" });
+    await assert.rejects(admin.login("garbage", "0x"), { code: "CHALLENGE_EXPIRED" });
+    await close();
+  });
+
   it("A1: an owner change on-chain blocks the login of the old owner", async () => {
     const c = await (await post("/challenge", { up: OWNER })).json();
     chain.ownerAddr = OTHER;

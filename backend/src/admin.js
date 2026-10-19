@@ -1,9 +1,11 @@
 // Admin API (docs/03-frontend.md §6, decisions A1-A5 of 2026-10-15).
 // A1: only the contract owner (a UP, read on-chain) can log in, by signing a one-time challenge (ERC-1271, 5 minutes);
+//     UCL-32: the challenge is stateless (text + HMAC with a per-process key), so callers cannot fill server memory;
+//     only challenges used for a successful login are remembered, until they expire.
 //     the session is a random token in an HttpOnly, SameSite=Strict cookie, kept in memory for 30 minutes.
 // A3: the backend never holds owner keys: it only prepares calldata, which the owner UP sends from the browser.
 // A5: every admin action is written to the audit log and emailed.
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import express from "express";
 import { Interface, concat, encodeBytes32String, formatEther, getAddress, isAddress, keccak256, toUtf8Bytes } from "ethers";
@@ -47,16 +49,23 @@ export function metadataValue(json, url) {
  *   balance(addr)}, minterAddress?: string, healthInfo?: Function, metadataFile?: string, clock?: () => number}}
  */
 export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, healthInfo = () => ({}), metadataFile, clock = Date.now }) {
-  const challenges = new Map(); // id -> {up, text, expires}
+  const challengeKey = randomBytes(32);
+  const usedChallenges = new Map(); // tag -> expires
   const sessions = new Map(); // sha256(token) -> {up, expires}
   const contract = cfg.deployment.address;
   const prune = (now) => {
-    for (const [k, v] of challenges) if (v.expires < now) challenges.delete(k);
+    for (const [k, v] of usedChallenges) if (v < now) usedChallenges.delete(k);
     for (const [k, v] of sessions) if (v.expires < now) sessions.delete(k);
   };
 
-  const requireOwner = async (up) => {
-    const owner = getAddress(await chain.owner());
+  // UCL-32: owner() cached for a minute when handing out challenges; the login always reads it fresh
+  let ownerCache = { at: -Infinity, value: null };
+  const cachedOwner = async () => {
+    if (clock() - ownerCache.at > 60_000) ownerCache = { at: clock(), value: await chain.owner() };
+    return ownerCache.value;
+  };
+  const requireOwner = async (up, read = chain.owner) => {
+    const owner = getAddress(await read());
     if (getAddress(up) !== owner) throw new AdminError(403, "NOT_OWNER");
     return owner;
   };
@@ -75,25 +84,33 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
     ].join("\n");
   }
 
+  const tagOf = (text) => createHmac("sha256", challengeKey).update(text).digest();
+
   async function createChallenge(upInput) {
     if (typeof upInput !== "string" || !isAddress(upInput)) throw new AdminError(400, "INVALID_UP");
-    const up = await requireOwner(upInput);
+    const up = await requireOwner(upInput, cachedOwner);
     const now = clock();
-    prune(now);
-    if (challenges.size > 1000) throw new AdminError(429, "RATE_LIMITED");
-    const id = randomBytes(16).toString("hex");
     const text = challengeText(up, randomBytes(16).toString("base64url"), now, now + CHALLENGE_TTL_MS);
-    challenges.set(id, { up, text, expires: now + CHALLENGE_TTL_MS });
-    return { id, text };
+    return { id: `${Buffer.from(text).toString("base64url")}.${tagOf(text).toString("base64url")}`, text };
   }
 
   async function login(id, signature) {
-    const c = typeof id === "string" ? challenges.get(id) : null;
-    if (c) challenges.delete(id); // single use, whatever the outcome
-    if (!c || c.expires < clock()) throw new AdminError(401, "CHALLENGE_EXPIRED");
+    const [textPart, tagPart] = typeof id === "string" ? id.split(".") : [];
+    const text = textPart ? Buffer.from(textPart, "base64url").toString() : "";
+    const tag = tagPart ? Buffer.from(tagPart, "base64url") : Buffer.alloc(0);
+    const expected = tagOf(text);
+    if (tag.length !== expected.length || !timingSafeEqual(tag, expected)) throw new AdminError(401, "CHALLENGE_EXPIRED");
+    const now = clock();
+    prune(now);
+    const expires = Date.parse(text.match(/^Expires-At: (.+)$/m)?.[1]);
+    const key = tag.toString("hex");
+    if (!(expires >= now) || usedChallenges.has(key)) throw new AdminError(401, "CHALLENGE_EXPIRED");
+    const c = { up: text.match(/^Universal-Profile: (.+)$/m)?.[1], text };
     if (typeof signature !== "string" || !(await upChecker.isValidUpSignature(c.up, c.text, signature))) {
       throw new AdminError(401, "INVALID_SIGNATURE");
     }
+    if (usedChallenges.has(key)) throw new AdminError(401, "CHALLENGE_EXPIRED"); // a concurrent login got here first
+    usedChallenges.set(key, expires);
     await requireOwner(c.up); // still the owner now
     const token = randomBytes(32).toString("base64url");
     sessions.set(hashToken(token).toString("hex"), { up: c.up, expires: clock() + SESSION_TTL_MS });
