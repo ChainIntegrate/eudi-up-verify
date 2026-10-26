@@ -180,16 +180,15 @@ trova nel suo ambiente.
   Android**. L'upload resta dietro un'opzione di configurazione (`ALLOW_CADES_UPLOAD`), da spegnere quando l'app è
   pronta.
 
-## 12. RPC (informazioni ricavate da `traceability-registry`, 2026-10-14)
+## 12. RPC (2026-10-14)
 
 - **Testnet:** RPC pubblico `https://rpc.testnet.lukso.network`.
-- **Mainnet:** nodo self-hosted ChainIntegrate `https://rpc.chainintegrate.it/rpc/<api-key>`, con la chiave **nel
-  percorso dell'URL** e la regola "una chiave dedicata per servizio": serve solo per il **backend** di up-cie-link.
-  Il dominio non è pubblico: l'RPC si usa solo lato server.
+- **Mainnet:** nodo self-hosted ChainIntegrate (indirizzo nel gestore di password, non nel repository), con la chiave
+  **nel percorso dell'URL** e la regola "una chiave dedicata per servizio": serve solo per il **backend** di
+  up-cie-link. L'RPC si usa solo lato server.
 - **Deploy dei contratti:** RPC pubblici (testnet e mainnet), decisione del 2026-10-14: per poche transazioni di
   deploy non serve il nodo.
 - Conseguenza: `RPC_URL` non va **mai** scritto nei log (il backend non lo stampa, gli errori riportano solo codici).
-- La porta 3014 è già usata da `traceability-registry`.
 
 ## 13. Decisioni del 2026-10-14 (pezzo 3 e monitoraggio)
 

@@ -1,7 +1,9 @@
 # UP CIE Link — operazioni sul server
 
-Configurazione concordata il 2026-10-15. Questo file è il riferimento per installare, aggiornare e gestire il
-servizio. I file in `deploy/` usano già questi valori.
+Configurazione concordata il 2026-10-15, aggiornata al 2026-10-27 (firmatario separato, UP Wallet, correzioni del
+secondo audit). Questo file è il riferimento per installare, aggiornare e gestire il servizio. I file in `deploy/`
+usano già questi valori. Indirizzi, accessi e versioni esatte del server non sono qui (audit UCL-36): stanno nel
+gestore di password.
 
 ## 1. Configurazione concordata
 
@@ -9,27 +11,34 @@ servizio. I file in `deploy/` usano già questi valori.
 |---|---|
 | Server | VPS di ChainIntegrate (indirizzo e accesso SSH nel gestore di password, non nel repository) |
 | Dominio | `up-cie-link.chainintegrate.it` (DNS già sul server) |
-| Porta interna del backend | **3015** (solo 127.0.0.1; 3014 è di traceability-registry) |
+| Porta interna del backend | **3015** (solo 127.0.0.1; scelta per non collidere con gli altri servizi del server) |
 | Codice | **`/var/www/up-cie-link`** (come gli altri progetti web) |
 | Utente di sistema | **`up-cie-link`** (dedicato, senza login; home `/home/up-cie-link`) |
 | Database | `/var/lib/up-cie-link/up-cie-link.db` (cartella 700) |
 | Backup | `/var/backups/up-cie-link` (cartella 700), cifrati con age, timer alle 03:15 |
+| Sistema operativo | Ubuntu LTS con supporto standard attivo (verificato il 2026-10-19, audit UCL-43); pianificare l'aggiornamento prima della fine del supporto (data nel gestore di password) |
 | Node / PM2 | `/usr/bin/node` (Node 22) e `/usr/bin/pm2` di sistema; versioni esatte nel gestore di password |
 | Processo backend | PM2 dell'utente `up-cie-link` (`pm2-up-cie-link.service`), app `up-cie-link` |
-| Monitor | timer systemd `up-cie-link-monitor.timer` (ogni ora), configurazione `backend/monitor.env` |
-| nginx | `/etc/nginx/sites-available/up-cie-link`, log `/var/log/nginx/up-cie-link.*.log` |
+| Firmatario (audit UCL-08) | servizio systemd `up-cie-link-signer` (avvio automatico), utente `up-cie-link-signer`, **senza rete**; codice in `/opt/up-cie-link-signer` (root, sola lettura, installato da un clone nuovo: commit in `/opt/up-cie-link-signer/COMMIT`); segreti in `/etc/up-cie-link/signer.env` (root, 600); socket `/run/up-cie-link-signer/signer.sock` (gruppo `up-cie-link`). Installato il 2026-10-27 |
+| Monitor | timer systemd `up-cie-link-monitor.timer` (ogni ora), configurazione `backend/monitor.env` (segnala anche `signer_not_ready`) |
+| nginx | `/etc/nginx/sites-available/up-cie-link` (modificato da certbot: gli aggiornamenti del template si riportano a mano), log `/var/log/nginx/up-cie-link.*.log`. CSP con la sola eccezione del relay WalletConnect (`connect-src … wss://relay.walletconnect.org`); `/vendor/` con le regole di `js|css|img`; `/README.md` non servito; header di sicurezza non duplicati sulle API; `/.well-known/security.txt` (scade il 2027-10-19) |
 | HTTP/2 | **non attivato** (decisione del 2026-10-15): con la versione di nginx del server l'opzione `http2` su `listen 443` vale per tutti i siti; si rivaluta con nginx ≥ 1.25.1 (`http2 on;` per singolo sito) |
 | Rotazione log nginx | giornaliera, 14 file (`/etc/logrotate.d/nginx`, verificato il 2026-10-15) — coerente con l'informativa |
 | Rete | LUKSO testnet (4201), RPC pubblico `https://rpc.testnet.lukso.network` |
 | Contratto | `0x6A525B5662EF905f3DD90F7139DC3a702b1371BA`, blocco 8745039 (`contracts/deployments/luksoTestnet.json`) |
 | Owner | UP testnet `0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C` |
-| Attestatore | `0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a` (chiave privata solo in `backend/.env`) |
+| Attestatore | `0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a` (chiave privata solo nel firmatario, `/etc/up-cie-link/signer.env`; la stessa anche per il mainnet, decisione A3 del 2026-10-27) |
+| Contratti testnet sostituiti | `0x056a…7892` e `0x329D…4C2f`: attestatore a zero dal 2026-10-19 (audit UCL-38) |
+| Canali di firma CIE | CieSign `.p7m` attivo (`ALLOW_CADES_UPLOAD=true`); canale dell'app Android spento (`ALLOW_RAW_CHANNEL=false`, audit UCL-40) |
+| UP Wallet (WalletConnect) | attivo dal 2026-10-26 (`WALLETCONNECT_PROJECT_ID` nel `.env` del backend: è pubblico, lo stesso progetto Reown di Cross_Chain); `up-cie-link.chainintegrate.it` va negli allowed domains del progetto e va registrato per la verifica del dominio (finché non lo è, UP Wallet mostra "UNKNOWN") |
+| Segreti nel `.env` del backend | **nessuno** (il backend non parte se ci sono); il `.env` contiene solo configurazione e credenziali SMTP |
 | Root CIE fissata (`CIE_ROOT_SHA256`) | `40f425927e8a1e6a297a15c2a9d79e2221bf4fe25b2f21e3bfad53a1ba58b0d7` — "National root CA for the Italian Electronic Identity Card" (Ministero dell'Interno), valida fino al 2044-05-16; presente nella Trusted List AgID (controllo del 2026-10-15) |
 | Sub CA | SUBCA003, SHA-256 `8f3cce1555f96594d294f00fec381fda9d8bac7271fcbdc8bb8f7766b0e27eee`, valida fino al 2039-05-13 (`backend/trust/` sul server) |
 | Installazione | 2026-10-15: backend online (PM2 `pm2-up-cie-link.service` abilitato), timer attivi, primo backup ok, mail ok (`smtps.aruba.it`), HTTPS con certbot (scadenza 2027-01-13, rinnovo automatico) |
 | Primo collegamento reale | 2026-10-15: riuscito (UP + CIE reale via CieSign → bollino principale valido) |
 | Metadati del bollino | serviti dal nostro dominio (`/metadata/badge.json`, `/metadata/badge-icon.png`), **niente IPFS** (decisione del 2026-10-15: un solo file, sempre uguale; integrità garantita dagli hash on-chain). Non modificarli senza "Aggiorna i metadati" dalla pagina admin; mantenere il dominio finché esistono bollini. Ultimo aggiornamento on-chain: 2026-10-15 (testo "No name, tax code or card data on-chain") |
 | Prova OCSP reale | `check-p7m` con una CIE reale: **CHECK OK** il 2026-10-15 (audit UCL-06) |
+| Prove reali successive | 2026-10-26: collegamento con UP Wallet da computer e tutto dal telefono Android; 2026-10-27: cancellazione dati e nuovo collegamento passando dal firmatario |
 
 Comandi come utente del servizio: `sudo -u up-cie-link -H <comando>`.
 
