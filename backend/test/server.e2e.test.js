@@ -197,4 +197,18 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
       b.stop();
     }
   });
+
+  it("UCL-08: a signer with another CERT_REF_KEY is caught at start-up (stored references no longer decrypt)", async () => {
+    const d = path.join(dir, "signer-other-refkey");
+    mkdirSync(d);
+    const other = await startSignerProcess(d, { attesterKey, contract: badgeAddress, chainId: 4201, pepper }); // same pepper, new CERT_REF_KEY
+    signerProcs.push(other);
+    const b = await startBackend({ SIGNER_SOCKET: other.socketPath });
+    try {
+      assert.match(b.out(), /signer: CERT_REF_KEY_MISMATCH/);
+      assert.deepEqual((await (await fetch(`http://127.0.0.1:${b.port}/api/health`)).json()).ok, true);
+    } finally {
+      b.stop();
+    }
+  });
 });

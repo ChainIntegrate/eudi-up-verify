@@ -95,7 +95,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   }
   const server = serve(core, cfg.socketPath);
-  server.on("listening", () => console.log(`[signer] attester ${core.address}, contract ${cfg.contract} (chain ${cfg.chainId}), socket ${cfg.socketPath}`));
+  server.on("listening", async () => {
+    // the pepper check value is not secret: logged so that a migration can compare it (docs/operations.md §2.3b)
+    const { pepperCheck } = await core.handle({ op: "hello" });
+    console.log(`[signer] attester ${core.address}, contract ${cfg.contract} (chain ${cfg.chainId}), pepper check ${pepperCheck}, socket ${cfg.socketPath}`);
+  });
   server.on("error", (e) => {
     console.error(`[signer] socket error: ${e.code}`);
     process.exit(1);

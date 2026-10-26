@@ -77,6 +77,18 @@ async function connectSigner() {
     } else if (onChainAttester.toLowerCase() !== address.toLowerCase()) {
       return signerProblem("ATTESTER_MISMATCH", `The signer's key ${address} is not the contract's attester (${onChainAttester}). New CIE files are refused.`);
     }
+    // a CERT_REF_KEY copied wrong: stored certificate references would no longer decrypt (revocation recheck lost)
+    const sample = db.prepare("SELECT cert_ref_enc FROM links WHERE cert_ref_enc IS NOT NULL LIMIT 1").get();
+    if (sample) {
+      try {
+        await signer.decryptCertRef(sample.cert_ref_enc);
+      } catch (e) {
+        if (e?.code === "DECRYPT_FAILED") {
+          return signerProblem("CERT_REF_KEY_MISMATCH", "The signer's CERT_REF_KEY does not decrypt the stored certificate references. New CIE files are refused: put the original CERT_REF_KEY in the signer's env file and restart both.");
+        }
+        throw e;
+      }
+    }
     Object.assign(signerState, { ready: true, address, error: null });
     console.log(`signer ready: attester ${address}`);
   } catch (e) {

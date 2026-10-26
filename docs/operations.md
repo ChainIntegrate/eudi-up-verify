@@ -143,6 +143,23 @@ firmatario, chiave = attestatore del contratto, e il **valore di controllo di `U
 deve restare uguale per sempre. Un `UNIQ_PEPPER` copiato male romperebbe in silenzio "una persona, una UP principale":
 il backend lo rifiuta (`PEPPER_MISMATCH`), manda una mail e non accetta file CIE. Il sito resta in linea in ogni caso
 (verifica, admin); senza firmatario i file CIE ricevono `SERVICE_UNAVAILABLE` e il monitor segnala `signer_not_ready`.
+All'avvio il backend prova anche a decifrare un riferimento al certificato già salvato: se non ci riesce,
+`CERT_REF_KEY` è sbagliata (`CERT_REF_KEY_MISMATCH`) e i file CIE vengono rifiutati.
+
+**Passaggio di un'installazione esistente** (i segreti erano in `backend/.env`): il valore di controllo viene salvato
+al primo avvio, quindi **prima** di togliere i segreti dal backend si verifica che il firmatario abbia lo stesso
+`UNIQ_PEPPER`:
+
+1. installare il firmatario e creare `signer.env` copiando i tre valori da `backend/.env` (passi sopra), avviarlo;
+2. confrontare il valore di controllo nel log del firmatario (`pepper check …`) con quello calcolato dal `.env`
+   attuale del backend; devono coincidere:
+
+   ```bash
+   sudo grep '^UNIQ_PEPPER=' /var/www/up-cie-link/backend/.env | cut -d= -f2- | node -e 'const c=require("crypto");let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(c.createHmac("sha256",Buffer.from(s.trim().replace(/^0x/,""),"hex")).update("up-cie-link:pepper-check:v1").digest("hex").slice(0,32)))'
+   sudo journalctl -u up-cie-link-signer -n 5 --no-pager | grep 'pepper check'
+   ```
+3. solo se coincidono: `git pull`, togliere le tre righe da `backend/.env`, `pm2 reload`. Il backend controlla
+   il resto (attestatore, `CERT_REF_KEY` su un riferimento salvato) e lo dice nel log (`signer ready`).
 
 ### 2.4 Certificati CIE e prova con l'OCSP reale (audit UCL-06)
 
