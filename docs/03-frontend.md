@@ -3,7 +3,7 @@
 Stato (2026-10-19): **in funzione in testnet** su `up-cie-link.chainintegrate.it`. Decisioni F1-F8 (§4), pagina
 admin A1-A5 (§6) confermate e implementate; primo collegamento reale (UP + CIE con CieSign) riuscito il 2026-10-15.
 Dopo il secondo audit: in "Il mio bollino" export e cancellazione dei dati firmati dalla UP (UCL-31); nella pagina
-admin i contratti sostituiti (UCL-38). Provati dall'owner: rinuncia, export, nuovo collegamento dopo la rinuncia, fermo dei contratti sostituiti.
+admin i contratti sostituiti (UCL-38). Provati dall'owner: rinuncia, export, nuovo collegamento dopo la rinuncia, cancellazione dei dati, fermo dei contratti sostituiti.
 La connessione con UP Wallet per Android (WalletConnect, §5) è rinviata al mainnet. I §1-3 sono la proposta
 originale, conservata come storia delle decisioni.
 
