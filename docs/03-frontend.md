@@ -7,7 +7,7 @@ admin i contratti sostituiti (UCL-38). Provati dall'owner: rinuncia, export, nuo
 La connessione con UP Wallet per Android (WalletConnect, §5) è implementata (2026-10-26). Prove reali del
 2026-10-26: con la pagina UP Wallet da computer (relay di Reown, firma dell'enunciato, bollino coniato) e tutta dal
 telefono Android con l'app UP Wallet e CieSign (bollino coniato, scadenza 2034-02-01 secondo UCL-34). Pagine
-sistemate per il telefono lo stesso giorno (intestazione, UP Wallet come scelta principale, finestra di collegamento). La verifica del dominio di Reown risulta UNKNOWN finché il dominio non è registrato nel progetto. I §1-3 sono la proposta originale, conservata come storia delle decisioni.
+sistemate per il telefono lo stesso giorno (intestazione, UP Wallet come scelta principale, finestra di collegamento). Verifica del dominio di Reown: VALID dal 2026-10-28, con l'iframe di Verify consentito dalla CSP. I §1-3 sono la proposta originale, conservata come storia delle decisioni.
 
 Obiettivo: il frontend definitivo (o quasi) su `up-cie-link.chainintegrate.it`, con cui fare subito i test online
 con UP e CIE reali via CieSign; l'app Android (Fase 4) si aggiungerà come secondo canale di firma CIE senza rifare le

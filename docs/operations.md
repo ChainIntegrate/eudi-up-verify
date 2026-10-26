@@ -30,7 +30,7 @@ gestore di password.
 | Attestatore | `0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a` (chiave privata solo nel firmatario, `/etc/up-cie-link/signer.env`; la stessa anche per il mainnet, decisione A3 del 2026-10-27) |
 | Contratti testnet sostituiti | `0x056a…7892` e `0x329D…4C2f`: attestatore a zero dal 2026-10-19 (audit UCL-38) |
 | Canali di firma CIE | CieSign `.p7m` attivo (`ALLOW_CADES_UPLOAD=true`); canale dell'app Android spento (`ALLOW_RAW_CHANNEL=false`, audit UCL-40) |
-| UP Wallet (WalletConnect) | attivo dal 2026-10-26 (`WALLETCONNECT_PROJECT_ID` nel `.env` del backend: è pubblico, lo stesso progetto Reown di Cross_Chain); `up-cie-link.chainintegrate.it` è negli allowed domains del progetto; la verifica del dominio passa dall'iframe di Verify consentito dalla CSP |
+| UP Wallet (WalletConnect) | attivo dal 2026-10-26 (`WALLETCONNECT_PROJECT_ID` nel `.env` del backend: è pubblico, lo stesso progetto Reown di Cross_Chain); `up-cie-link.chainintegrate.it` è negli allowed domains del progetto; la verifica del dominio passa dall'iframe di Verify consentito dalla CSP: UP Wallet mostra "VALID" (verificato il 2026-10-28) |
 | Segreti nel `.env` del backend | **nessuno** (il backend non parte se ci sono); il `.env` contiene solo configurazione e credenziali SMTP |
 | Root CIE fissata (`CIE_ROOT_SHA256`) | `40f425927e8a1e6a297a15c2a9d79e2221bf4fe25b2f21e3bfad53a1ba58b0d7` — "National root CA for the Italian Electronic Identity Card" (Ministero dell'Interno), valida fino al 2044-05-16; presente nella Trusted List AgID (controllo del 2026-10-15) |
 | Sub CA | SUBCA003, SHA-256 `8f3cce1555f96594d294f00fec381fda9d8bac7271fcbdc8bb8f7766b0e27eee`, valida fino al 2039-05-13 (`backend/trust/` sul server) |
