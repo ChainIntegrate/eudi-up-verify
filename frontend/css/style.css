@@ -31,7 +31,7 @@ code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monosp
 .brand-logo { width: 40px; height: 40px; border-radius: 8px; }
 .brand-name { font-weight: 700; font-size: 18px; letter-spacing: 0.01em; }
 .nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
-.nav a { padding: 6px 12px; border-radius: 6px; color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 14px; }
+.nav a { padding: 6px 12px; border-radius: 6px; color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 14px; white-space: nowrap; overflow-wrap: normal; }
 .nav a:hover { color: var(--text); background: var(--chip); }
 .nav a.active { color: var(--accent); background: var(--chip); }
 .toggles { display: flex; gap: 8px; }
@@ -72,7 +72,7 @@ label.check input { margin-top: 4px; }
 .steps li.done { color: var(--ok); }
 
 pre.statement { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; margin: 12px 0; }
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; margin: 12px 0;  max-height: 45vh; overflow: auto;}
 .countdown { font-variant-numeric: tabular-nums; font-weight: 700; }
 .countdown.low { color: var(--warn); }
 
@@ -98,7 +98,14 @@ dl.facts dd { margin: 0; overflow-wrap: anywhere; }
 .site-footer p { margin: 4px 0; }
 
 @media (max-width: 560px) {
+  /* header on two rows: logo with language and theme, then the menu across the width */
+  .site-header { gap: 8px 12px; padding: 12px 0; margin-bottom: 16px; }
+  .toggles { margin-left: auto; }
+  .nav { order: 3; flex-basis: 100%; justify-content: space-between; }
+  .nav a { padding: 6px 8px; }
   h1 { font-size: 22px; }
+  /* phone: the UP Wallet window opens the app first; the QR code (for another device) is smaller, below */
+  .modal.phone .qr-box img.qr { width: 160px; height: 160px; }
   .panel { padding: 16px; }
   dl.facts { grid-template-columns: 1fr; }
   dl.facts dd { margin-bottom: 6px; }
@@ -111,6 +118,7 @@ ul.plain li { margin: 0.4rem 0; }
 /* UP Wallet (WalletConnect) window and pending bar */
 .modal-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
 .modal { max-width: 440px; width: 100%; max-height: 100%; overflow: auto; margin: 0; }
+.qr-caption { text-align: center; margin: 4px 0 0; }
 .qr-box { display: flex; justify-content: center; }
 .qr-box img.qr { width: 240px; height: 240px; image-rendering: pixelated; background: #fff; padding: 8px; border-radius: 8px; }
 a.btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }

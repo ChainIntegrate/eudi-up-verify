@@ -499,6 +499,21 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.locator("#wcDisconnect").click();
     await page.locator("#connectUpWallet").waitFor();
     assert.equal(await page.evaluate(() => [window.__wcDisconnected, localStorage.getItem("ucl-wc-session")]).then((r) => JSON.stringify(r)), "[true,null]");
+
+    // phone-sized screen: menu on one line per link, UP Wallet is the only choice, the window opens the app first
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(site + "/collega");
+    await page.locator("#connectUpWallet").waitFor();
+    const navHeights = await page.$$eval("#nav a", (as) => as.map((a) => a.getBoundingClientRect().height));
+    assert.ok(Math.max(...navHeights) < 40, `menu links on one line (${navHeights})`);
+    assert.equal(await page.getByRole("button", { name: "Estensione UP Browser" }).count(), 0);
+    assert.equal(await page.getByText("Estensione UP Browser non trovata").count(), 0);
+    await page.locator("#connectUpWallet").click();
+    await page.locator("#wcQr").waitFor();
+    const [openY, qrY] = await page.evaluate(() => ["#wcOpen", "#wcQr"].map((s) => document.querySelector(s).getBoundingClientRect().top));
+    assert.ok(openY < qrY, "on a phone the open button comes before the QR code");
+    await shot(page, "12-upwallet-phone");
+    await page.locator("#wcCancel").click();
     assert.deepEqual(problems, []);
   });
 });

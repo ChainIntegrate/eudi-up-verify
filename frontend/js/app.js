@@ -149,15 +149,18 @@ function walletPanel(onConnected, { upWallet = true } = {}) {
     }
     const ext = extensionWallet();
     const wcOn = upWallet && Boolean(state.config.walletConnectProjectId);
+    // without the extension UP Wallet is the main choice; on a phone the extension is not offered at all
+    const wcFirst = wcOn && !ext;
+    const phone = wcFirst && isPhone();
     fill(box,
       h("p", { class: "dim" }, t("connectText")),
       h("div", { class: "actions" },
-        h("button", { type: "button", class: "btn", onclick: () => connect(ext) }, t("connectExtension")),
+        phone ? null : h("button", { type: "button", class: wcFirst ? "btn secondary" : "btn", onclick: () => connect(ext) }, t("connectExtension")),
         upWallet
-          ? h("button", { type: "button", class: "btn secondary", id: "connectUpWallet", disabled: !wcOn, title: wcOn ? null : t("androidSoon"), onclick: pair }, t("connectAndroid"))
+          ? h("button", { type: "button", class: wcFirst ? "btn" : "btn secondary", id: "connectUpWallet", disabled: !wcOn, title: wcOn ? null : t("androidSoon"), onclick: pair }, t("connectAndroid"))
           : null,
       ),
-      ext ? null : notice("warn", h("span", { html: t("noExtension") })),
+      ext || phone ? null : notice("warn", h("span", { html: t("noExtension") })),
       h("p", { class: "small dim" }, !upWallet ? t("adminDesktopOnly") : wcOn ? t("upWalletHint") : t("androidSoon")),
       err ? errorNotice(err) : null,
     );
@@ -193,20 +196,24 @@ function walletPanel(onConnected, { upWallet = true } = {}) {
   return box;
 }
 
+// A phone-sized screen: there the UP Wallet window opens the app first (touch is not detected reliably).
+const isPhone = () => window.matchMedia("(max-width: 820px)").matches;
+
 // UP Wallet for Android: a window with the QR code (computer), the link that opens the app (phone) and copy.
 function pairWindow(onWallet) {
+  const phone = isPhone();
   const status = h("p", { class: "small", id: "wcStatus", role: "status" }, t("wcPreparing"));
   const qr = h("img", { class: "qr", id: "wcQr", alt: t("wcQrAlt"), hidden: true });
-  const open = h("a", { class: "btn", id: "wcOpen", "aria-disabled": "true" }, t("wcOpenApp"));
+  const open = h("a", { class: phone ? "btn" : "btn secondary", id: "wcOpen", "aria-disabled": "true" }, t("wcOpenApp"));
   const copy = h("button", { type: "button", class: "btn secondary", id: "wcCopy", disabled: true }, t("wcCopy"));
   const cancel = h("button", { type: "button", class: "btn secondary", id: "wcCancel" }, t("cancel"));
+  const qrBox = h("div", { class: "qr-box" }, qr);
+  const actions = h("div", { class: "actions" }, open, copy, cancel);
   const win = h("div", { class: "modal-back" },
-    h("div", { class: "modal panel", role: "dialog", "aria-modal": "true", "aria-labelledby": "wcTitle" },
+    h("div", { class: `modal panel${phone ? " phone" : ""}`, role: "dialog", "aria-modal": "true", "aria-labelledby": "wcTitle" },
       h("h2", { id: "wcTitle" }, t("wcTitle")),
-      h("p", {}, t("wcIntro")),
-      h("div", { class: "qr-box" }, qr),
-      h("div", { class: "actions" }, open, copy, cancel),
-      status,
+      h("p", {}, phone ? t("wcIntroPhone") : t("wcIntro")),
+      phone ? [actions, status, qrBox, h("p", { class: "small dim qr-caption" }, t("wcQrOther"))] : [qrBox, actions, status],
       h("p", { class: "small dim" }, t("wcPrivacy")),
     ),
   );
@@ -373,10 +380,11 @@ function viewLink() {
       h("section", { class: "panel" },
         h("h2", {}, t("upSignTitle")),
         h("p", {}, t("upSignText")),
-        h("pre", { class: "statement" }, s.text),
         h("p", {}, `${t("upSignDeadline")} `, countdown(s.upSignatureDeadline, expired)),
         err ? errorNotice(err) : null,
         h("div", { class: "actions" }, sign),
+        // the button comes first (phones); the full text stays below, in a box that scrolls
+        h("pre", { class: "statement mt" }, s.text),
       ),
     );
   }
