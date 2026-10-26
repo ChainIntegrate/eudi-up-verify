@@ -346,7 +346,7 @@ l'attestatore a zero.
 - `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
 - copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto (confermato il
   2026-10-27); processo separato per HMAC e firma (UCL-08): fatto e installato sulla VPS il 2026-10-27 (§2.3b);
-- informativa: completata il 2026-10-27 (UCL-14); da rileggere prima del mainnet (owner o legale);
+- informativa: completata il 2026-10-27 (UCL-14);
 - verificare se la policy dei certificati CIE (CP/CPS) consente a un privato di basarsi sul certificato (UCL-13);
 - `ALLOW_RAW_CHANNEL=false` finché l'app Android non è pronta (UCL-40);
 - `NOTIFY_EACH_LINK=false`.

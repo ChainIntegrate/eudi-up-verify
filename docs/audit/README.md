@@ -26,8 +26,8 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
 | UCL-10 | Medium | Conservazione e cancellazione | riferimento al certificato cancellato a invalidazione/scadenza; collegamenti 12 mesi dopo la fine; impronte e richieste orfane 12 mesi; audit 12 mesi; `npm run data:export` / `data:erase`; informativa aggiornata | `bad21d1`, `8d59cab` | risolto |
 | UCL-11 | Medium | Nessun controllo d'età | solo maggiorenni, età dal codice fiscale in memoria, codice neutro `AGE_NOT_ELIGIBLE` | `8d59cab` | risolto |
 | UCL-12 | Medium | `expired` durante verifica/coda/conio | scadenza solo per `pending_up` / `pending_cie` | `a5b79a5` | risolto |
-| UCL-13 | Medium | Termini CieSign e policy dei certificati CIE | owner: i termini di CieSign li accetta ogni utente per conto suo | — | accettato (vedi nota) |
-| UCL-14 | Low | Informativa incompleta | titolare "ChainIntegrate, servizi di Simone Cavalletti" con e-mail e Telegram (decisione del 2026-10-15; P.IVA e PEC non ci sono: si aggiungeranno quando il servizio sarà più strutturato, decisione del 2026-10-27); fornitore Aruba S.p.A. (server e posta); Reown con sede negli USA, trattamento possibile fuori dall'UE; diritti di limitazione e portabilità ("Scarica i miei dati", JSON); la scadenza rivela il mese di scadenza della carta (= mese di nascita) | informativa del 2026-10-27 | risolto (revisione finale del testo da parte dell'owner o di un legale: non è una consulenza legale) |
+| UCL-13 | Medium | Termini CieSign e policy dei certificati CIE | owner: i termini di CieSign li accetta ogni utente per conto suo; policy dei certificati CIE letta il 2026-10-27 (vedi nota): il servizio è una relying party come la policy la descrive | — | risolto (decisione dell'owner del 2026-10-27) |
+| UCL-14 | Low | Informativa incompleta | titolare "ChainIntegrate, servizi di Simone Cavalletti" con e-mail e Telegram (decisione del 2026-10-15; P.IVA e PEC non ci sono: si aggiungeranno quando il servizio sarà più strutturato, decisione del 2026-10-27); fornitore Aruba S.p.A. (server e posta); Reown con sede negli USA, trattamento possibile fuori dall'UE; diritti di limitazione e portabilità ("Scarica i miei dati", JSON); la scadenza rivela il mese di scadenza della carta (= mese di nascita) | informativa del 2026-10-27 | risolto |
 | UCL-15 | Low | Rate limit | IPv6 per /64, mappa limitata, cache di 10 s di `/api/badge`, `limit_req` in nginx | `abca9c9`, `6cd0cd6` | risolto |
 | UCL-16 | Low | nginx | header ripetuti in ogni location, HSTS, Permissions-Policy, `server_tokens off`, log senza query string, sorgenti SVG non serviti; provato con nginx reale | `abca9c9` | risolto (logrotate verificato sul server: giornaliero, 14 file) |
 | UCL-17 | Low | SMTP | `requireTLS` con `SMTP_SECURE=false` | `abca9c9` | risolto |
@@ -54,8 +54,23 @@ Ogni correzione porta nel messaggio di commit l'ID del punto.
   8745039, dal commit `90ed066`, verificato su Blockscout, metadati LSP4 impostati dall'owner. La verifica "è una UP" accetta qualsiasi Key Manager che dichiari LSP6 e punti alla UP: un contratto costruito
   apposta può ancora farlo, ma il conio viene comunque simulato e il contratto non è più rientrabile.
 - **UCL-06:** verifica completa con un `.p7m` reale e l'OCSP reale eseguita il 2026-10-15 sul server: `CHECK OK`.
-- **UCL-13:** i termini di CieSign riguardano l'utente. Resta un punto distinto e non verificato: se la policy dei
-  certificati CIE (CP/CPS) consente a un privato di basarsi sul certificato di autenticazione fuori da "Entra con CIE".
+- **UCL-13:** i termini di CieSign riguardano l'utente. Policy dei certificati: "Certificate Policy and Certification
+  Practice Statement — Public Key Infrastructure for the Italian Electronic Identity Card CIE", OID 1.3.76.47.2,
+  pubblicata dal Ministero dell'Interno (`https://www.cartaidentita.interno.gov.it/policy/cittadini_cps.pdf`, copia
+  letta il 2026-10-27, SHA-256 `d521cab0aae124ee1c73375a81d66b8a133e7b359871217ec0ee0cd3dedc3189`). Cosa dice:
+  - §1.3.4: *"Relying parties are service providers that use the certificate … to authenticate subscribers … giving
+    them access to their services"*; CRL e OCSP (`ocsp.cie.interno.gov.it`) per verificarne la validità. Nessuna
+    distinzione tra fornitori pubblici e privati, nessuna convenzione richiesta;
+  - §1.4.1: *"used only to perform a strong authentication to online services offered by Service Providers"*;
+    §1.4.2: *"Private use of certificates is prohibited"* (riferito all'uso fuori dai servizi);
+  - §4.5.2 / §9.6.4: la relying party usa il certificato solo per questi scopi e ne controlla catena, validità e
+    revoca.
+
+  Il servizio fa esattamente questo: è un fornitore di un servizio online che autentica il titolare (firma, con la
+  chiave della carta sbloccata dal PIN, di un enunciato monouso legato alla sessione) e controlla catena fino alla
+  root fissata, validità e revoca via OCSP. Lo stesso Ministero promuove la firma con il certificato della CIE
+  (CieSign). Il codice fiscale letto dal certificato è un trattamento regolato dal GDPR, coperto da informativa e
+  consenso.
 - **WalletConnect (futuro):** prima di includere il bundle, verificare la licenza (non open source) e aggiungere Reown
   all'informativa.
 

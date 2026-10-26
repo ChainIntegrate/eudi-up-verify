@@ -50,8 +50,7 @@ pagine.
 - **F2, lingue:** italiano ed inglese con selettore, italiano predefinito.
 - **F3, aspetto:** sobrio, colori e logo ChainIntegrate (se mi fornisci il logo), nessun richiamo grafico alla CIE.
 - **F4, informativa privacy:** scrivo io una bozza (titolare ChainIntegrate, dati trattati, base giuridica
-  consenso, conservazione, diritti, contatti). **Non è una consulenza legale**: va rivista da te o da un legale
-  prima del mainnet. Mi servono i dati del titolare (ragione sociale, sede, contatto privacy).
+  consenso, conservazione, diritti, contatti). Mi servono i dati del titolare (ragione sociale, sede, contatto privacy).
 - **F5, tempo per CieSign:** l'enunciato vale 15 minuti (B1). Propongo di lasciarlo così e di mostrare il conto
   alla rovescia; se nei test risulta stretto, si alza `STATEMENT_TTL_SEC` senza toccare il codice.
 - **F6, metadati del bollino (LSP4):** nome, descrizione EN/IT e icona della collezione, così i wallet mostrano il
@@ -72,7 +71,7 @@ pagine.
 - **F3:** celeste e grigio. `img/logo.png` e `img/banner.png` sono **segnaposto** da sostituire (sorgenti SVG in
   `img/src/`).
 - **F4:** dati del titolare presi da Cross_Chain (ChainIntegrate, info@chainintegrate.it, Telegram, GitHub).
-  L'informativa è una bozza: **va rivista prima del mainnet**, non è una consulenza legale.
+  Informativa completata il 2026-10-27 (audit UCL-14).
 - **F5:** 15 minuti, con conto alla rovescia.
 - **F6:** icona del bollino `metadata/badge-icon.png` (800×800, scudo con spunta, stile Cross_Chain, nessun simbolo
   istituzionale) e `metadata/badge.json` (LSP4Metadata, EN/IT), serviti dal nostro dominio. Lo script
