@@ -6,3 +6,8 @@ Licensed under the Apache License, Version 2.0 (see LICENSE).
 This product includes Solidity sources from the LUKSO standards (@lukso/*-contracts, Apache-2.0) and
 OpenZeppelin Contracts (MIT), compiled into the UpCieBadge contract; their licence headers are kept in the
 verified source.
+
+The site's UP Wallet connection (frontend/vendor/, loaded only when it is used) includes the WalletConnect
+client of Reown, Inc., under the WalletConnect Community License Agreement (not open source):
+Portions © 2025 Reown, Inc. All Rights Reserved. It also includes qrcode-generator by Kazuhiko Arase (MIT) and
+the open-source packages listed in frontend/vendor/signclient-2.25.0.THIRD-PARTY.txt.

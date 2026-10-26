@@ -2,8 +2,8 @@
 // Strings used with { html } may contain markup and must stay static.
 import { storage } from "./dom.js";
 
-const PRIVACY_DATE_IT = "17 ottobre 2026";
-const PRIVACY_DATE_EN = "17 October 2026";
+const PRIVACY_DATE_IT = "26 ottobre 2026";
+const PRIVACY_DATE_EN = "26 October 2026";
 const CONTACTS_IT = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> oppure una segnalazione su <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 const CONTACTS_EN = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> or an issue on <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 
@@ -62,7 +62,22 @@ const T = {
     connectText: "Scegli il wallet con cui collegare la tua Universal Profile.",
     connectExtension: "Estensione UP Browser",
     connectAndroid: "UP Wallet per Android",
-    androidSoon: "La connessione con UP Wallet per Android (WalletConnect) è in arrivo.",
+    androidSoon: "La connessione con UP Wallet per Android (WalletConnect) non è attiva su questo server.",
+    upWalletHint: "UP Wallet per Android: inquadri un QR con l'app (oppure, sul telefono, apri l'app con un tocco) e confermi lì ogni firma.",
+    adminDesktopOnly: "La pagina admin si usa solo dal computer, con l'estensione UP Browser.",
+    viaUpWallet: "con UP Wallet",
+    disconnect: "Disconnetti",
+    cancel: "Annulla",
+    wcTitle: "Collega UP Wallet",
+    wcIntro: "Apri UP Wallet sul telefono, scegli la rete LUKSO di questo servizio e la tua UP, poi inquadra il QR con \"Scan QR\". Se sei già sul telefono, tocca \"Apri UP Wallet\".",
+    wcQrAlt: "QR per collegare UP Wallet",
+    wcOpenApp: "Apri UP Wallet",
+    wcCopy: "Copia link",
+    wcCopied: "Link copiato: incollalo in UP Wallet con \"Paste\".",
+    wcPreparing: "Preparo il collegamento…",
+    wcWaiting: "In attesa di UP Wallet…",
+    wcPending: "Conferma la richiesta nell'app UP Wallet sul telefono.",
+    wcPrivacy: "Il collegamento passa dai server di WalletConnect (Reown), che vedono i dati della sessione ma non il contenuto delle richieste, cifrate. Portions © 2025 Reown, Inc. All Rights Reserved.",
     next: "Avanti",
     back: "Indietro",
     connected: "UP collegata:",
@@ -266,7 +281,11 @@ const T = {
       CHAIN_READ_FAILED: "Lettura dalla blockchain non riuscita. Riprova.",
       NOT_FOUND: "Enunciato non trovato.",
       PAYLOAD_TOO_LARGE: "Il file è troppo grande.",
-      WALLET_REJECTED: "Operazione annullata nell'estensione.",
+      WALLET_REJECTED: "Operazione annullata nel wallet.",
+      WC_REJECTED: "Collegamento rifiutato in UP Wallet.",
+      WC_FAILED: "Collegamento con UP Wallet non riuscito. Riprova.",
+      WC_LOAD_FAILED: "Non riesco a caricare il codice di collegamento. Ricarica la pagina e riprova.",
+      WC_WRONG_CHAIN: "UP Wallet è su un'altra rete: in UP Wallet scegli la rete LUKSO di questo servizio e riprova.",
       WALLET_ERROR: "L'estensione UP Browser ha restituito un errore.",
       NO_EXTENSION: "Estensione UP Browser non trovata.",
       NO_ACCOUNT: "Nessuna UP selezionata nell'estensione.",
@@ -304,11 +323,12 @@ const T = {
         <li><strong>Servizio OCSP del Ministero dell'Interno</strong> (ocsp.cie.interno.gov.it): il nostro server chiede se il certificato della tua carta è revocato, alla verifica e poi ogni giorno. Riceve il numero di serie del certificato e l'IP del nostro server, non il tuo; poiché il Ministero sa a chi appartiene ogni certificato, può dedurre che la tua carta è collegata a questo servizio.</li>
         <li><strong>Nodo della blockchain LUKSO</strong> (sulla rete principale un nodo di ChainIntegrate; sulla rete di prova il nodo pubblico di LUKSO): il nostro server legge lo stato dei bollini e invia le transazioni. Vede gli indirizzi delle UP.</li>
         <li><strong>Estensione UP Browser</strong> (LUKSO): firma l'enunciato e la rinuncia con la tua UP, nel tuo browser.</li>
+        <li><strong>WalletConnect (Reown, Inc.)</strong>, solo se colleghi UP Wallet per Android: le richieste tra questa pagina e l'app passano dai suoi server (relay). Vede l'indirizzo della UP, la rete, l'IP e i dati tecnici della sessione; il contenuto delle richieste (testo da firmare, transazioni) è cifrato tra la pagina e l'app. Nessuna statistica d'uso viene inviata a Reown.</li>
         <li><strong>Chiunque legga la blockchain</strong>: vede il bollino delle UP. Se sposti la UP principale (migrazione), le due operazioni avvengono a breve distanza e possono far capire che le due UP sono della stessa persona.</li>
         <li><strong>Avvisi a ChainIntegrate</strong>: per i problemi del servizio e gli eventi importanti (per esempio una richiesta di eccezione) riceviamo una e-mail con l'indirizzo della UP, mai dati della carta.</li>
       </ul>
       <h2>6 · Cosa resta nel tuo browser</h2>
-      <p>La lingua e il tema scelti, e il numero dell'enunciato in corso (solo per la sessione). Nient'altro.</p>
+      <p>La lingua e il tema scelti, il numero dell'enunciato in corso (solo per la sessione) e, se colleghi UP Wallet, i dati del collegamento WalletConnect, fino a quando premi "Disconnetti". Nient'altro.</p>
       <h2>7 · I tuoi diritti</h2>
       <p>Secondo il Regolamento UE 2016/679 (GDPR) puoi chiedere l'accesso, la rettifica o la cancellazione dei dati che ti riguardano, o revocare il consenso, dalla pagina "Il mio bollino", firmando la richiesta con la UP (solo chi controlla la UP può farlo). Puoi anche scrivere ai contatti del punto 2: ti chiederemo comunque una firma della UP, per essere certi che la richiesta venga da te. La cancellazione invalida i bollini e cancella anche l'impronta del codice fiscale: dopo potresti collegare di nuovo la CIE come se fosse la prima volta. Puoi anche rinunciare al bollino da solo, dalla pagina "Il mio bollino". Puoi presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). Quello che sta sulla blockchain (il bollino e la sua storia) non può essere cancellato da nessuno.</p>
       <h2>8 · Minori e modifiche</h2>
@@ -381,7 +401,22 @@ const T = {
     connectText: "Choose the wallet to connect your Universal Profile with.",
     connectExtension: "UP Browser extension",
     connectAndroid: "UP Wallet for Android",
-    androidSoon: "Connecting with UP Wallet for Android (WalletConnect) is coming.",
+    androidSoon: "Connecting with UP Wallet for Android (WalletConnect) is not active on this server.",
+    upWalletHint: "UP Wallet for Android: scan a QR code with the app (or, on the phone, open the app with a tap) and confirm every signature there.",
+    adminDesktopOnly: "The admin page is used only from a computer, with the UP Browser extension.",
+    viaUpWallet: "with UP Wallet",
+    disconnect: "Disconnect",
+    cancel: "Cancel",
+    wcTitle: "Connect UP Wallet",
+    wcIntro: "Open UP Wallet on your phone, choose this service's LUKSO network and your UP, then scan the QR code with \"Scan QR\". If you are already on the phone, tap \"Open UP Wallet\".",
+    wcQrAlt: "QR code to connect UP Wallet",
+    wcOpenApp: "Open UP Wallet",
+    wcCopy: "Copy link",
+    wcCopied: "Link copied: paste it in UP Wallet with \"Paste\".",
+    wcPreparing: "Preparing the connection…",
+    wcWaiting: "Waiting for UP Wallet…",
+    wcPending: "Confirm the request in the UP Wallet app on your phone.",
+    wcPrivacy: "The connection goes through WalletConnect's (Reown) servers, which see the session data but not the content of the requests, which is encrypted. Portions © 2025 Reown, Inc. All Rights Reserved.",
     next: "Next",
     back: "Back",
     connected: "Connected UP:",
@@ -580,7 +615,11 @@ const T = {
       CHAIN_READ_FAILED: "Reading from the blockchain failed. Try again.",
       NOT_FOUND: "Statement not found.",
       PAYLOAD_TOO_LARGE: "The file is too large.",
-      WALLET_REJECTED: "Cancelled in the extension.",
+      WALLET_REJECTED: "Cancelled in the wallet.",
+      WC_REJECTED: "Connection refused in UP Wallet.",
+      WC_FAILED: "Connecting UP Wallet failed. Try again.",
+      WC_LOAD_FAILED: "The connection code cannot be loaded. Reload the page and try again.",
+      WC_WRONG_CHAIN: "UP Wallet is on another network: choose this service's LUKSO network in UP Wallet and try again.",
       WALLET_ERROR: "The UP Browser extension returned an error.",
       NO_EXTENSION: "UP Browser extension not found.",
       NO_ACCOUNT: "No UP selected in the extension.",
@@ -617,11 +656,12 @@ const T = {
         <li><strong>OCSP service of the Italian Ministry of the Interior</strong> (ocsp.cie.interno.gov.it): our server asks whether your card's certificate is revoked, at the check and then daily. It receives the certificate's serial number and our server's IP, not yours; since the Ministry knows whom each certificate belongs to, it can infer that your card is linked to this service.</li>
         <li><strong>LUKSO blockchain node</strong> (on mainnet a ChainIntegrate node; on the test network LUKSO's public node): our server reads the badges and sends the transactions. It sees the UP addresses.</li>
         <li><strong>UP Browser extension</strong> (LUKSO): signs the statement and the renunciation with your UP, in your browser.</li>
+        <li><strong>WalletConnect (Reown, Inc.)</strong>, only if you connect UP Wallet for Android: requests between this page and the app go through its servers (relay). It sees the UP address, the network, the IP and the session's technical data; the content of the requests (text to sign, transactions) is encrypted between the page and the app. No usage statistics are sent to Reown.</li>
         <li><strong>Anyone reading the blockchain</strong>: sees the badges of the UPs. If you move your primary UP (migration), the two operations happen close together and may reveal that both UPs belong to the same person.</li>
         <li><strong>Alerts to ChainIntegrate</strong>: for service problems and notable events (for example an exception request) we receive an e-mail with the UP address, never card data.</li>
       </ul>
       <h2>6 · What stays in your browser</h2>
-      <p>The language and theme you chose, and the number of the statement in progress (for the session only). Nothing else.</p>
+      <p>The language and theme you chose, the number of the statement in progress (for the session only) and, if you connect UP Wallet, the WalletConnect connection data, until you press "Disconnect". Nothing else.</p>
       <h2>7 · Your rights</h2>
       <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to, rectification or erasure of your data, or withdraw your consent, from the "My badge" page, signing the request with your UP (only whoever controls the UP can do so). You can also write to the contacts in section 2: we will still ask for a signature of the UP, to be sure the request comes from you. Erasure invalidates the badges and also deletes the tax code fingerprint: afterwards you could link the CIE again as if for the first time. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
       <h2>8 · Minors and changes</h2>

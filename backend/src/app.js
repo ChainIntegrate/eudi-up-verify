@@ -113,6 +113,7 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, 
       statementVersion: STATEMENT_VERSION,
       upSignatureWindowSec: cfg.upSignatureWindowSec,
       statementTtlSec: cfg.statementTtlSec,
+      walletConnectProjectId: cfg.walletConnectProjectId ?? null,
       cieChannels: [...(cfg.allowCadesUpload ? ["cades"] : []), ...(cfg.allowRawChannel ? ["raw"] : [])],
     });
   });

@@ -17,7 +17,7 @@ export function viewAdmin(ctx) {
   const net = state.config?.network === "luksoMainnet"
     ? notice("err", h("strong", {}, "MAINNET"), " — ", t("adminMainnetBanner"))
     : notice("warn", h("strong", {}, "TESTNET"), " — ", t("adminTestnetBanner"));
-  root.append(h("h1", {}, t("adminTitle")), net, h("section", { class: "panel" }, walletPanel(() => checkSession())), body);
+  root.append(h("h1", {}, t("adminTitle")), net, h("section", { class: "panel" }, walletPanel(() => checkSession(), { upWallet: false })), body);
   return root;
 
   async function checkSession() {

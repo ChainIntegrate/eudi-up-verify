@@ -89,6 +89,7 @@ PUBLIC_ORIGIN=https://up-cie-link.chainintegrate.it
 DB_PATH=/var/lib/up-cie-link/up-cie-link.db
 ALLOW_CADES_UPLOAD=true
 ALLOW_RAW_CHANNEL=false
+WALLETCONNECT_PROJECT_ID=<Project ID Reown, lo stesso di Cross_Chain: pubblico>
 NOTIFY_EACH_LINK=true
 ATTESTER_PRIVATE_KEY=<chiave privata di 0x8F42…723a>
 UNIQ_PEPPER=<primo openssl rand>
@@ -262,7 +263,6 @@ l'attestatore a zero.
 - paternità on-chain: `LSP4Creators` sul contratto e `LSP12IssuedAssets` sulla UP owner (oggi Universal Everything
   mostra ChainIntegrate come creatore e "Asset Maintainer", probabilmente perché la UP è `owner`);
 - `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
-- WalletConnect per UP Wallet Android (docs/03-frontend.md §5);
 - copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto; processo separato
   per HMAC e firma (UCL-08);
 - informativa: completare i punti mancanti (UCL-14); il titolare è già "ChainIntegrate, servizi di Simone Cavalletti";

@@ -5,3 +5,4 @@ frontend/metadata/** -text
 *.png binary
 *.ico binary
 *.p7m binary
+frontend/vendor/** -text

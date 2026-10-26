@@ -34,12 +34,12 @@ our server.
 | Spike | Verify a real CIE signature (`spike/`) | done, all checks passed on a real CIE |
 | 1 | Attester contract, tests, deployment (`contracts/`) | done; redeployed on testnet after the audit (`0x6A52…71BA`), verified, LSP4 metadata set |
 | 2 | Backend (Node/Express): statements, ERC-1271, CIE verification, minting, jobs, monitor, backups | done |
-| 3 | Frontend: connect UP, sign, show badge, self-service data export/erasure, admin page | done on testnet (live at up-cie-link.chainintegrate.it; first real UP + CIE link on 2026-10-15; renounce, data export, re-link after renouncing and data erasure tested by the owner); UP Wallet for Android (WalletConnect) at mainnet |
+| 3 | Frontend: connect UP, sign, show badge, self-service data export/erasure, admin page | done on testnet (live at up-cie-link.chainintegrate.it; first real UP + CIE link on 2026-10-15; renounce, data export, re-link after renouncing and data erasure tested by the owner); UP Wallet for Android (WalletConnect, QR code; not on the admin page) built and tested in the browser, real phone test pending |
 | 4 | Android app (NFC signature), end-to-end demo | to do |
 | Server | Testnet service on the VPS: PM2, monitor and backup timers, nginx + TLS (`docs/operations.md`) | done (2026-10-15), updated with all audit fixes on 2026-10-19 |
 | Audit | Two security/privacy reviews (2026-10-14 and 2026-10-15) and their fixes (`docs/audit/`) | done: every finding fixed or decided; deferred by decision: separate signing/HMAC process (UCL-08), CIE certificate policy check (UCL-13), privacy notice completion (UCL-14), off-site backups (UCL-25) |
 | EU eID | Same attestation with other European eID cards that carry a signing certificate | exploring: looking for testers |
-| Mainnet | Contract on mainnet (possibly the same address on every network via the Nick factory; creator data LSP4Creators/LSP12IssuedAssets), WalletConnect, complete privacy notice, off-site backups (`docs/operations.md` §6) | to do |
+| Mainnet | Contract on mainnet (possibly the same address on every network via the Nick factory; creator data LSP4Creators/LSP12IssuedAssets), complete privacy notice, off-site backups (`docs/operations.md` §6) | to do |
 
 ## Repository layout
 

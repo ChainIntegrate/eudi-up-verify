@@ -1,6 +1,6 @@
 // Universal Profile through a wallet "connector" exposing an EIP-1193 request():
 //  - "extension": the UP Browser Extension (window.lukso; window.ethereum as a fallback);
-//  - "walletconnect": ChainIntegrate's UP Wallet for Android (to be added, see docs/03-frontend.md).
+//  - "walletconnect": ChainIntegrate's UP Wallet for Android, through WalletConnect (wc.js).
 // Only three things are asked of the wallet: the UP address, a signature of the statement, and the
 // renounce() transaction sent by the UP itself.
 

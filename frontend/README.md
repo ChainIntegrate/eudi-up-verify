@@ -1,8 +1,10 @@
 # UP CIE Link — frontend
 
 Static pages served by nginx on the same domain as the API (`/api` is proxied to the backend). Plain HTML, CSS and
-JavaScript modules written for this project: **no third-party libraries, no build step, no CDN, no external fonts**.
-A strict Content-Security-Policy (see `../deploy/nginx/up-cie-link.conf`) allows only files from this domain.
+JavaScript modules written for this project: **no build step, no CDN, no external fonts**, and no third-party code
+except the UP Wallet connection (`vendor/`, WalletConnect, loaded only when it is used; see `vendor/README.md`).
+A strict Content-Security-Policy (see `../deploy/nginx/up-cie-link.conf`) allows only files from this domain; the
+only other origin is WalletConnect's relay (`connect-src`).
 
 | Path | |
 |---|---|
@@ -13,8 +15,9 @@ A strict Content-Security-Policy (see `../deploy/nginx/up-cie-link.conf`) allows
 | `/privacy`, `/note-legali` | privacy notice and legal notes |
 | `/admin` | contract owner only (not in the menu): login signed by the owner UP, service status, exception requests, revoke/reinstate, badge metadata, emergency stop. Every transaction is prepared by the backend and signed by the owner UP in the wallet; on mainnet `MAINNET` must be typed to confirm |
 
-- `js/app.js` router and pages; `js/admin.js` the admin page; `js/i18n.js` all texts (Italian and English); `js/up.js` wallet connectors
-  (UP Browser Extension now; UP Wallet for Android through WalletConnect to come); `js/api.js` backend calls;
+- `js/app.js` router and pages; `js/admin.js` the admin page; `js/i18n.js` all texts (Italian and English); `js/up.js` wallet requests
+  (UP Browser Extension, or UP Wallet for Android through `js/wc.js`: WalletConnect, QR code, session kept until
+  "Disconnect"; not on the admin page, which is desktop only); `js/api.js` backend calls;
   `js/theme.js` light/dark theme before the first paint.
 - The browser never calls an RPC node: on-chain reads go through the backend. Data from the network is always
   inserted as text, never as HTML.

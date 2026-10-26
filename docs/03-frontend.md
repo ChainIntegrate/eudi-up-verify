@@ -4,8 +4,8 @@ Stato (2026-10-19): **in funzione in testnet** su `up-cie-link.chainintegrate.it
 admin A1-A5 (§6) confermate e implementate; primo collegamento reale (UP + CIE con CieSign) riuscito il 2026-10-15.
 Dopo il secondo audit: in "Il mio bollino" export e cancellazione dei dati firmati dalla UP (UCL-31); nella pagina
 admin i contratti sostituiti (UCL-38). Provati dall'owner: rinuncia, export, nuovo collegamento dopo la rinuncia, cancellazione dei dati, fermo dei contratti sostituiti.
-La connessione con UP Wallet per Android (WalletConnect, §5) è rinviata al mainnet. I §1-3 sono la proposta
-originale, conservata come storia delle decisioni.
+La connessione con UP Wallet per Android (WalletConnect, §5) è implementata (2026-10-26) e provata nel browser;
+manca la prova reale sul telefono. I §1-3 sono la proposta originale, conservata come storia delle decisioni.
 
 Obiettivo: il frontend definitivo (o quasi) su `up-cie-link.chainintegrate.it`, con cui fare subito i test online
 con UP e CIE reali via CieSign; l'app Android (Fase 4) si aggiungerà come secondo canale di firma CIE senza rifare le
@@ -87,10 +87,28 @@ del file con i byte esatti, verifica, rinuncia, errori; nessun errore nella pagi
 provato con nginx reale (pagine, header, CORS dei metadati, `X-Forwarded-For`, limite 128k).
 Non verificato: l'estensione UP Browser reale, CieSign reale, i browser diversi da Chromium.
 
-## 5. UP Wallet per Android (richiesta del 2026-10-14) — rinviata al mainnet
+## 5. UP Wallet per Android (richiesta del 2026-10-14)
 
-Decisione del 2026-10-14: per semplicità WalletConnect si aggiunge **al passaggio in mainnet**; in testnet solo
-l'estensione UP Browser. Le domande W1-W4 qui sotto restano aperte fino ad allora.
+Decisione del 2026-10-14: WalletConnect al passaggio in mainnet. Rivista il 2026-10-26: si fa subito, per provarlo in
+testnet (UP Wallet aggiunge la testnet LUKSO; la sua chiave del telefono va autorizzata sulla UP di prova dalla
+pagina Backup di Cross_Chain, fatto dall'owner il 2026-10-26).
+
+**Decisioni del 2026-10-26** (sostituiscono le domande W1-W4 qui sotto, conservate come storia):
+- **W1:** eccezione alla regola "nessun codice di terzi" (F1) per il solo collegamento UP Wallet: `vendor/signclient-2.25.0.min.js`
+  e `vendor/qrcode-generator-1.4.4.js`, gli stessi file di Cross_Chain (hash identici), caricati con SRI e **solo**
+  quando l'utente sceglie UP Wallet; telemetria spenta. Licenze in `frontend/vendor/` e in `NOTICE`.
+- **W2:** il progetto Reown di Cross_Chain (Reown consente un solo progetto all'account), con
+  `up-cie-link.chainintegrate.it` negli allowed domains; ID in `WALLETCONNECT_PROJECT_ID`, letto da `/api/config`.
+- **W3:** QR con `qrcode-generator` (MIT) come immagine `data:`; sul telefono il pulsante "Apri UP Wallet" apre il link
+  `wc:`; "Copia link" per incollarlo con "Paste".
+- **W4:** verificato sul codice di UP Wallet (Cross_Chain e `up-wallet-android` 0.9.3): `personal_sign` firmato dalla
+  chiave del telefono e controllato via ERC-1271 sulla UP prima di restituirlo; `eth_sendTransaction` eseguito dalla
+  UP tramite il Key Manager. Prova reale sul telefono: da fare.
+- **P1:** `/collega` e `/il-mio-bollino`; **la pagina admin resta solo da computer** con l'estensione.
+- **P2:** la sessione resta nel browser fino a "Disconnetti". **P4:** la sessione chiede solo la rete del servizio
+  (4201 o 42). **P6:** CSP `connect-src` aperta solo a `wss://relay.walletconnect.org` (altri indirizzi di Reown solo
+  se la prova reale li richiede). **P7:** informativa §5 e §6. **P8:** test end-to-end con un finto client
+  WalletConnect (il relay non è raggiungibile dai test).
 
 La connessione deve funzionare con l'estensione UP Browser **e** con l'app UP Wallet per Android. L'app parla con le
 dApp via **WalletConnect** (incolla il link `wc:` della dApp, come `up-wallet.html`), firma `personal_sign` con il

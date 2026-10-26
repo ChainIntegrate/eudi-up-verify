@@ -5,6 +5,7 @@ import { fill, h, shortAddr, storage } from "./dom.js";
 import { errorText, formatDate, getLang, setLang, t } from "./i18n.js";
 import { WalletError, connectUp, extensionWallet, renounce, signStatement } from "./up.js";
 import { viewAdmin } from "./admin.js";
+import { pairUpWallet, qrDataUrl, restoreUpWallet } from "./wc.js";
 
 const EXPLORERS = { 42: "https://explorer.execution.mainnet.lukso.network", 4201: "https://explorer.execution.testnet.lukso.network" };
 const MAX_P7M_BYTES = 64 * 1024;
@@ -133,25 +134,31 @@ function viewStatic(titleKey, bodyKey, subtitle) {
 }
 
 /** Connection panel: one button per wallet. Calls onConnected(up) once the UP is known. */
-function walletPanel(onConnected) {
+// upWallet: false on the admin page (desktop only, decision of 2026-10-26): there only the extension is offered
+function walletPanel(onConnected, { upWallet = true } = {}) {
   const box = h("div");
+  const usable = () => state.up && (upWallet || state.wallet?.kind !== "walletconnect");
   const draw = (err) => {
-    if (state.up) {
-      box.replaceChildren(
-        h("p", {}, `${t("connected")} `, h("code", { title: state.up }, state.up)),
+    if (usable()) {
+      const wc = state.wallet?.kind === "walletconnect";
+      fill(box,
+        h("p", {}, `${t("connected")} `, h("code", { title: state.up }, state.up), wc ? ` (${t("viaUpWallet")})` : ""),
+        wc ? h("div", { class: "actions" }, h("button", { type: "button", class: "btn secondary", id: "wcDisconnect", onclick: disconnect }, t("disconnect"))) : null,
       );
       return;
     }
     const ext = extensionWallet();
-    const extButton = h("button", { type: "button", class: "btn", onclick: () => connect(ext) }, t("connectExtension"));
+    const wcOn = upWallet && Boolean(state.config.walletConnectProjectId);
     fill(box,
       h("p", { class: "dim" }, t("connectText")),
       h("div", { class: "actions" },
-        extButton,
-        h("button", { type: "button", class: "btn secondary", disabled: true, title: t("androidSoon") }, t("connectAndroid")),
+        h("button", { type: "button", class: "btn", onclick: () => connect(ext) }, t("connectExtension")),
+        upWallet
+          ? h("button", { type: "button", class: "btn secondary", id: "connectUpWallet", disabled: !wcOn, title: wcOn ? null : t("androidSoon"), onclick: pair }, t("connectAndroid"))
+          : null,
       ),
       ext ? null : notice("warn", h("span", { html: t("noExtension") })),
-      h("p", { class: "small dim" }, t("androidSoon")),
+      h("p", { class: "small dim" }, !upWallet ? t("adminDesktopOnly") : wcOn ? t("upWalletHint") : t("androidSoon")),
       err ? errorNotice(err) : null,
     );
   };
@@ -171,9 +178,90 @@ function walletPanel(onConnected) {
       draw(e);
     }
   };
+  async function disconnect() {
+    const w = state.wallet;
+    state.wallet = null;
+    state.up = null;
+    await w?.disconnect();
+    render();
+  }
+  function pair() {
+    pairWindow((wallet) => connect(wallet));
+  }
   draw();
-  if (state.up) queueMicrotask(() => onConnected(state.up));
+  if (usable()) queueMicrotask(() => onConnected(state.up));
   return box;
+}
+
+// UP Wallet for Android: a window with the QR code (computer), the link that opens the app (phone) and copy.
+function pairWindow(onWallet) {
+  const status = h("p", { class: "small", id: "wcStatus", role: "status" }, t("wcPreparing"));
+  const qr = h("img", { class: "qr", id: "wcQr", alt: t("wcQrAlt"), hidden: true });
+  const open = h("a", { class: "btn", id: "wcOpen", "aria-disabled": "true" }, t("wcOpenApp"));
+  const copy = h("button", { type: "button", class: "btn secondary", id: "wcCopy", disabled: true }, t("wcCopy"));
+  const cancel = h("button", { type: "button", class: "btn secondary", id: "wcCancel" }, t("cancel"));
+  const win = h("div", { class: "modal-back" },
+    h("div", { class: "modal panel", role: "dialog", "aria-modal": "true", "aria-labelledby": "wcTitle" },
+      h("h2", { id: "wcTitle" }, t("wcTitle")),
+      h("p", {}, t("wcIntro")),
+      h("div", { class: "qr-box" }, qr),
+      h("div", { class: "actions" }, open, copy, cancel),
+      status,
+      h("p", { class: "small dim" }, t("wcPrivacy")),
+    ),
+  );
+  let uri = "";
+  const close = () => win.remove();
+  document.body.append(win);
+  onLeave(close);
+  const pairing = pairUpWallet({
+    projectId: state.config.walletConnectProjectId,
+    chainId: state.config.chainId,
+    onPending: pendingBar,
+    async onUri(u) {
+      uri = u;
+      open.href = u;
+      open.removeAttribute("aria-disabled");
+      copy.disabled = false;
+      status.textContent = t("wcWaiting");
+      try {
+        qr.src = await qrDataUrl(u);
+        qr.hidden = false;
+      } catch { /* the link still works */ }
+    },
+  });
+  copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(uri);
+      status.textContent = t("wcCopied");
+    } catch { /* no clipboard */ }
+  });
+  cancel.addEventListener("click", () => {
+    pairing.cancel();
+    close();
+  });
+  pairing.promise.then(
+    (wallet) => {
+      if (!win.isConnected || !wallet) return;
+      close();
+      onWallet(wallet);
+    },
+    (e) => {
+      status.textContent = errorText(e?.code ?? "WC_FAILED");
+      status.className = "small err-text";
+    },
+  );
+}
+
+// While UP Wallet has a request to confirm on the phone
+function pendingBar(on) {
+  let bar = document.getElementById("wcPending");
+  if (!on) {
+    bar?.remove();
+    return;
+  }
+  bar ??= h("div", { id: "wcPending", class: "pending-bar", role: "status" }, h("span", { class: "spinner" }), " ", t("wcPending"));
+  document.body.append(bar);
 }
 
 // ---------------------------------------------------------------- link flow
@@ -596,6 +684,17 @@ async function start() {
   } catch {
     main().replaceChildren(notice("err", t("configError")));
     return;
+  }
+  // P2: a UP Wallet session kept in this browser (the WalletConnect code loads only when there is one)
+  const kept = await restoreUpWallet({ projectId: state.config.walletConnectProjectId, chainId: state.config.chainId, onPending: pendingBar });
+  if (kept) {
+    state.wallet = kept;
+    state.up = (await kept.request({ method: "eth_accounts" }))[0];
+    kept.onAccountsChanged(() => {
+      state.up = null;
+      state.wallet = null;
+      render();
+    });
   }
   render();
 }

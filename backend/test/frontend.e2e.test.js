@@ -19,7 +19,7 @@ import { artifact, contractsAvailable, deployProfile, startNode } from "./helper
 
 const FRONTEND = fileURLToPath(new URL("../../frontend/", import.meta.url));
 export const CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; " +
+  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' wss://relay.walletconnect.org; " +
   "font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
 function loadPlaywright() {
@@ -74,6 +74,44 @@ function serveFrontend(port, apiBase) {
     res.end(readFileSync(file));
   });
   return new Promise((r) => srv.listen(port, "127.0.0.1", () => r(srv)));
+}
+
+/**
+ * Stand-in for vendor/signclient-*.js (Reown's relay is not reachable from the tests): the page's WalletConnect code
+ * runs unchanged against it. window.__wcApprove(up, chainId) plays UP Wallet approving the pairing; requests go to
+ * the same controller key as the extension stub. Sessions are kept in localStorage, as the real client does.
+ */
+function fakeSignClientBundle() {
+  const KEY = "fake-wc-sessions";
+  const load = () => JSON.parse(localStorage.getItem(KEY) ?? "[]");
+  const save = (s) => localStorage.setItem(KEY, JSON.stringify(s));
+  const handlers = {};
+  const client = {
+    core: { relayer: { connected: true, restartTransport: async () => {} }, pairing: { disconnect: async () => {} } },
+    session: { getAll: () => load() },
+    on: (ev, cb) => ((handlers[ev] ??= []).push(cb)),
+    async connect({ optionalNamespaces }) {
+      window.__wcNamespaces = optionalNamespaces;
+      let approve;
+      const approval = new Promise((r) => (approve = r));
+      window.__wcApprove = (up, chainId) => {
+        const s = { topic: "topic-1", pairingTopic: "pair-1", expiry: Math.floor(Date.now() / 1000) + 3600, peer: { metadata: { name: "ChainIntegrate UP Wallet" } }, namespaces: { eip155: { accounts: [`eip155:${chainId}:${up}`] } } };
+        save([s]);
+        approve(s);
+      };
+      return { uri: "wc:pair-1@2?relay-protocol=irn&symKey=00", approval: () => approval };
+    },
+    request: async ({ request }) => window.__walletRequest(request.method, request.params ?? []),
+    async disconnect({ topic }) {
+      save(load().filter((s) => s.topic !== topic));
+      window.__wcDisconnected = true;
+    },
+  };
+  window.SignClientBundle = {
+    Core: class { constructor(opts) { window.__wcCore = opts; this.eventClient = {}; } },
+    SignClient: { init: async () => client },
+    getSdkError: (k) => ({ code: 6000, message: k }),
+  };
 }
 
 describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "contracts not built") || (!browserAvailable && "playwright not installed") }, () => {
@@ -136,6 +174,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
       TRUST_DIR: path.join(dir, "trust"),
       CIE_ROOT_SHA256: pki.rootSha256,
       ALLOW_CADES_UPLOAD: "true",
+      WALLETCONNECT_PROJECT_ID: "test-project-id",
     };
     server = spawn(process.execPath, [fileURLToPath(new URL("../src/server.js", import.meta.url))], { env, stdio: ["ignore", "pipe", "pipe"] });
     server.stdout.on("data", (d) => (logs += d));
@@ -157,7 +196,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
   });
 
   /** A page with the UP Browser Extension stub, backed by the controller key in Node. */
-  async function newPage(who = { up: () => up, profile: () => profile, controller: () => controller }) {
+  async function newPage(who = { up: () => up, profile: () => profile, controller: () => controller }, { extension = true, upWallet = false } = {}) {
     const page = await browser.newPage({ acceptDownloads: true });
     const problems = [];
     page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
@@ -183,9 +222,12 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
           throw Object.assign(new Error(`unsupported ${method}`), { code: 4200 });
       }
     });
-    await page.addInitScript(() => {
-      window.lukso = { request: ({ method, params }) => window.__walletRequest(method, params ?? []), on() {} };
-    });
+    if (extension) {
+      await page.addInitScript(() => {
+        window.lukso = { request: ({ method, params }) => window.__walletRequest(method, params ?? []), on() {} };
+      });
+    }
+    if (upWallet) await page.addInitScript(fakeSignClientBundle);
     return { page, problems };
   }
 
@@ -416,6 +458,47 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.getByText("Collegamento non riuscito").waitFor({ timeout: 30_000 });
     assert.ok(await page.getByText("Il file firmato non contiene esattamente l'enunciato").isVisible());
     await shot(page, "09-error");
+    assert.deepEqual(problems, []);
+  });
+  it("UP Wallet for Android (WalletConnect): pair with the QR code, sign, kept after reload, disconnect", async () => {
+    const { page, problems } = await newPage(undefined, { extension: false, upWallet: true });
+    await page.goto(site + "/collega");
+    await page.locator("#connectUpWallet").click();
+    await page.locator("#wcQr").waitFor(); // the real QR library, loaded with Subresource Integrity
+    assert.match(await page.locator("#wcQr").getAttribute("src"), /^data:image\/gif;base64,/);
+    assert.equal(await page.locator("#wcOpen").getAttribute("href"), "wc:pair-1@2?relay-protocol=irn&symKey=00");
+    assert.deepEqual(await page.evaluate(() => window.__wcNamespaces), {
+      eip155: { chains: ["eip155:4201"], methods: ["personal_sign", "eth_sendTransaction"], events: ["accountsChanged", "chainChanged"] },
+    });
+    assert.deepEqual(await page.evaluate(() => [window.__wcCore.telemetryEnabled, window.__wcCore.customStoragePrefix]), [false, "up-cie-link"]);
+    await shot(page, "11-upwallet-pair");
+    await page.evaluate((a) => window.__wcApprove(a, 4201), up);
+
+    // the link flow goes on as with the extension; the statement is signed in "UP Wallet"
+    await page.getByRole("button", { name: "Avanti" }).click();
+    await page.check("#consentRead");
+    await page.check("#consentAgree");
+    await page.getByRole("button", { name: "Prepara l'enunciato" }).click();
+    const text = await page.locator("pre.statement").textContent();
+    await page.getByRole("button", { name: "Firma con la UP" }).click();
+    await page.locator("#p7m").waitFor();
+    await page.setInputFiles("#p7m", { name: "s.p7m", mimeType: "application/pkcs7-mime", buffer: pki.signCades(Buffer.from(text, "ascii")) });
+    await page.getByRole("button", { name: "Invia il file firmato" }).click();
+    await page.getByText("Fatto: la UP ha il bollino").waitFor({ timeout: 30_000 });
+
+    // the session is kept: after a reload "My badge" is connected without pairing again
+    await page.goto(site + "/il-mio-bollino");
+    await page.getByText("con UP Wallet").waitFor();
+    assert.equal(await page.locator("#badgeState").textContent(), "Bollino valido");
+    // the admin page offers the extension only (desktop only)
+    await page.goto(site + "/admin");
+    await page.getByText("La pagina admin si usa solo dal computer").waitFor();
+    assert.equal(await page.locator("#connectUpWallet").count(), 0);
+    // disconnect
+    await page.goto(site + "/il-mio-bollino");
+    await page.locator("#wcDisconnect").click();
+    await page.locator("#connectUpWallet").waitFor();
+    assert.equal(await page.evaluate(() => [window.__wcDisconnected, localStorage.getItem("ucl-wc-session")]).then((r) => JSON.stringify(r)), "[true,null]");
     assert.deepEqual(problems, []);
   });
 });
