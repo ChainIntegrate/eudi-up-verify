@@ -336,7 +336,7 @@ l'attestatore a zero.
   mostra ChainIntegrate come creatore e "Asset Maintainer", probabilmente perché la UP è `owner`);
 - `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
 - copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto (confermato il
-  2026-10-27); processo separato per HMAC e firma (UCL-08): fatto, da installare sulla VPS prima del mainnet (§2.3b);
+  2026-10-27); processo separato per HMAC e firma (UCL-08): fatto e installato sulla VPS il 2026-10-27 (§2.3b);
 - informativa: completare i punti mancanti (UCL-14); il titolare è già "ChainIntegrate, servizi di Simone Cavalletti";
 - verificare se la policy dei certificati CIE (CP/CPS) consente a un privato di basarsi sul certificato (UCL-13);
 - `ALLOW_RAW_CHANNEL=false` finché l'app Android non è pronta (UCL-40);
