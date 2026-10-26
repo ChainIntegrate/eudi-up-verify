@@ -20,7 +20,7 @@ import { startSignerProcess } from "./helpers/signer.js";
 
 const FRONTEND = fileURLToPath(new URL("../../frontend/", import.meta.url));
 export const CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' wss://relay.walletconnect.org; " +
+  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' wss://relay.walletconnect.org; frame-src https://verify.walletconnect.org https://verify.walletconnect.com; " +
   "font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
 function loadPlaywright() {

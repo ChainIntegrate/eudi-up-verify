@@ -4,7 +4,8 @@ Static pages served by nginx on the same domain as the API (`/api` is proxied to
 JavaScript modules written for this project: **no build step, no CDN, no external fonts**, and no third-party code
 except the UP Wallet connection (`vendor/`, WalletConnect, loaded only when it is used; see `vendor/README.md`).
 A strict Content-Security-Policy (see `../deploy/nginx/up-cie-link.conf`) allows only files from this domain; the
-only other origin is WalletConnect's relay (`connect-src`).
+only other origins are WalletConnect's relay (`connect-src`) and its Verify service (`frame-src`, a hidden iframe that
+attests the domain to UP Wallet).
 
 | Path | |
 |---|---|

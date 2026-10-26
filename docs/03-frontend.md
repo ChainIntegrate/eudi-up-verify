@@ -107,8 +107,9 @@ pagina Backup di Cross_Chain, fatto dall'owner il 2026-10-26).
   UP tramite il Key Manager. Prova reale sul telefono: da fare.
 - **P1:** `/collega` e `/il-mio-bollino`; **la pagina admin resta solo da computer** con l'estensione.
 - **P2:** la sessione resta nel browser fino a "Disconnetti". **P4:** la sessione chiede solo la rete del servizio
-  (4201 o 42). **P6:** CSP `connect-src` aperta solo a `wss://relay.walletconnect.org` (altri indirizzi di Reown solo
-  se la prova reale li richiede). **P7:** informativa §5 e §6. **P8:** test end-to-end con un finto client
+  (4201 o 42). **P6:** CSP `connect-src` aperta solo a `wss://relay.walletconnect.org`; dal 2026-10-28 anche
+  `frame-src https://verify.walletconnect.org https://verify.walletconnect.com` (l'iframe di Verify che attesta il
+  dominio: senza, UP Wallet mostrava "UNKNOWN"). **P7:** informativa §5 e §6. **P8:** test end-to-end con un finto client
   WalletConnect (il relay non è raggiungibile dai test).
 
 La connessione deve funzionare con l'estensione UP Browser **e** con l'app UP Wallet per Android. L'app parla con le
