@@ -46,9 +46,11 @@ export function metadataValue(json, url) {
 
 /**
  * @param deps {{db, cfg, upChecker, chain: {owner(), attester(), attesterOf(address), getData(key), getAttestation(up), exceptionOf(t),
- *   balance(addr)}, minterAddress?: string, healthInfo?: Function, metadataFile?: string, clock?: () => number}}
+ *   balance(addr)}, minterAddress?: string|(() => string|null), healthInfo?: Function, metadataFile?: string, clock?: () => number}}
  */
 export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, healthInfo = () => ({}), metadataFile, clock = Date.now }) {
+  // the attester key is in the signer process (UCL-08): its address is known once the signer has answered
+  const attesterAddr = () => (typeof minterAddress === "function" ? minterAddress() : minterAddress);
   const challengeKey = randomBytes(32);
   const usedChallenges = new Map(); // tag -> expires
   const sessions = new Map(); // sha256(token) -> {up, expires}
@@ -140,7 +142,7 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
     const [owner, attester, onChainMetadata] = await Promise.all([chain.owner(), chain.attester(), chain.getData(LSP4_METADATA_KEY)]);
     let balance = null;
     try {
-      balance = formatEther(await chain.balance(attester === ZERO ? (minterAddress ?? ZERO) : attester));
+      balance = formatEther(await chain.balance(attester === ZERO ? (attesterAddr() ?? ZERO) : attester));
     } catch { /* unknown */ }
     const json = readMetadataFile();
     const expected = json ? metadataValue(json, metadataUrl()) : null;
@@ -161,7 +163,8 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
       deployBlock: cfg.deployment.deployBlock,
       owner: getAddress(owner),
       attester: getAddress(attester),
-      configuredAttester: minterAddress,
+      configuredAttester: attesterAddr(),
+      signer: healthInfo().signer ?? null,
       mintingStopped: attester === ZERO,
       attesterBalance: balance,
       indexer: kvGet(db, "indexer"),
@@ -247,9 +250,9 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
         summary = "EMERGENCY STOP: attester set to zero, no new badges";
         break;
       case "restoreAttester":
-        if (!minterAddress) throw new AdminError(400, "INVALID_ARGS");
-        data = OWNER_IFACE.encodeFunctionData("setAttester", [minterAddress]);
-        summary = `restore the attester ${minterAddress}`;
+        if (!attesterAddr()) throw new AdminError(400, "INVALID_ARGS");
+        data = OWNER_IFACE.encodeFunctionData("setAttester", [attesterAddr()]);
+        summary = `restore the attester ${attesterAddr()}`;
         break;
       case "stopSuperseded": {
         // UCL-38: only the earlier contracts listed in the deployment record

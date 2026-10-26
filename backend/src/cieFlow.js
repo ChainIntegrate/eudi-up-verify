@@ -10,7 +10,6 @@ import { isAtLeast } from "./cie/taxcode.js";
 import { LinkError, decide } from "./linking.js";
 import { badgeExpiry, failMint, finishMint, processInvalidations, recordMintTx, startMint } from "./mints.js";
 import { notify } from "./notify.js";
-import { encryptCertRef, personKey as derivePersonKey } from "./secrets.js";
 import { getStatement, statementText } from "./statements.js";
 
 export const MIN_AGE = 18; // UCL-11
@@ -29,10 +28,12 @@ const setStatus = (db, id, fields) => {
 };
 
 /**
- * @param deps {{db, cfg, trust, pepper: Buffer, certRefKey: Buffer, badge, minter, queue, ocspTransport?, clock?}}
+ * @param deps {{db, cfg, trust, signer, signerReady?: () => boolean, badge, minter, queue, ocspTransport?, clock?}}
+ *   signer: person key and certificate reference come from the signer process (UCL-08); signerReady() false
+ *   (not checked yet, unreachable at start-up, pepper mismatch) refuses new CIE files with SERVICE_UNAVAILABLE.
  */
 export function createCieFlow(deps) {
-  const { db, cfg, trust, pepper, certRefKey, badge, minter, queue, ocspTransport, clock = Date.now } = deps;
+  const { db, cfg, trust, signer, signerReady = () => true, badge, minter, queue, ocspTransport, clock = Date.now } = deps;
 
   async function submit(statementId, channel, payload) {
     const row = getStatement(db, statementId);
@@ -41,6 +42,7 @@ export function createCieFlow(deps) {
     if (row.status === "pending_up") throw new FlowError(409, "UP_SIGNATURE_REQUIRED");
     if (row.status !== "pending_cie") throw new FlowError(409, "ALREADY_SUBMITTED");
     if (now > row.expires_at) throw new FlowError(410, "STATEMENT_EXPIRED");
+    if (!signerReady()) throw new FlowError(503, "SERVICE_UNAVAILABLE"); // the statement stays usable
     // single submission per statement
     if (db.prepare("UPDATE statements SET status = 'verifying' WHERE id = ? AND status = 'pending_cie'").run(row.id).changes !== 1) {
       throw new FlowError(409, "ALREADY_SUBMITTED");
@@ -77,11 +79,29 @@ export function createCieFlow(deps) {
       throw new FlowError(400, "CARD_EXPIRING");
     }
 
-    const job = {
-      personKey: derivePersonKey(pepper, result.taxCode),
-      certRefEnc: encryptCertRef(certRefKey, result.certRef),
-      expiresAtSec: badgeExpiry(result.notAfter), // UCL-03/34
-    };
+    let job;
+    try {
+      job = {
+        personKey: await signer.personKey(result.taxCode),
+        certRefEnc: await signer.encryptCertRef(result.certRef),
+        expiresAtSec: badgeExpiry(result.notAfter), // UCL-03/34
+      };
+    } catch (e) {
+      // UCL-08: the signer is down or at its rate limit; the CIE was valid but nothing is kept
+      result.taxCode = undefined;
+      const code = e?.code === "RATE_LIMITED" ? "SERVICE_BUSY" : "SERVICE_UNAVAILABLE";
+      setStatus(db, row.id, { status: "failed", error_code: code });
+      audit(db, "cie_not_processed", { up: row.up, detail: e?.code ?? "error" }, clock());
+      if (code === "SERVICE_BUSY") {
+        notify(db, {
+          kind: "signer_busy",
+          severity: "problem",
+          subject: "signer: person-key rate limit reached",
+          body: "The signer refused a person key (SIGNER_MAX_PERSON_KEYS_PER_MINUTE). With real traffic raise the limit in /etc/up-cie-link/signer.env; otherwise something is asking for person keys in bulk: check the server.",
+        }, clock());
+      }
+      throw new FlowError(503, code);
+    }
     result.taxCode = undefined; // drop personal data as soon as the key is derived
     setStatus(db, row.id, { status: "queued" });
     audit(db, "cie_verified", { up: row.up }, clock());
@@ -151,6 +171,22 @@ export function createCieFlow(deps) {
       if (e?.code === "TX_TIMEOUT" || e?.code === "SEND_FAILED") {
         // the transaction may still be mined: the mint stays open and reconcileMints() closes it
         audit(db, "mint_pending", { up: row.up, txHash: e.txHash ?? null, detail: e.code }, clock());
+        return;
+      }
+      if (e?.code === "MINT_RATE_LIMITED") {
+        // UCL-08, decision A: the signer's hourly/daily cap; the person retries later, the owner is told at once
+        failMint(db, mintRow(), "MINT_RATE_LIMITED", clock());
+        notify(db, {
+          kind: "mint_rate_limited",
+          severity: "problem",
+          subject: `mint limit reached: badge for ${row.up} not minted`,
+          body: [
+            `The signer refused attest() for ${row.up}: its hourly or daily mint limit is reached.`,
+            "The holder was told to try again later. If this is real traffic, raise SIGNER_MAX_ATTEST_PER_HOUR /",
+            "SIGNER_MAX_ATTEST_PER_DAY in /etc/up-cie-link/signer.env and restart the signer; if not, someone is",
+            "minting through the backend: stop minting from the admin page and check the server.",
+          ].join("\n"),
+        }, clock());
         return;
       }
       failMint(db, mintRow(), "MINT_FAILED", clock());

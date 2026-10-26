@@ -14,6 +14,7 @@ import { ContractFactory, Wallet, randomBytes, hexlify } from "ethers";
 import { createBadgeReader } from "../src/chain.js";
 import { createFakePki } from "./helpers/fake-pki.js";
 import { artifact, contractsAvailable, deployProfile, startNode } from "./helpers/hardhat-node.js";
+import { startSignerProcess } from "./helpers/signer.js";
 
 const freePort = () =>
   new Promise((resolve) => {
@@ -25,12 +26,12 @@ const freePort = () =>
   });
 
 describe("server end-to-end", { skip: !contractsAvailable && "contracts not built" }, () => {
-  let node, pki, stopOcsp, server, dir, base, up, controller, badgeAddress, env, deployer, ownerUp, logs = "";
+  let node, pki, stopOcsp, server, dir, base, up, controller, badgeAddress, env, deployer, ownerUp, attesterKey, signerProc, signerProcs = [], pepper, logs = "";
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
     [deployer] = node.wallets;
-    const attesterKey = node.keys[1];
+    attesterKey = node.keys[1];
     controller = Wallet.createRandom();
     const upArt = artifact("universalProfile");
     const deployUp = async (ownerAddr) => {
@@ -57,19 +58,21 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
     writeFileSync(path.join(dir, "trust", "root.pem"), pki.rootPem);
     writeFileSync(path.join(dir, "trust", "sub.pem"), pki.subPem);
 
+    // UCL-08: the secrets are in the signer process, the backend only knows its socket
+    pepper = hexlify(randomBytes(32));
+    signerProc = await startSignerProcess(dir, { attesterKey, contract: badgeAddress, chainId: 4201, pepper });
+    signerProcs.push(signerProc);
     const port = await freePort();
     base = `http://127.0.0.1:${port}`;
     env = {
       ...process.env,
+      SIGNER_SOCKET: signerProc.socketPath,
       NETWORK: "luksoTestnet",
       RPC_URL: node.url,
       PORT: String(port),
       PUBLIC_ORIGIN: "https://up-cie-link.example",
       DB_PATH: path.join(dir, "e2e.db"),
       DEPLOYMENTS_DIR: path.join(dir, "deployments"),
-      ATTESTER_PRIVATE_KEY: attesterKey,
-      UNIQ_PEPPER: hexlify(randomBytes(32)),
-      CERT_REF_KEY: hexlify(randomBytes(32)),
       TRUST_DIR: path.join(dir, "trust"),
       CIE_ROOT_SHA256: pki.rootSha256,
       ALLOW_CADES_UPLOAD: "true",
@@ -84,6 +87,7 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
 
   after(() => {
     server?.kill("SIGTERM");
+    signerProcs.forEach((p) => p.stop());
     stopOcsp?.();
     node?.stop();
     pki?.cleanup();
@@ -129,10 +133,14 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
     const d2 = path.join(dir, "deployments-stopped");
     mkdirSync(d2);
     writeFileSync(path.join(d2, "luksoTestnet.json"), JSON.stringify({ chainId: 4201, address: await stopped.getAddress(), deployBlock: await node.provider.getBlockNumber() }));
+    const d2s = path.join(dir, "signer-stopped");
+    mkdirSync(d2s);
+    const stoppedSigner = await startSignerProcess(d2s, { attesterKey, contract: await stopped.getAddress(), chainId: 4201 });
+    signerProcs.push(stoppedSigner);
     const port = await freePort();
     let out = "";
     const child = spawn(process.execPath, [fileURLToPath(new URL("../src/server.js", import.meta.url))], {
-      env: { ...env, PORT: String(port), DEPLOYMENTS_DIR: d2, DB_PATH: path.join(dir, "stopped.db") },
+      env: { ...env, PORT: String(port), DEPLOYMENTS_DIR: d2, DB_PATH: path.join(dir, "stopped.db"), SIGNER_SOCKET: stoppedSigner.socketPath },
       stdio: ["ignore", "pipe", "pipe"],
     });
     child.stdout.on("data", (x) => (out += x));
@@ -143,6 +151,50 @@ describe("server end-to-end", { skip: !contractsAvailable && "contracts not buil
       assert.equal((await (await fetch(`http://127.0.0.1:${port}/api/health`)).json()).ok, true);
     } finally {
       child.kill("SIGTERM");
+    }
+  });
+
+  /** Starts a second backend with `extra` env; returns {port, out(), stop()} once it listens (or exited). */
+  async function startBackend(extra) {
+    const port = await freePort();
+    let out = "";
+    const child = spawn(process.execPath, [fileURLToPath(new URL("../src/server.js", import.meta.url))], {
+      env: { ...env, PORT: String(port), ...extra },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let exited = null;
+    child.on("exit", (c) => (exited = c));
+    child.stdout.on("data", (x) => (out += x));
+    child.stderr.on("data", (x) => (out += x));
+    for (let i = 0; i < 100 && !out.includes("trust store:") && exited === null; i++) await new Promise((r) => setTimeout(r, 100));
+    return { port, out: () => out, exited: () => exited, stop: () => child.kill("SIGTERM") };
+  }
+
+  it("UCL-08 (S3): the backend refuses to start with the signer's secrets in its environment", async () => {
+    const b = await startBackend({ UNIQ_PEPPER: pepper, DB_PATH: path.join(dir, "s3.db") });
+    assert.equal(b.exited(), 1);
+    assert.match(b.out(), /UNIQ_PEPPER must not be in the backend's environment/);
+  });
+
+  it("UCL-08: a signer with another UNIQ_PEPPER is caught; the site stays up and refuses CIE files", async () => {
+    const d = path.join(dir, "signer-other-pepper");
+    mkdirSync(d);
+    const other = await startSignerProcess(d, { attesterKey, contract: badgeAddress, chainId: 4201 }); // new pepper
+    signerProcs.push(other);
+    // same database as the main backend: its stored pepper check value does not match
+    const b = await startBackend({ SIGNER_SOCKET: other.socketPath });
+    try {
+      assert.match(b.out(), /signer: PEPPER_MISMATCH/);
+      const base2 = `http://127.0.0.1:${b.port}`;
+      const s = await (await fetch(`${base2}/api/statements`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ up, mode: "link" }) })).json();
+      await fetch(`${base2}/api/statements/${s.id}/up-signature`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ signature: await controller.signMessage(s.text) }) });
+      const sub = await fetch(`${base2}/api/statements/${s.id}/cie-cades`, { method: "POST", body: pki.signCades(Buffer.from(s.text, "ascii")) });
+      assert.equal(sub.status, 503);
+      assert.equal((await sub.json()).error, "SERVICE_UNAVAILABLE");
+      assert.equal((await (await fetch(`${base2}/api/statements/${s.id}`)).json()).status, "pending_cie", "the statement stays usable");
+      assert.equal((await (await fetch(`${base2}/api/badge/${up}`)).json()).status, "valid", "the site still reads the chain");
+    } finally {
+      b.stop();
     }
   });
 });

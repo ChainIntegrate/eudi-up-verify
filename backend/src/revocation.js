@@ -6,15 +6,15 @@ import { kvGet, kvSet } from "./db.js";
 import { CieError, certSha256 } from "./cie/pki.js";
 import { ocspStatus } from "./cie/ocsp.js";
 import { notify } from "./notify.js";
-import { decryptCertRef } from "./secrets.js";
 import { processInvalidations, scheduleInvalidation } from "./mints.js";
 
 const DAY = 86_400_000;
 
 /**
- * @param {{db, trust, certRefKey: Buffer, queue, minter, badge, transport?: Function, now?: () => number, unavailableDaysAlert?: number}} p
+ * @param {{db, trust, signer, queue, minter, badge, transport?: Function, now?: () => number, unavailableDaysAlert?: number}} p
+ *   signer: decrypts the certificate references (UCL-08)
  */
-export async function runRevocationCheck({ db, trust, certRefKey, queue, minter, badge, transport, now = Date.now, unavailableDaysAlert = 3 }) {
+export async function runRevocationCheck({ db, trust, signer, queue, minter, badge, transport, now = Date.now, unavailableDaysAlert = 3 }) {
   const t = now();
   const issuers = new Map([...trust.intermediates, ...trust.roots].map((c) => [certSha256(c), c]));
   const links = db.prepare("SELECT up, cert_ref_enc FROM links WHERE status = 'valid' AND expires_at > ? AND cert_ref_enc IS NOT NULL").all(t);
@@ -24,7 +24,7 @@ export async function runRevocationCheck({ db, trust, certRefKey, queue, minter,
     result.checked++;
     let status;
     try {
-      const ref = decryptCertRef(certRefKey, link.cert_ref_enc);
+      const ref = await signer.decryptCertRef(link.cert_ref_enc);
       const issuer = issuers.get(ref.issuerSha256);
       if (!issuer) throw new CieError("ISSUER_NOT_IN_TRUST_STORE");
       status = await ocspStatus({ issuer, serialHex: ref.serialHex, url: ref.ocspUrl, transport, now: new Date(t) });

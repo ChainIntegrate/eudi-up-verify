@@ -91,16 +91,58 @@ ALLOW_CADES_UPLOAD=true
 ALLOW_RAW_CHANNEL=false
 WALLETCONNECT_PROJECT_ID=<Project ID Reown, lo stesso di Cross_Chain: pubblico>
 NOTIFY_EACH_LINK=true
-ATTESTER_PRIVATE_KEY=<chiave privata di 0x8F42…723a>
-UNIQ_PEPPER=<primo openssl rand>
-CERT_REF_KEY=<secondo openssl rand>
 CIE_ROOT_SHA256=<dal passo 2.4>
 SMTP_HOST=… SMTP_PORT=… SMTP_SECURE=… SMTP_USER=… SMTP_PASS=… SMTP_FROM=… NOTIFICATION_EMAIL=…  (come il relayer)
 BACKUP_DIR=/var/backups/up-cie-link
 BACKUP_AGE_RECIPIENT=<chiave pubblica age1… generata sul PC con npm run backup:keygen -- <file>>
 ```
 
-Il backend non parte se `.env` è leggibile da altri utenti.
+Il backend non parte se `.env` è leggibile da altri utenti, né se contiene `ATTESTER_PRIVATE_KEY`, `UNIQ_PEPPER` o
+`CERT_REF_KEY`: quelli vanno solo nel firmatario (§2.3b).
+
+### 2.3b Firmatario: segreti in un processo separato (audit UCL-08, decisioni S1-S3 del 2026-10-27)
+
+Il backend non vede i tre segreti: li custodisce il **firmatario** (`signer/`), un processo con un suo utente
+(`up-cie-link-signer`), **senza rete**, che risponde solo al backend su `/run/up-cie-link-signer/signer.sock`. Calcola
+l'impronta del codice fiscale, cifra/decifra il riferimento al certificato e firma solo `attest()` / `invalidate()`
+sul contratto indicato, con limiti di frequenza (20 conii l'ora, 100 al giorno; 100 invalidazioni l'ora; 30 impronte
+al minuto; 2.000 decifrature al giorno). Oltre i limiti rifiuta: l'utente vede un messaggio chiaro, a te arriva una
+mail di problema; se è traffico vero si alzano i limiti in `signer.env` (vedi `signer/signer.env.example`).
+
+Il suo codice sta in `/opt/up-cie-link-signer`, di root e in sola lettura, installato **da un clone nuovo** (mai da
+`/var/www/up-cie-link`, scrivibile dall'utente del backend):
+
+```bash
+sudo bash -c 'd=$(mktemp -d) && git clone --depth 1 https://github.com/ChainIntegrate/up-cie-link "$d" \
+  && bash "$d/deploy/install-signer.sh" && rm -rf "$d"'
+```
+
+Lo script crea l'utente, installa il codice e l'unità systemd. Poi i segreti, in un file leggibile solo da root
+(systemd lo legge e li passa al processo):
+
+```bash
+sudo install -m 600 -o root -g root /dev/null /etc/up-cie-link/signer.env
+sudo nano /etc/up-cie-link/signer.env
+```
+
+```
+ATTESTER_PRIVATE_KEY=<chiave privata di 0x8F42…723a>
+UNIQ_PEPPER=<primo openssl rand>
+CERT_REF_KEY=<secondo openssl rand>
+SIGNER_CONTRACT=<indirizzo del contratto, come in contracts/deployments/<rete>.json>
+SIGNER_CHAIN_ID=4201
+```
+
+```bash
+sudo systemctl enable --now up-cie-link-signer
+sudo journalctl -u up-cie-link-signer -n 5 --no-pager   # "[signer] attester 0x8F42…, contract …, socket …"
+```
+
+Controlli del backend all'avvio (e ogni minuto finché non passano): versione del protocollo, contratto e rete del
+firmatario, chiave = attestatore del contratto, e il **valore di controllo di `UNIQ_PEPPER`**: salvato al primo avvio,
+deve restare uguale per sempre. Un `UNIQ_PEPPER` copiato male romperebbe in silenzio "una persona, una UP principale":
+il backend lo rifiuta (`PEPPER_MISMATCH`), manda una mail e non accetta file CIE. Il sito resta in linea in ogni caso
+(verifica, admin); senza firmatario i file CIE ricevono `SERVICE_UNAVAILABLE` e il monitor segnala `signer_not_ready`.
 
 ### 2.4 Certificati CIE e prova con l'OCSP reale (audit UCL-06)
 
@@ -210,7 +252,10 @@ sudo -u up-cie-link -H git pull --ff-only
 sudo -u up-cie-link -H pm2 reload up-cie-link
 ```
 
-- Se cambiano i file in `deploy/systemd/`: ricopiarli e `sudo systemctl daemon-reload`.
+- Se cambia `signer/` o `deploy/systemd/up-cie-link-signer.service`: rieseguire l'installazione del firmatario
+  **da un clone nuovo** (§2.3b), poi `sudo systemctl restart up-cie-link-signer`. Il commit installato è in
+  `/opt/up-cie-link-signer/COMMIT`.
+- Se cambiano gli altri file in `deploy/systemd/`: ricopiarli e `sudo systemctl daemon-reload`.
 - Se cambia `deploy/nginx/up-cie-link.conf`: certbot ha modificato la copia in `/etc/nginx`, quindi **non
   sovrascriverla**: confrontare con `diff` e riportare a mano le differenze, poi `sudo nginx -t`.
 - Il frontend è servito direttamente dalla cartella del repository: il `git pull` lo aggiorna.
@@ -220,6 +265,8 @@ sudo -u up-cie-link -H pm2 reload up-cie-link
 | Cosa | Comando |
 |---|---|
 | Log del backend | `sudo -u up-cie-link -H pm2 logs up-cie-link --lines 50 --nostream` |
+| Log e stato del firmatario | `sudo journalctl -u up-cie-link-signer -n 50 --no-pager`; lo stato (pronto, limiti) è anche nella pagina admin |
+| Limiti del firmatario raggiunti (mail) | se è traffico vero: alzarli in `/etc/up-cie-link/signer.env`, poi `sudo systemctl restart up-cie-link-signer`; se non lo è, **Ferma i conii** e controllare il server |
 | Stato del monitor (senza mail) | `cd /var/www/up-cie-link/backend && sudo -u up-cie-link -H node src/monitor.js --dry-run` |
 | Backup subito | `sudo systemctl start up-cie-link-backup.service` |
 | Ripristino (sul PC o su un altro server) | `npm run restore -- --file <backup.db.gz.age> --identity <chiave age privata> --out restored.db` |
@@ -234,9 +281,10 @@ Emergenza (chiave dell'attestatore o server compromessi):
 2. se il **server** era compromesso: reinstallarlo da zero (o su una macchina nuova) seguendo il §2, con segreti
    nuovi; non fidarsi di nulla di ciò che c'era;
 3. nuova chiave dell'attestatore: `npm run new-key` in `contracts/` sul PC. **Annotare l'indirizzo fuori dal server**
-   (gestore di password): è il riferimento per il passo 5. Chiave privata in `backend/.env`, poi
-   `sudo -u up-cie-link -H pm2 reload up-cie-link` (con l'attestatore a zero il backend parte comunque, in modalità
-   "conii fermati");
+   (gestore di password): è il riferimento per il passo 5. Chiave privata in `/etc/up-cie-link/signer.env`
+   (`ATTESTER_PRIVATE_KEY`), poi `sudo systemctl restart up-cie-link-signer` e
+   `sudo -u up-cie-link -H pm2 reload up-cie-link` (con l'attestatore a zero il backend accetta la nuova chiave e
+   resta in modalità "conii fermati");
 4. pagina admin → **Ripristina l'attestatore**;
 5. **prima di firmare** (audit UCL-33): la pagina è servita dal server, quindi se il server fosse ancora compromesso
    potrebbe proporre un altro indirizzo. Confrontare con l'indirizzo annotato al passo 3 sia quello scritto nella
@@ -250,21 +298,28 @@ l'attestatore a zero.
 
 ## 5. Cosa custodire fuori dal server
 
-- `UNIQ_PEPPER` e `CERT_REF_KEY` (senza di loro un backup non serve);
+- `UNIQ_PEPPER` e `CERT_REF_KEY` (senza di loro un backup non serve); sul server sono solo in
+  `/etc/up-cie-link/signer.env`, che non entra nei backup;
 - chiave privata dell'attestatore;
 - chiave privata age dei backup (file generato con `npm run backup:keygen`, mai sul server);
 - accesso alla UP owner (controller nell'estensione).
 
 ## 6. Passaggio a mainnet (da fare più avanti)
 
-- deploy del contratto in mainnet (`CONFIRM_MAINNET=yes`), verifica, metadati dalla pagina admin (valutare la Nick factory `0x4e59…956C` con CREATE2 per avere lo stesso indirizzo su più reti);
+- deploy del contratto in mainnet (`CONFIRM_MAINNET=yes`), verifica, metadati dalla pagina admin; deploy normale,
+  **senza** Nick factory (decisione A2 del 2026-10-27: il contratto vive solo su LUKSO);
+- stessa chiave dell'attestatore `0x8F42…723a` (decisione A3), con LYX veri per il gas;
+- firmatario: `SIGNER_CONTRACT` = nuovo indirizzo e `SIGNER_CHAIN_ID=42` in `/etc/up-cie-link/signer.env`, poi
+  riavvio del firmatario e del backend;
+- testnet abbandonato (decisione A1): attestatore a zero sul contratto testnet dalla pagina admin; database e backup
+  del testnet cancellati quando il mainnet parte (o una copia tenuta fuori dal server, a scelta);
 - nel sorgente del contratto il commento di `attest` dice ancora "mese dopo la scadenza": correggerlo prima del deploy
   (oggi la scadenza è il primo giorno del mese della scadenza, UCL-34);
 - paternità on-chain: `LSP4Creators` sul contratto e `LSP12IssuedAssets` sulla UP owner (oggi Universal Everything
   mostra ChainIntegrate come creatore e "Asset Maintainer", probabilmente perché la UP è `owner`);
 - `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
-- copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto; processo separato
-  per HMAC e firma (UCL-08);
+- copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto (confermato il
+  2026-10-27); processo separato per HMAC e firma (UCL-08): fatto, da installare sulla VPS prima del mainnet (§2.3b);
 - informativa: completare i punti mancanti (UCL-14); il titolare è già "ChainIntegrate, servizi di Simone Cavalletti";
 - verificare se la policy dei certificati CIE (CP/CPS) consente a un privato di basarsi sul certificato (UCL-13);
 - `ALLOW_RAW_CHANNEL=false` finché l'app Android non è pronta (UCL-40);

@@ -1,0 +1,45 @@
+# The signer (audit UCL-08): holds the attester key, UNIQ_PEPPER and CERT_REF_KEY; answers the backend on a Unix
+# socket. Its own user, no network, code in /opt (root-owned, installed by deploy/install-signer.sh from a fresh
+# clone), secrets in /etc/up-cie-link/signer.env (root-only: systemd reads it and passes it to the process).
+# The socket's group is the backend's (up-cie-link): only the backend can talk to it. See docs/operations.md.
+[Unit]
+Description=up-cie-link signer
+
+[Service]
+Type=simple
+User=up-cie-link-signer
+Group=up-cie-link
+EnvironmentFile=/etc/up-cie-link/signer.env
+Environment=SIGNER_SOCKET=/run/up-cie-link-signer/signer.sock
+RuntimeDirectory=up-cie-link-signer
+RuntimeDirectoryMode=0750
+WorkingDirectory=/opt/up-cie-link-signer
+ExecStart=/usr/bin/node src/signer.js
+Restart=always
+RestartSec=2
+UMask=0077
+# no network at all: the signer needs none
+PrivateNetwork=true
+IPAddressDeny=any
+RestrictAddressFamilies=AF_UNIX
+# no way to write outside its runtime directory, read home directories or gain privileges
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

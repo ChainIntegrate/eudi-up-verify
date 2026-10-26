@@ -9,6 +9,7 @@ import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import { Contract, ContractFactory, Interface, NonceManager, Wallet, parseEther } from "ethers";
 import { createMinter } from "../src/chain.js";
+import { testSigner } from "./helpers/signer.js";
 import { openDb } from "../src/db.js";
 import { runIndexer } from "../src/indexer.js";
 import { startMint } from "../src/mints.js";
@@ -59,7 +60,8 @@ describe("indexer and monitor on a real chain", { skip: !contractsAvailable && "
 
   it("indexer: renounce, unrecorded mint, revoke and reinstate", async () => {
     const db = openDb(":memory:");
-    const minter = createMinter(node.provider, badgeAddress, attesterKey);
+    const { signer, address } = testSigner({ attesterKey, contract: badgeAddress, chainId: Number((await node.provider.getNetwork()).chainId) });
+    const minter = createMinter(node.provider, badgeAddress, signer, () => address);
     const expires = Math.floor(Date.now() / 1000) + 365 * 86400;
     const tx1 = await minter.attest(up1, expires, true);
     applyLink(db, { up: up1, personKey: randomBytes(32), primary: true, expiresAtMs: expires * 1000, certRefEnc: Buffer.from("ref"), txHash: tx1 });

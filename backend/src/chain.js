@@ -1,6 +1,6 @@
 // UpCieBadge client: reads (exceptionOf) and the attester's writes (attest, invalidate).
 // Writes are only called from the serial queue, so the attester never has two transactions in flight.
-import { Contract, Wallet, encodeBytes32String } from "ethers";
+import { Contract, Interface, encodeBytes32String } from "ethers";
 
 export const BADGE_ABI = [
   "function exceptionOf(bytes32 ticket) view returns (uint8)",
@@ -44,28 +44,60 @@ export class MintError extends Error {
 }
 
 /**
- * Attester writes (UCL-01):
- *  - a plain Wallet: the nonce is read from the node for every transaction (the queue is serial), so a failure
- *    never leaves a local nonce gap;
+ * Attester writes (UCL-01, UCL-08):
+ *  - the transaction is built here and signed by the signer process, which holds the key (UCL-08): it signs only
+ *    attest()/invalidate() on this contract and applies its own rate limits;
+ *  - the nonce is read from the node for every transaction (the queue is serial), so a failure never leaves a
+ *    local nonce gap;
  *  - every call is simulated first (staticCall): a revert becomes SIMULATION_REVERTED without sending anything;
  *  - the receipt is awaited with a timeout: TX_TIMEOUT carries the hash, the caller decides (the queue moves on).
  * `onSent(hash)` is called as soon as the transaction is broadcast, before waiting (UCL-04).
+ * Signer refusals: MINT_RATE_LIMITED (its rate limit), SIGNER_REFUSED, SIGNER_UNAVAILABLE; nothing was sent.
+ * @param signer {{signTx(tx): Promise<string>}} (signer.js)
+ * @param {() => string|null} attesterAddress the signer's address (from its hello; null while it is not ready)
  * @param {{confirmations?: number, timeoutMs?: number}} [opts]
  */
-export function createMinter(provider, address, attesterPrivateKey, { confirmations = 1, timeoutMs = 180_000 } = {}) {
-  const signer = new Wallet(attesterPrivateKey, provider);
-  const c = new Contract(address, BADGE_ABI, signer);
+export function createMinter(provider, address, signer, attesterAddress, { confirmations = 1, timeoutMs = 180_000 } = {}) {
+  const c = new Contract(address, BADGE_ABI, provider);
+  const iface = new Interface(BADGE_ABI);
   const send = async (fn, args, onSent) => {
+    const from = attesterAddress();
+    if (!from) throw new MintError("SIGNER_UNAVAILABLE");
     try {
-      await c[fn].staticCall(...args);
+      await c[fn].staticCall(...args, { from });
     } catch {
       throw new MintError("SIMULATION_REVERTED");
     }
+    const data = iface.encodeFunctionData(fn, args);
+    let raw;
+    try {
+      const [nonceHex, gas, fees, network] = await Promise.all([
+        // nonce read directly from the node (ethers caches identical requests for a short time)
+        provider.send("eth_getTransactionCount", [from, "pending"]),
+        provider.estimateGas({ from, to: address, data }),
+        provider.getFeeData(),
+        provider.getNetwork(),
+      ]);
+      const tx = {
+        to: address,
+        data,
+        value: "0",
+        chainId: Number(network.chainId),
+        nonce: Number(nonceHex),
+        gasLimit: ((gas * 12n) / 10n).toString(), // 20% margin
+        maxFeePerGas: fees.maxFeePerGas.toString(),
+        maxPriorityFeePerGas: fees.maxPriorityFeePerGas.toString(),
+      };
+      raw = await signer.signTx(tx);
+    } catch (e) {
+      if (e?.code === "RATE_LIMITED") throw new MintError("MINT_RATE_LIMITED");
+      if (e?.code === "TX_REFUSED") throw new MintError("SIGNER_REFUSED");
+      if (e?.code === "SIGNER_UNAVAILABLE") throw new MintError("SIGNER_UNAVAILABLE");
+      throw new MintError("SEND_FAILED");
+    }
     let tx;
     try {
-      // nonce read directly from the node (ethers caches identical requests for a short time)
-      const nonce = Number(await provider.send("eth_getTransactionCount", [signer.address, "pending"]));
-      tx = await c[fn](...args, { nonce });
+      tx = await provider.broadcastTransaction(raw);
     } catch {
       throw new MintError("SEND_FAILED");
     }
@@ -80,7 +112,9 @@ export function createMinter(provider, address, attesterPrivateKey, { confirmati
     return receipt.hash;
   };
   return {
-    address: signer.address,
+    get address() {
+      return attesterAddress();
+    },
     attest: (up, expiresAtSec, primary, { onSent } = {}) => send("attest", [up, SOURCE_CIE, expiresAtSec, primary], onSent),
     invalidate: (up, reason, { onSent } = {}) => send("invalidate", [up, encodeBytes32String(reason)], onSent),
   };

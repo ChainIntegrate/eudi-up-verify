@@ -2,12 +2,15 @@
 // The contract address and DEPLOY_BLOCK come from contracts/deployments/<NETWORK>.json (source of truth).
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { parseKey } from "./secrets.js";
 
 const envFile = fileURLToPath(new URL("../.env", import.meta.url));
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const CHAIN_IDS = { luksoTestnet: 4201, luksoMainnet: 42 };
+
+// UCL-08 (decision S3): these live only in the signer process (/etc/up-cie-link/signer.env); a copy left in the
+// backend's environment would undo the separation, so the backend refuses to start.
+export const SIGNER_SECRETS = ["ATTESTER_PRIVATE_KEY", "UNIQ_PEPPER", "CERT_REF_KEY"];
 
 function required(name, env) {
   const v = env[name];
@@ -35,6 +38,10 @@ export function loadDeployment(network, deploymentsDir) {
 
 /** @param {Record<string,string|undefined>} env */
 export function loadConfig(env = process.env) {
+  const leftover = SIGNER_SECRETS.filter((k) => env[k]);
+  if (leftover.length) {
+    throw new Error(`${leftover.join(", ")} must not be in the backend's environment: they belong in the signer's env file (docs/operations.md)`);
+  }
   const network = required("NETWORK", env);
   if (!(network in CHAIN_IDS)) throw new Error(`NETWORK must be one of ${Object.keys(CHAIN_IDS).join(", ")}`);
   const deploymentsDir = env.DEPLOYMENTS_DIR || fileURLToPath(new URL("../../contracts/deployments", import.meta.url));
@@ -58,10 +65,8 @@ export function loadConfig(env = process.env) {
     backupDir: env.BACKUP_DIR || null, // shown on the admin page
     // the badge metadata JSON served by the site (admin page: compare with / write to the contract)
     metadataFile: env.METADATA_FILE || fileURLToPath(new URL("../../frontend/metadata/badge.json", import.meta.url)),
-    // secrets (never logged)
-    attesterPrivateKey: required("ATTESTER_PRIVATE_KEY", env),
-    uniqPepper: parseKey("UNIQ_PEPPER", required("UNIQ_PEPPER", env)),
-    certRefKey: parseKey("CERT_REF_KEY", required("CERT_REF_KEY", env)),
+    // the signer process holds the secrets (UCL-08); the backend only knows its socket
+    signerSocket: env.SIGNER_SOCKET || "/run/up-cie-link-signer/signer.sock",
     // CIE trust store: CA certificates directory + pinned root SHA-256 fingerprints (comma separated)
     trustDir: env.TRUST_DIR || fileURLToPath(new URL("../trust", import.meta.url)),
     cieRootSha256: required("CIE_ROOT_SHA256", env).split(",").map((s) => s.trim()).filter(Boolean),

@@ -10,7 +10,7 @@ import { trustStoreFromCerts } from "../src/cie/trust.js";
 import { createCieFlow } from "../src/cieFlow.js";
 import { openDb } from "../src/db.js";
 import { createSerialQueue } from "../src/queue.js";
-import { decryptCertRef } from "../src/secrets.js";
+import { testSigner } from "./helpers/signer.js";
 import { FAKE_NAME, FAKE_SURNAME, FAKE_TAX_CODE, createFakePki } from "./helpers/fake-pki.js";
 
 const OTHER_TAX_CODE = "VRDLGU75C41F205X";
@@ -42,8 +42,7 @@ const upChecker = {
 
 describe("CIE flow: verification, uniqueness, minting", () => {
   let pki, other, trust, db, server, base, minter, badge, queue;
-  const pepper = randomBytes(32);
-  const certRefKey = randomBytes(32);
+  const { signer } = testSigner();
 
   before(() => {
     pki = createFakePki();
@@ -73,7 +72,7 @@ describe("CIE flow: verification, uniqueness, minting", () => {
       },
     };
     badge = { exceptions: new Map(), exceptionOf: async (t) => BigInt(badge.exceptions.get(t) ?? 0) };
-    const cieFlow = createCieFlow({ db, cfg, trust, pepper, certRefKey, badge, minter, queue, ocspTransport: pki.ocspTransport });
+    const cieFlow = createCieFlow({ db, cfg, trust, signer, badge, minter, queue, ocspTransport: pki.ocspTransport });
     server = createApp({ db, cfg, upChecker, cieFlow }).listen(0, "127.0.0.1");
     await new Promise((r) => server.once("listening", r));
     base = `http://127.0.0.1:${server.address().port}`;
@@ -111,7 +110,7 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     const linkRow = db.prepare("SELECT * FROM links WHERE up = ?").get(UP1);
     assert.equal(linkRow.is_primary, 1);
     assert.equal(linkRow.status, "valid");
-    const ref = decryptCertRef(certRefKey, linkRow.cert_ref_enc);
+    const ref = await signer.decryptCertRef(linkRow.cert_ref_enc);
     assert.match(ref.serialHex, /^[0-9a-f]+$/);
     // privacy: no tax code, name or surname anywhere in the database
     const dump = ["statements", "persons", "links", "exception_requests", "audit"]

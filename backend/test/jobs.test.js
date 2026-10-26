@@ -15,7 +15,7 @@ import { applyLink } from "../src/linking.js";
 import { flushNotifications, notify } from "../src/notify.js";
 import { createSerialQueue } from "../src/queue.js";
 import { runCleanup, runRevocationCheck } from "../src/revocation.js";
-import { encryptCertRef } from "../src/secrets.js";
+import { testSigner } from "./helpers/signer.js";
 import { backup, rotationKeep } from "../scripts/backup.js";
 import { restore } from "../scripts/restore.js";
 import { createFakePki } from "./helpers/fake-pki.js";
@@ -44,7 +44,7 @@ describe("notifications outbox", () => {
 
 describe("revocation recheck and cleanup", () => {
   let pki, trust;
-  const certRefKey = randomBytes(32);
+  const { signer } = testSigner();
   before(() => {
     pki = createFakePki();
     trust = trustStoreFromCerts([parseCertificate(pki.rootPem), parseCertificate(pki.subPem)], [pki.rootSha256]);
@@ -60,7 +60,7 @@ describe("revocation recheck and cleanup", () => {
       personKey: randomBytes(32),
       primary: true,
       expiresAtMs: Date.now() + 10 * DAY,
-      certRefEnc: encryptCertRef(certRefKey, r.certRef),
+      certRefEnc: await signer.encryptCertRef(r.certRef),
       txHash: "0x01",
     });
     return db;
@@ -70,7 +70,7 @@ describe("revocation recheck and cleanup", () => {
   it("good certificate: nothing happens", async () => {
     const db = await dbWithLink();
     const minter = minterSpy();
-    const r = await runRevocationCheck({ db, trust, certRefKey, queue: createSerialQueue(), minter, transport: pki.ocspTransport });
+    const r = await runRevocationCheck({ db, trust, signer, queue: createSerialQueue(), minter, transport: pki.ocspTransport });
     assert.deepEqual(r, { checked: 1, good: 1, revoked: 0, unavailable: 0, errors: 0 });
     assert.equal(minter.calls.length, 0);
     assert.equal(db.prepare("SELECT last_ocsp_status s FROM links").get().s, "good");
@@ -81,7 +81,7 @@ describe("revocation recheck and cleanup", () => {
     const minter = minterSpy();
     pki.setStatus("revoked");
     try {
-      const r = await runRevocationCheck({ db, trust, certRefKey, queue: createSerialQueue(), minter, transport: pki.ocspTransport });
+      const r = await runRevocationCheck({ db, trust, signer, queue: createSerialQueue(), minter, transport: pki.ocspTransport });
       assert.equal(r.revoked, 1);
     } finally {
       pki.setStatus("good");
@@ -99,7 +99,7 @@ describe("revocation recheck and cleanup", () => {
     const down = async () => { throw new Error("down"); };
     let t = Date.now();
     for (let d = 0; d < 5; d++, t += DAY) {
-      await runRevocationCheck({ db, trust, certRefKey, queue: createSerialQueue(), minter, transport: down, now: () => t });
+      await runRevocationCheck({ db, trust, signer, queue: createSerialQueue(), minter, transport: down, now: () => t });
     }
     assert.equal(minter.calls.length, 0);
     assert.equal(db.prepare("SELECT status FROM links").get().status, "valid");
@@ -107,7 +107,7 @@ describe("revocation recheck and cleanup", () => {
     assert.equal(problems.length, 1);
     assert.equal(kvGet(db, "ocsp_unavailable").days, 5);
     // back online resets the streak
-    await runRevocationCheck({ db, trust, certRefKey, queue: createSerialQueue(), minter, transport: pki.ocspTransport, now: () => t });
+    await runRevocationCheck({ db, trust, signer, queue: createSerialQueue(), minter, transport: pki.ocspTransport, now: () => t });
     assert.equal(kvGet(db, "ocsp_unavailable").days, 0);
   });
 
@@ -115,7 +115,7 @@ describe("revocation recheck and cleanup", () => {
     const db = await dbWithLink();
     const minter = minterSpy();
     const broken = async () => Buffer.from("not an OCSP response");
-    for (let i = 0; i < 3; i++) await runRevocationCheck({ db, trust, certRefKey, queue: createSerialQueue(), minter, transport: broken });
+    for (let i = 0; i < 3; i++) await runRevocationCheck({ db, trust, signer, queue: createSerialQueue(), minter, transport: broken });
     assert.equal(db.prepare("SELECT COUNT(*) n FROM notifications WHERE kind = 'revocation_errors'").get().n, 1);
     assert.equal(minter.calls.length, 0);
   });

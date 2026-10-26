@@ -114,6 +114,7 @@ export function viewAdmin(ctx) {
         fact("adminContract", h("code", {}, s.contract)),
         fact("adminOwner", h("code", {}, s.owner)),
         fact("adminAttester", h("code", {}, s.attester)),
+        fact("adminSigner", s.signer ? h("span", { id: "adminSignerState", class: `status ${s.signer.ready ? "ok" : "warn"}` }, s.signer.ready ? t("adminSignerOk") : s.signer.error) : null),
         fact("adminBalance", s.attesterBalance === null ? null : `${Number(s.attesterBalance).toFixed(4)} LYX`),
         fact("adminActive", `${s.activeBadges.primary} / ${s.activeBadges.additional}`),
         fact("adminQueue", `${s.queue ?? "—"} · ${s.openMints} · ${s.pendingInvalidations}`),

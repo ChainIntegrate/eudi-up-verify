@@ -39,6 +39,8 @@ export async function collectFindings({ cfg, provider, db, fetchHealth, now }) {
   }
   if (healthError) add("backend_down", "problem", `backend not answering on 127.0.0.1:${cfg.port}`);
   else if (!health?.ok) add("backend_unhealthy", "problem", "backend /api/health does not report ok");
+  // UCL-08: without the signer no CIE file is verified and nothing is minted
+  else if (health.signer && !health.signer.ready) add("signer_not_ready", "problem", `signer not ready (${health.signer.error}): new CIE files are refused`);
   if (health?.indexer?.at && now - health.indexer.at > 15 * 60_000) {
     add("indexer_stuck", "problem", `event indexer has not run for ${Math.round((now - health.indexer.at) / 60_000)} minutes`);
   }

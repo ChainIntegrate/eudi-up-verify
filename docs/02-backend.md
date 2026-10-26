@@ -138,8 +138,12 @@ richiesta resta nei backup fino alla loro rotazione (max ~8 settimane): da scriv
 
 ## 8. Configurazione (`backend/.env`, con `.env.example` nel repo)
 
+Dal 2026-10-27 (audit UCL-08) `ATTESTER_PRIVATE_KEY`, `UNIQ_PEPPER` e `CERT_REF_KEY` stanno solo nel firmatario
+(`signer/`, `/etc/up-cie-link/signer.env`, vedi `docs/operations.md` §2.3b); il backend rifiuta di partire se li
+trova nel suo ambiente.
+
 `PORT`, `PUBLIC_ORIGIN` (frontend), `NETWORK` (`luksoTestnet`/`luksoMainnet`, da cui si leggono indirizzo e
-`DEPLOY_BLOCK` in `contracts/deployments/`), `RPC_URL`, `ATTESTER_PRIVATE_KEY`, `UNIQ_PEPPER`, `CERT_REF_KEY`,
+`DEPLOY_BLOCK` in `contracts/deployments/`), `RPC_URL`, `SIGNER_SOCKET`,
 `CIE_ROOT_SHA256` (impronte delle root ammesse), `DB_PATH`, `BACKUP_DIR`, `BACKUP_AGE_RECIPIENT`.
 
 ## 9. Test

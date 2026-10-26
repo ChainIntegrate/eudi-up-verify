@@ -46,6 +46,7 @@ our server.
 ```
 contracts/   Hardhat 3 project: UpCieBadge (LSP8 soulbound), tests, deploy/verify/metadata scripts, deployments/
 backend/     Node/Express service: statements, UP and CIE verification, minting queue, indexer, monitor, backups
+signer/      Separate process holding the attester key and the server secrets (no network, local socket, rate limits)
 frontend/    Static pages (no third-party code): link, verify, my badge, privacy, legal notes
 deploy/      PM2, systemd timers (monitor, backup), nginx site; server operations in docs/operations.md
 spike/       Stand-alone scripts to create a statement and verify a CIE CAdES signature
@@ -57,6 +58,7 @@ docs/        Analysis, design notes and decisions (Italian); docs/audit: audit r
 
 ```bash
 cd contracts && npm ci --ignore-scripts && npx hardhat test
+cd ../signer && npm ci --ignore-scripts
 cd ../backend && npm ci && npm test      # needs the contracts built; the browser test needs Playwright
 ```
 
@@ -72,6 +74,9 @@ The CIE verification spike is described in [`spike/README.md`](spike/README.md).
   export or erase their data themselves from the "My badge" page, signing the request with their UP (see the privacy
   notice in the frontend).
 - Logs never contain certificates, tax codes or signatures. Adults only (age read from the tax code in memory).
+- The attester key and the server secrets are not in the web backend: a separate signer process (own user, no
+  network, root-owned code) holds them, signs only the badge contract's `attest`/`invalidate` and rate-limits mints
+  and tax-code fingerprints, so a compromised backend cannot copy them.
 
 ## License
 

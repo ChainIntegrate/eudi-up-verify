@@ -26,6 +26,14 @@ describe("monitor: database-side findings", () => {
     assert.ok((await collectFindings({ cfg, provider, db: null, fetchHealth: down, now })).some((f) => f.id === "backend_down"));
   });
 
+  it("UCL-08: a signer that is not ready is a problem", async () => {
+    const health = async () => ({ ok: true, indexer: { at: now }, signer: { ready: false, error: "PEPPER_MISMATCH" } });
+    const f = (await collectFindings({ cfg, provider, db: null, fetchHealth: health, now })).find((x) => x.id === "signer_not_ready");
+    assert.match(f.text, /PEPPER_MISMATCH/);
+    const ok = async () => ({ ok: true, indexer: { at: now }, signer: { ready: true, error: null } });
+    assert.ok(!(await collectFindings({ cfg, provider, db: null, fetchHealth: ok, now })).some((x) => x.id === "signer_not_ready"));
+  });
+
   it("revocation recheck: never run, stale, with errors", async () => {
     const db = openDb(":memory:");
     applyLink(db, { up: UP, personKey: randomBytes(32), primary: true, expiresAtMs: now + 1e10, certRefEnc: null, txHash: "0x1" }, now);

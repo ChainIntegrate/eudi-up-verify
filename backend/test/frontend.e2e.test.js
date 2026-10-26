@@ -16,6 +16,7 @@ import { after, before, describe, it } from "node:test";
 import { Contract, ContractFactory, Interface, NonceManager, Wallet, getBytes, hexlify, id, randomBytes } from "ethers";
 import { createFakePki } from "./helpers/fake-pki.js";
 import { artifact, contractsAvailable, deployProfile, startNode } from "./helpers/hardhat-node.js";
+import { startSignerProcess } from "./helpers/signer.js";
 
 const FRONTEND = fileURLToPath(new URL("../../frontend/", import.meta.url));
 export const CSP =
@@ -115,7 +116,7 @@ function fakeSignClientBundle() {
 }
 
 describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "contracts not built") || (!browserAvailable && "playwright not installed") }, () => {
-  let node, pki, stopOcsp, server, web, dir, site, up, profile, controller, ownerProfile, ownerController, badgeAddress, oldBadgeAddress, browser, logs = "";
+  let node, pki, stopOcsp, stopSigner, server, web, dir, site, up, profile, controller, ownerProfile, ownerController, badgeAddress, oldBadgeAddress, browser, logs = "";
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
@@ -157,6 +158,8 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     writeFileSync(path.join(dir, "trust", "root.pem"), pki.rootPem);
     writeFileSync(path.join(dir, "trust", "sub.pem"), pki.subPem);
 
+    const signer = await startSignerProcess(dir, { attesterKey, contract: badgeAddress, chainId: 4201 });
+    stopSigner = signer.stop;
     const apiPort = await freePort();
     const webPort = await freePort();
     site = `http://127.0.0.1:${webPort}`;
@@ -168,9 +171,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
       PUBLIC_ORIGIN: site,
       DB_PATH: path.join(dir, "fe2e.db"),
       DEPLOYMENTS_DIR: path.join(dir, "deployments"),
-      ATTESTER_PRIVATE_KEY: attesterKey,
-      UNIQ_PEPPER: hexlify(randomBytes(32)),
-      CERT_REF_KEY: hexlify(randomBytes(32)),
+      SIGNER_SOCKET: signer.socketPath, // UCL-08: the secrets are in the signer process
       TRUST_DIR: path.join(dir, "trust"),
       CIE_ROOT_SHA256: pki.rootSha256,
       ALLOW_CADES_UPLOAD: "true",
@@ -189,6 +190,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await browser?.close();
     web?.close();
     server?.kill("SIGTERM");
+    stopSigner?.();
     stopOcsp?.();
     node?.stop();
     pki?.cleanup();
