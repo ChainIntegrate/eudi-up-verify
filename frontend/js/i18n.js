@@ -2,10 +2,13 @@
 // Strings used with { html } may contain markup and must stay static.
 import { storage } from "./dom.js";
 
-const PRIVACY_DATE_IT = "28 ottobre 2026";
-const PRIVACY_DATE_EN = "28 October 2026";
+const PRIVACY_DATE_IT = "27 ottobre 2026";
+const PRIVACY_DATE_EN = "27 October 2026";
 const CONTACTS_IT = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> oppure una segnalazione su <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 const CONTACTS_EN = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> or an issue on <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
+
+// LUKSO wordmark (file provided by the owner), coloured like the footer text
+const LUKSO_LOGO = `<a class="lukso" href="https://lukso.network" target="_blank" rel="noopener"><svg class="lukso-logo" viewBox="0 0 72 16" role="img" aria-label="LUKSO" xmlns="http://www.w3.org/2000/svg"><path d="M22.5331 2.75397H20.4375V11.6559C20.4375 13.1338 21.0588 13.7496 22.3161 13.7496H28.1985V11.9466H23.322C22.7155 11.9466 22.5331 11.7594 22.5331 11.1781V2.75397ZM34.5346 14.0009C31.6944 14.0009 29.9884 12.4934 29.9884 9.53265V2.75397H32.0692V9.40949C32.0692 11.0106 32.582 12.183 34.5346 12.183C36.4871 12.183 36.9999 11.0894 36.9999 9.39471V2.73919H39.0807V9.51787C39.0807 12.4441 37.3747 14.0009 34.5346 14.0009ZM49.958 13.7545V11.9367H54.2724C55.515 11.9367 56.1511 11.6116 56.1511 10.7495C56.1511 9.98095 55.653 9.73463 54.302 9.36515L53.0151 9.01045C50.6089 8.35032 49.8052 7.57687 49.8052 5.75904C49.8052 3.94121 50.8899 2.73919 53.5131 2.73919H57.438V4.58658H53.4835C52.379 4.58658 51.8416 4.83289 51.8416 5.6211C51.8416 6.36006 52.3396 6.71476 53.6117 7.0399L54.9479 7.37982C57.1816 7.95128 58.2368 8.74936 58.2368 10.5376C58.2368 12.6018 57.0879 13.7545 53.8928 13.7545H49.958ZM69.0894 8.25672C69.0894 6.01029 67.7088 4.34518 65.5984 4.34518C63.488 4.34518 62.1518 5.98073 62.1518 8.25672C62.1518 10.5327 63.5768 12.183 65.5984 12.183C67.7236 12.183 69.0894 10.4884 69.0894 8.25672ZM59.9823 8.27149C59.9823 5.06935 62.2307 2.52734 65.5836 2.52734C68.9365 2.52734 71.2639 4.93142 71.2639 8.27149C71.2639 11.6116 68.8774 13.9713 65.6033 13.9713C62.0976 13.9713 59.9872 11.5377 59.9872 8.27149H59.9823ZM42.5273 9.31588L45.831 13.7496H48.3457L44.3419 8.46855C44.1249 8.17789 44.0312 7.96113 44.0312 7.74437C44.0312 7.52761 44.1742 7.33057 44.4355 7.03499L48.2717 2.73919H45.7422L42.483 6.4044C41.985 6.97093 41.7532 7.37489 41.7532 7.75915C41.7532 8.25179 42.0343 8.65082 42.5273 9.31588Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M14.4512 5.40475C14.4512 4.76944 14.1123 4.1824 13.5621 3.86474L8.60693 1.00386C8.05674 0.686212 7.37887 0.686212 6.82868 1.00386L1.8735 3.86474C1.32331 4.18239 0.984375 4.76944 0.984375 5.40475L0.984375 11.1265C0.984375 11.7618 1.32331 12.3489 1.8735 12.6665L6.82868 15.5274C7.37888 15.845 8.05674 15.845 8.60693 15.5274L13.5621 12.6665C14.1123 12.3489 14.4512 11.7618 14.4512 11.1265V5.40475ZM6.20586 4.70898C5.87035 4.70898 5.56033 4.88798 5.39258 5.17853L3.88174 7.79538C3.71399 8.08594 3.71399 8.44392 3.88174 8.73448L5.39258 11.3513C5.56033 11.6419 5.87035 11.8209 6.20586 11.8209H9.22754C9.56304 11.8209 9.87306 11.6419 10.0408 11.3513L11.5517 8.73448C11.7194 8.44392 11.7194 8.08594 11.5517 7.79538L10.0408 5.17853C9.87306 4.88798 9.56304 4.70898 9.22754 4.70898H6.20586Z" fill="currentColor"/></svg></a>`;
 
 const T = {
   it: {
@@ -17,7 +20,7 @@ const T = {
     navLink: "Collega",
     navVerify: "Verifica",
     navMine: "Il mio bollino",
-    footer: `Servizio sperimentale di <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Note legali</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Codice sorgente</a> · Assistenza: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
+    footer: `Servizio sperimentale di <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · Costruito su ${LUKSO_LOGO} · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Note legali</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Codice sorgente</a> · Assistenza: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
     footerNote: "Non è un servizio pubblico e non è collegato al Ministero dell'Interno.",
     testnetBanner: "Rete di prova (LUKSO testnet): i bollini emessi qui servono solo per i test.",
     loading: "Caricamento…",
@@ -125,7 +128,7 @@ const T = {
     expiredText: "Il tempo è finito. Ricomincia: serve un nuovo enunciato.",
     restart: "Ricomincia",
     ticketTitle: "Codice della richiesta di eccezione",
-    ticketText: `Invia questo codice a ChainIntegrate (<a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>). Quando l'eccezione è approvata, rifai il collegamento con la modalità "UP aggiuntiva".`,
+    ticketText: `Invia questo codice a ChainIntegrate (<a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>). La richiesta ci arriva già in automatico, ma solo con la tua e-mail possiamo avvisarti quando è approvata; puoi anche spiegarci il motivo. Dopo l'approvazione, rifai il collegamento con la modalità "UP aggiuntiva".`,
     copy: "Copia",
     copied: "Copiato",
 
@@ -332,15 +335,16 @@ const T = {
         <li><strong>Enunciati</strong>: indirizzo della UP, modalità, date, esito. Si cancellano 7 giorni dopo la scadenza.</li>
         <li><strong>Richieste di eccezione</strong>: codice, impronta del codice fiscale, stato. Quelle non approvate si chiudono dopo 30 giorni.</li>
         <li><strong>Registro delle operazioni</strong> (data, tipo di operazione, indirizzo della UP, transazione): 12 mesi.</li>
+        <li><strong>E-mail che ci scrivi</strong> (per esempio per un'eccezione o una domanda): restano nella casella di ChainIntegrate, non nel database del servizio. Le conserviamo per il tempo necessario a rispondere, al massimo 12 mesi.</li>
         <li><strong>Copie di sicurezza</strong> cifrate del database: fino a 14 giorni, più una a settimana per 8 settimane.</li>
         <li><strong>Registri del server web</strong>: indirizzo IP, data e pagina richiesta, per sicurezza; cancellati dopo 14 giorni. I limiti di richieste usano l'IP solo in memoria.</li>
       </ul>
       <h2>5 · Con chi parla il servizio, e cosa vede</h2>
       <ul>
         <li><strong>Servizio OCSP del Ministero dell'Interno</strong> (ocsp.cie.interno.gov.it): il nostro server chiede se il certificato della tua carta è revocato, alla verifica e poi ogni giorno. Riceve il numero di serie del certificato e l'IP del nostro server, non il tuo; poiché il Ministero sa a chi appartiene ogni certificato, può dedurre che la tua carta è collegata a questo servizio.</li>
-        <li><strong>Nodo della blockchain LUKSO</strong> (sulla rete principale un nodo di ChainIntegrate; sulla rete di prova il nodo pubblico di LUKSO): il nostro server legge lo stato dei bollini e invia le transazioni. Vede gli indirizzi delle UP.</li>
+        <li><strong>Nodo della blockchain LUKSO</strong> (un nodo di ChainIntegrate): il nostro server legge lo stato dei bollini e invia le transazioni. Vede gli indirizzi delle UP.</li>
         <li><strong>Estensione UP Browser</strong> (LUKSO): firma l'enunciato e la rinuncia con la tua UP, nel tuo browser.</li>
-        <li><strong>Aruba S.p.A.</strong> (Italia), fornitore che tratta i dati per nostro conto: il server su cui gira il servizio (database, registri, copie di sicurezza cifrate) e l'invio delle e-mail di avviso a ChainIntegrate.</li>
+        <li><strong>Aruba S.p.A.</strong> (Italia), fornitore che tratta i dati per nostro conto: il server su cui gira il servizio (database, registri, copie di sicurezza cifrate), l'invio delle e-mail di avviso a ChainIntegrate e la casella e-mail di ChainIntegrate.</li>
         <li><strong>WalletConnect (Reown, Inc.)</strong>, solo se colleghi UP Wallet per Android: le richieste tra questa pagina e l'app passano dai suoi server (relay). Vede l'indirizzo della UP, la rete, l'IP e i dati tecnici della sessione; il contenuto delle richieste (testo da firmare, transazioni) è cifrato tra la pagina e l'app. Nessuna statistica d'uso viene inviata a Reown. Reown ha sede negli Stati Uniti: questi dati possono essere trattati fuori dall'Unione Europea. Secondo la sua <a href="https://reown.com/privacy-policy" target="_blank" rel="noopener">informativa</a>, i trasferimenti fuori dallo Spazio economico europeo avvengono con i meccanismi di trasferimento previsti dalla legge. Se non vuoi, usa l'estensione UP Browser.</li>
         <li><strong>Chiunque legga la blockchain</strong>: vede il bollino delle UP. Se sposti la UP principale (migrazione), le due operazioni avvengono a breve distanza e possono far capire che le due UP sono della stessa persona.</li>
         <li><strong>Avvisi a ChainIntegrate</strong>: per i problemi del servizio e gli eventi importanti (per esempio una richiesta di eccezione) riceviamo una e-mail con l'indirizzo della UP, mai dati della carta.</li>
@@ -378,7 +382,7 @@ const T = {
     navLink: "Link",
     navVerify: "Verify",
     navMine: "My badge",
-    footer: `Experimental service by <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Legal notes</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Source code</a> · Support: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
+    footer: `Experimental service by <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · Built on ${LUKSO_LOGO} · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Legal notes</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Source code</a> · Support: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
     footerNote: "Not a public service and not connected to the Italian Ministry of the Interior.",
     testnetBanner: "Test network (LUKSO testnet): badges issued here are for testing only.",
     loading: "Loading…",
@@ -484,7 +488,7 @@ const T = {
     expiredText: "Time is up. Start again: a new statement is needed.",
     restart: "Start again",
     ticketTitle: "Exception request code",
-    ticketText: `Send this code to ChainIntegrate (<a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>). Once the exception is approved, link again with the "Additional UP" mode.`,
+    ticketText: `Send this code to ChainIntegrate (<a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>). The request already reaches us automatically, but only with your e-mail can we tell you when it is approved; you can also tell us why you need it. Once approved, link again with the "Additional UP" mode.`,
     copy: "Copy",
     copied: "Copied",
 
@@ -685,15 +689,16 @@ const T = {
         <li><strong>Statements</strong>: UP address, mode, dates, outcome. Deleted 7 days after they expire.</li>
         <li><strong>Exception requests</strong>: code, tax code fingerprint, status. Unapproved ones are closed after 30 days.</li>
         <li><strong>Operations log</strong> (date, type of operation, UP address, transaction): 12 months.</li>
+        <li><strong>E-mails you write to us</strong> (for example for an exception or a question): kept in ChainIntegrate's mailbox, not in the service's database, for as long as needed to answer, at most 12 months.</li>
         <li><strong>Encrypted backups</strong> of the database: up to 14 days, plus one per week for 8 weeks.</li>
         <li><strong>Web server logs</strong>: IP address, date and page requested, for security; deleted after 14 days. Rate limits use the IP in memory only.</li>
       </ul>
       <h2>5 · Who the service talks to, and what they see</h2>
       <ul>
         <li><strong>OCSP service of the Italian Ministry of the Interior</strong> (ocsp.cie.interno.gov.it): our server asks whether your card's certificate is revoked, at the check and then daily. It receives the certificate's serial number and our server's IP, not yours; since the Ministry knows whom each certificate belongs to, it can infer that your card is linked to this service.</li>
-        <li><strong>LUKSO blockchain node</strong> (on mainnet a ChainIntegrate node; on the test network LUKSO's public node): our server reads the badges and sends the transactions. It sees the UP addresses.</li>
+        <li><strong>LUKSO blockchain node</strong> (a ChainIntegrate node): our server reads the badges and sends the transactions. It sees the UP addresses.</li>
         <li><strong>UP Browser extension</strong> (LUKSO): signs the statement and the renunciation with your UP, in your browser.</li>
-        <li><strong>Aruba S.p.A.</strong> (Italy), a provider processing data on our behalf: the server the service runs on (database, logs, encrypted backups) and the alert e-mails sent to ChainIntegrate.</li>
+        <li><strong>Aruba S.p.A.</strong> (Italy), a provider processing data on our behalf: the server the service runs on (database, logs, encrypted backups), the alert e-mails sent to ChainIntegrate and ChainIntegrate's mailbox.</li>
         <li><strong>WalletConnect (Reown, Inc.)</strong>, only if you connect UP Wallet for Android: requests between this page and the app go through its servers (relay). It sees the UP address, the network, the IP and the session's technical data; the content of the requests (text to sign, transactions) is encrypted between the page and the app. No usage statistics are sent to Reown. Reown is based in the United States: this data may be processed outside the European Union. According to its <a href="https://reown.com/privacy-policy" target="_blank" rel="noopener">privacy policy</a>, transfers outside the European Economic Area use the lawful transfer mechanisms provided by law. If you do not want that, use the UP Browser extension.</li>
         <li><strong>Anyone reading the blockchain</strong>: sees the badges of the UPs. If you move your primary UP (migration), the two operations happen close together and may reveal that both UPs belong to the same person.</li>
         <li><strong>Alerts to ChainIntegrate</strong>: for service problems and notable events (for example an exception request) we receive an e-mail with the UP address, never card data.</li>

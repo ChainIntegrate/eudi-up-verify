@@ -96,6 +96,8 @@ dl.facts dd { margin: 0; overflow-wrap: anywhere; }
 .site-footer { margin-top: 40px; padding: 18px 0; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
 .site-footer a { font-weight: 600; text-decoration: none; }
 .site-footer p { margin: 4px 0; }
+.site-footer a.lukso { color: inherit; }
+.site-footer .lukso-logo { height: 11px; width: auto; vertical-align: -1px; }
 
 @media (max-width: 560px) {
   /* header on two rows: logo with language and theme, then the menu across the width */
