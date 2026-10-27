@@ -30,6 +30,9 @@ primary one, not an additional UP allowed by an exception). Use `isVerifiedPrima
 | `luksoTestnet` | 4201 | `0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C` | explorer.execution.testnet.lukso.network |
 | `luksoMainnet` | 42 | `0x4a2605796e0d91A9667d6E30365aEEC384C48c27` | explorer.execution.mainnet.lukso.network |
 
+Live contract: **mainnet** `0xc945c5FABBc19dBd04f90a1a4878cfA0F78C5e38` (block 8661334, 2026-10-27,
+`deployments/luksoMainnet.json`). The testnet is retired: its contract `0x6A52…71BA` has the attester set to zero.
+
 ## Keys and configuration
 
 | Name | What |
@@ -82,10 +85,14 @@ If automatic verification fails (e.g. Blockscout API errors), export the compile
 Blockscout UI (Contract → Verify & publish → Solidity, Standard JSON input):
 
 ```bash
-npx hardhat run scripts/export-standard-json.ts --network luksoTestnet
+npx hardhat clean && npx hardhat run scripts/export-standard-json.ts --network luksoMainnet
 # prints compiler version, contract name, settings and ABI-encoded constructor args;
-# writes verify-input/luksoTestnet-UpCieBadge.standard-input.json (git-ignored)
+# writes verify-input/luksoMainnet-UpCieBadge.standard-input.json (git-ignored)
 ```
+
+`clean` first: with builds of an older source still in `artifacts/` the script stops ("found 2"). In the UI the
+licence is Apache-2.0. Blockscout may verify a new deployment by itself as a *partial match* when the same bytecode
+was verified before with different comments; the Standard JSON upload replaces it with the exact source.
 
 ## After deployment
 
