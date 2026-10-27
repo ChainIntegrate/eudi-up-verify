@@ -1,0 +1,18 @@
+{
+  "network": "luksoMainnet",
+  "chainId": 42,
+  "contract": "contracts/UpCieBadge.sol:UpCieBadge",
+  "address": "0xc945c5FABBc19dBd04f90a1a4878cfA0F78C5e38",
+  "deployBlock": 8661334,
+  "txHash": "0x956ac0b48d170172bdb50e97478243f464115f2922937bd52052c1e04116219c",
+  "owner": "0x4a2605796e0d91A9667d6E30365aEEC384C48c27",
+  "attester": "0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a",
+  "deployer": "0x9C8Fd044A4C777f9f97c6cFC127C91f86b795C9c",
+  "deployedAt": "2026-10-27T14:37:24.507Z",
+  "gitCommit": "8746055a971240b5b8369e7189786bf2c56f0562",
+  "verified": true,
+  "superseded": [],
+  "verifiedOn": [
+    "blockscout"
+  ]
+}
