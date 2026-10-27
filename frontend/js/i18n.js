@@ -68,6 +68,7 @@ const T = {
     connectAndroid: "UP Wallet per Android",
     androidSoon: "La connessione con UP Wallet per Android (WalletConnect) non è attiva su questo server.",
     upWalletHint: "UP Wallet per Android: inquadri un QR con l'app (oppure, sul telefono, apri l'app con un tocco) e confermi lì ogni firma.",
+    upWalletGet: `Non hai l'app? È un prototipo open source di ChainIntegrate, fuori dal Play Store, da usare a tuo rischio: si scarica dalle <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">release su GitHub</a> e si prepara con la <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">guida cross-chain</a> (sezione "Strumenti").`,
     adminDesktopOnly: "La pagina admin si usa solo dal computer, con l'estensione UP Browser.",
     viaUpWallet: "con UP Wallet",
     disconnect: "Disconnetti",
@@ -367,8 +368,8 @@ const T = {
         <li><strong>CieSign</strong>, il programma per firmare file con la CIE, sul computer.</li>
         <li>La tua <strong>Universal Profile</strong> in uno di questi wallet:
           <ul>
-            <li>l'estensione <strong>UP Browser</strong> (computer, Chrome o Brave);</li>
-            <li>l'app <strong>UP Wallet</strong> per Android: dal telefono la apri con un tocco, dal computer inquadri un QR.</li>
+            <li>l'estensione <strong>UP Browser</strong> di LUKSO, sul computer (<a href="https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" target="_blank" rel="noopener">Chrome Web Store</a>);</li>
+            <li>l'app <strong>UP Wallet</strong> per Android: dal telefono la apri con un tocco, dal computer inquadri un QR. È un prototipo open source di ChainIntegrate, nato come wallet del manutentore: non è sul Play Store e si usa a proprio rischio, con piccoli importi. Si scarica dalle <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">release su GitHub</a> (file <code>.apk</code>); per installarla e autorizzare la chiave del telefono sulla tua UP segui la <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">guida cross-chain</a>, sezione "Strumenti". Serve un controller di amministrazione della UP usabile da un computer (per esempio in MetaMask). Se non ti è chiaro, usa l'estensione.</li>
           </ul>
           Il controller che usi deve avere il permesso di firma (SIGN) sulla UP.</li>
         <li>Circa 10 minuti. Non servono LYX: il conio del bollino lo paga il servizio.</li>
@@ -502,6 +503,7 @@ const T = {
     connectAndroid: "UP Wallet for Android",
     androidSoon: "Connecting with UP Wallet for Android (WalletConnect) is not active on this server.",
     upWalletHint: "UP Wallet for Android: scan a QR code with the app (or, on the phone, open the app with a tap) and confirm every signature there.",
+    upWalletGet: `No app yet? It is an open-source prototype by ChainIntegrate, outside the Play Store, to use at your own risk: download it from the <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">GitHub releases</a> and set it up with the <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">cross-chain guide</a> ("Tools" section).`,
     adminDesktopOnly: "The admin page is used only from a computer, with the UP Browser extension.",
     viaUpWallet: "with UP Wallet",
     disconnect: "Disconnect",
@@ -794,8 +796,8 @@ const T = {
         <li><strong>CieSign</strong>, the program to sign files with the CIE, on a computer.</li>
         <li>Your <strong>Universal Profile</strong> in one of these wallets:
           <ul>
-            <li>the <strong>UP Browser</strong> extension (computer, Chrome or Brave);</li>
-            <li>the <strong>UP Wallet</strong> app for Android: on the phone you open it with a tap, from a computer you scan a QR code.</li>
+            <li>LUKSO's <strong>UP Browser</strong> extension, on a computer (<a href="https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" target="_blank" rel="noopener">Chrome Web Store</a>);</li>
+            <li>the <strong>UP Wallet</strong> app for Android: on the phone you open it with a tap, from a computer you scan a QR code. It is an open-source prototype by ChainIntegrate, born as the maintainer's wallet: it is not on the Play Store and you use it at your own risk, with small amounts. Download it from the <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">GitHub releases</a> (<code>.apk</code> file); to install it and authorize the phone key on your UP, follow the <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">cross-chain guide</a>, "Tools" section. You need an admin controller of the UP usable from a computer (for example in MetaMask). If this is unclear, use the extension.</li>
           </ul>
           The controller you use needs the SIGN permission on the UP.</li>
         <li>About 10 minutes. No LYX needed: the service pays for minting the badge.</li>

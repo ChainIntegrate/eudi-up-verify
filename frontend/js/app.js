@@ -163,6 +163,7 @@ function walletPanel(onConnected, { upWallet = true } = {}) {
       ),
       ext || phone ? null : notice("warn", h("span", { html: t("noExtension") })),
       h("p", { class: "small dim" }, !upWallet ? t("adminDesktopOnly") : wcOn ? t("upWalletHint") : t("androidSoon")),
+      upWallet && wcOn ? h("p", { class: "small dim", html: t("upWalletGet") }) : null,
       err ? errorNotice(err) : null,
     );
   };
