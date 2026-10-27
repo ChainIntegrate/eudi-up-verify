@@ -38,7 +38,7 @@ gestore di password.
 | Primo collegamento reale | 2026-10-15: riuscito (UP + CIE reale via CieSign → bollino principale valido) |
 | Metadati del bollino | serviti dal nostro dominio (`/metadata/badge.json`, `/metadata/badge-icon.png`), **niente IPFS** (decisione del 2026-10-15: un solo file, sempre uguale; integrità garantita dagli hash on-chain). Non modificarli senza "Aggiorna i metadati" dalla pagina admin; mantenere il dominio finché esistono bollini. Ultimo aggiornamento on-chain: 2026-10-15 (testo "No name, tax code or card data on-chain") |
 | Prova OCSP reale | `check-p7m` con una CIE reale: **CHECK OK** il 2026-10-15 (audit UCL-06) |
-| Prove reali successive | 2026-10-26: collegamento con UP Wallet da computer e tutto dal telefono Android; 2026-10-27: cancellazione dati e nuovo collegamento passando dal firmatario |
+| Prove reali successive | 2026-10-26: collegamento con UP Wallet da computer e tutto dal telefono Android; 2026-10-27: cancellazione dati e nuovo collegamento passando dal firmatario; VPS aggiornata alle correzioni del terzo audit (`2515c27`: firmatario reinstallato, pepper invariato, monitor senza problemi, corpi compressi → 415) |
 
 Comandi come utente del servizio: `sudo -u up-cie-link -H <comando>`.
 
