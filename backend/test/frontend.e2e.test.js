@@ -14,7 +14,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, before, describe, it } from "node:test";
 import { Contract, ContractFactory, Interface, NonceManager, Wallet, getBytes, hexlify, id, randomBytes } from "ethers";
-import { createFakePki } from "./helpers/fake-pki.js";
+import { FAKE_TAX_CODE, createFakePki } from "./helpers/fake-pki.js";
 import { artifact, contractsAvailable, deployProfile, startNode } from "./helpers/hardhat-node.js";
 import { startSignerProcess } from "./helpers/signer.js";
 
@@ -116,7 +116,7 @@ function fakeSignClientBundle() {
 }
 
 describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "contracts not built") || (!browserAvailable && "playwright not installed") }, () => {
-  let node, pki, stopOcsp, stopSigner, server, web, dir, site, up, profile, controller, ownerProfile, ownerController, badgeAddress, oldBadgeAddress, browser, logs = "";
+  let node, pki, renewedCard, stopOcsp, stopSigner, server, web, dir, site, up, profile, controller, ownerProfile, ownerController, badgeAddress, oldBadgeAddress, browser, logs = "";
 
   before(async () => {
     node = await startNode({ chainId: 4201 });
@@ -149,6 +149,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
 
     const ocspPort = await freePort();
     pki = createFakePki({ ocspUrl: `http://127.0.0.1:${ocspPort}/` });
+    renewedCard = pki.issueHolder(FAKE_TAX_CODE, { days: 800 }); // before the OCSP responder reads its index
     stopOcsp = pki.serveOcsp(ocspPort);
 
     dir = mkdtempSync(path.join(tmpdir(), "fe2e-"));
@@ -484,7 +485,8 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     const text = await page.locator("pre.statement").textContent();
     await page.getByRole("button", { name: "Firma con la UP" }).click();
     await page.locator("#p7m").waitFor();
-    await page.setInputFiles("#p7m", { name: "s.p7m", mimeType: "application/pkcs7-mime", buffer: pki.signCades(Buffer.from(text, "ascii")) });
+    // a renewed card (expiring later): the same UP was linked by the earlier tests (UCL-46 accepts only a later expiry)
+    await page.setInputFiles("#p7m", { name: "s.p7m", mimeType: "application/pkcs7-mime", buffer: pki.signCades(Buffer.from(text, "ascii"), { holder: renewedCard }) });
     await page.getByRole("button", { name: "Invia il file firmato" }).click();
     await page.getByText("Fatto: la UP ha il bollino").waitFor({ timeout: 30_000 });
 

@@ -34,6 +34,17 @@ describe("monitor: database-side findings", () => {
     assert.ok(!(await collectFindings({ cfg, provider, db: null, fetchHealth: ok, now })).some((x) => x.id === "signer_not_ready"));
   });
 
+  it("UCL-47: the monitor reads the signer's refusals of the last 24 hours, and notices a silent signer", async () => {
+    const health = async () => ({ ok: true, indexer: { at: now }, signer: { ready: true, error: null } });
+    const busy = async () => ({ refusedLastDay: { personKey: 4 } });
+    const f = (await collectFindings({ cfg, provider, db: null, fetchHealth: health, fetchSignerStatus: busy, now })).find((x) => x.id === "signer_refusals");
+    assert.match(f.text, /personKey: 4/);
+    const quiet = async () => ({ refusedLastDay: {} });
+    assert.ok(!(await collectFindings({ cfg, provider, db: null, fetchHealth: health, fetchSignerStatus: quiet, now })).some((x) => x.id.startsWith("signer_")));
+    const down = async () => { throw new Error("ECONNREFUSED"); };
+    assert.ok((await collectFindings({ cfg, provider, db: null, fetchHealth: health, fetchSignerStatus: down, now })).some((x) => x.id === "signer_down"));
+  });
+
   it("revocation recheck: never run, stale, with errors", async () => {
     const db = openDb(":memory:");
     applyLink(db, { up: UP, personKey: randomBytes(32), primary: true, expiresAtMs: now + 1e10, certRefEnc: null, txHash: "0x1" }, now);

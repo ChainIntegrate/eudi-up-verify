@@ -167,9 +167,13 @@ describe("CIE flow: verification, uniqueness, minting", () => {
     assert.equal((await r.json()).error, "CONTENT_MISMATCH");
   });
 
-  it("same person, same UP, mode link: renewal in place", async () => {
+  it("same person, same UP, mode link: renewal in place only with a card expiring later (UCL-46)", async () => {
     await link(UP1);
-    const st = await link(UP1);
+    const again = await link(UP1); // same card: nothing new, no mint
+    assert.equal(again.errorCode, "ALREADY_VERIFIED");
+    assert.deepEqual(minter.calls, [["attest", UP1, true]]);
+    const newCard = pki.issueHolder(FAKE_TAX_CODE, { days: 800 }); // the same person's renewed card
+    const st = await link(UP1, "link", newCard);
     assert.equal(st.status, "done");
     assert.deepEqual(minter.calls, [["attest", UP1, true], ["attest", UP1, true]]);
   });

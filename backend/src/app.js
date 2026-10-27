@@ -93,7 +93,8 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, 
     if (req.method === "OPTIONS") return res.sendStatus(204);
     next();
   });
-  app.use(express.json({ limit: "64kb" }));
+  // UCL-45: the site never sends compressed bodies; refusing them removes the decompression attack surface
+  app.use(express.json({ limit: "64kb", inflate: false }));
 
   const general = rateLimiter({ windowMs: 60_000, max: 120, clock });
   const cachedBadge = badgeCache();
@@ -196,7 +197,7 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, 
     "/api/statements/:id/cie-cades",
     cieLimiter,
     (req, _res, next) => (cfg.allowCadesUpload ? next() : next(new HttpError(404, "CHANNEL_DISABLED"))),
-    express.raw({ type: () => true, limit: "64kb" }),
+    express.raw({ type: () => true, limit: "64kb", inflate: false }),
     submitCie("cades", (req) => {
       if (!Buffer.isBuffer(req.body) || req.body.length === 0) throw new HttpError(400, "INVALID_P7M");
       return { p7m: req.body };
@@ -271,6 +272,7 @@ export function createApp({ db, cfg, upChecker, cieFlow, badge, admin, subject, 
     if (err instanceof HttpError || err instanceof AdminError || err instanceof SubjectError) return res.status(err.status).json({ error: err.code });
     if (err?.type === "entity.too.large") return res.status(413).json({ error: "PAYLOAD_TOO_LARGE" });
     if (err?.type === "entity.parse.failed") return res.status(400).json({ error: "INVALID_JSON" });
+    if (err?.type === "encoding.unsupported") return res.status(415).json({ error: "UNSUPPORTED_ENCODING" }); // UCL-45
     console.error(`[error] ${err?.code ?? err?.name ?? "unknown"}`); // no message: it could carry input data
     res.status(500).json({ error: "INTERNAL" });
   });

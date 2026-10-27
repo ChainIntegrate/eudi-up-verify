@@ -94,3 +94,24 @@ revisione. Nuovi punti, tutti **aperti** salvo dove indicato:
 | UCL-41 | Info | Cooldown del rifiuto eccezione contato dalla richiesta | risolto: colonna `rejected_at`, il periodo di 30 giorni parte dal rifiuto; test |
 | UCL-42 | Info | Copia di lavoro Windows con CRLF | **da fare dall'owner**: nella cartella locale `git rm --cached -r .` poi `git reset --hard` (o un clone nuovo) |
 | UCL-43 | Info | Versione di nginx e supporto del sistema operativo | verificato il 2026-10-19: Ubuntu 22.04.5 LTS, supporto standard fino ad aprile 2027. Pianificare il passaggio a 24.04 prima di allora (porterebbe anche HTTP/2 per singolo sito) |
+
+## Terza revisione (2026-10-27, revisione `71a5fff`)
+
+Report: [`AUDIT-2026-10-27.md`](AUDIT-2026-10-27.md), conservato senza modifiche salvo la versione del sistema
+operativo oscurata. Conferma le correzioni delle due revisioni precedenti (127 test, prove di concetto ripetute con il
+firmatario, file di terzi ricostruiti da npm identici, sito live uguale al repository). Decisioni dell'owner del
+2026-10-27: proposte su UCL-44, 45, 46, 47, 50, 51, 52, 53 confermate; UCL-48 rischio accettato; UCL-49 dati oscurati.
+
+| ID | Sev. | Titolo | Cosa è stato fatto | Stato |
+|---|---|---|---|---|
+| UCL-44 | Medium | Una UP non più valida esporta e cancella i dati di tutta la persona | la richiesta firmata con la UP riguarda tutta la persona solo se il collegamento di quella UP è valido oggi; altrimenti solo quella UP (`requestScope`, `exportUp`, `eraseUp`); chi non ha più una UP valida firma la richiesta con la CIE (`src/subjectCie.js`, `scripts/data-subject.js --p7m`: firma, catena, revoca, data, stessa persona via firmatario); mail all'owner anche per gli export; la prova di concetto dell'auditor è ora un test | risolto |
+| UCL-45 | Medium | `body-parser 2.3.0`, DoS con corpi compressi | `body-parser 2.4.0`; `inflate: false` sui due parser: un corpo compresso riceve 415 `UNSUPPORTED_ENCODING` (test) | risolto |
+| UCL-46 | Low | Rinnovi illimitati consumano la quota globale di conio | il rinnovo è accettato solo con una carta che scade più tardi; altrimenti `ALREADY_VERIFIED`, senza conio (test) | risolto |
+| UCL-47 | Low | Il firmatario resta un oracolo di impronte per un backend compromesso | tetto giornaliero di 300 impronte (`SIGNER_MAX_PERSON_KEYS_PER_DAY`); il monitor legge dal socket del firmatario i rifiuti delle ultime 24 ore (`signer_refusals`) e se non risponde (`signer_down`) | risolto (residuo: entro i limiti un backend compromesso può ancora chiedere impronte e conii) |
+| UCL-48 | Low | La chiave dell'attestatore per il mainnet è stata nel `.env` del backend | decisione dell'owner (A3, confermata il 2026-10-27): la chiave è sempre stata trattata come una chiave vera | accettato |
+| UCL-49 | Low | Il report del secondo audit ripete i dati dell'operatore | copia pubblicata con UP di prova, scadenza, mese di nascita e utente SSH oscurati | risolto (restano nella cronologia git) |
+| UCL-50 | Low | Residui dell'informativa | §7: export e cancellazione dalla pagina, rettifica e limitazione per e-mail con firma della UP o della CIE; ambito della richiesta per le UP non più valide; Reown: trasferimenti fuori dallo SEE con i meccanismi previsti dalla legge, come dichiara la sua informativa; indirizzo e P.IVA: decisione del 2026-10-27 | risolto |
+| UCL-51 | Low | Licenza WalletConnect: avviso | note legali: sezione "Componenti di terzi" con l'avviso di Reown, il link alla licenza e all'elenco dei pacchetti; il file di Reown resta identico a quello di npm | risolto |
+| UCL-52 | Low | Altre segnalazioni delle dipendenze | `nodemailer 10.2.1`; `npm audit` del backend: 0. Hardhat 3: solo strumenti di build, si aggiorna con la prossima versione (mai il ritorno a Hardhat 2 proposto da `npm audit fix`) | risolto nel backend; contratti: da seguire |
+| UCL-53 | Info | Limiti del firmatario e crescita | `docs/operations.md` e `signer.env.example`: le decifrature al giorno vanno tenute sopra il numero di bollini attivi | documentato |
+| UCL-54 | Info | Bollini con la vecchia scadenza | sul testnet, che si abbandona; il mainnet parte con la regola nuova | nessuna azione |

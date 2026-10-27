@@ -33,6 +33,7 @@ export function loadSignerConfig(env = process.env) {
       attestPerDay: int("SIGNER_MAX_ATTEST_PER_DAY", DEFAULT_LIMITS.attestPerDay),
       invalidatePerHour: int("SIGNER_MAX_INVALIDATE_PER_HOUR", DEFAULT_LIMITS.invalidatePerHour),
       personKeyPerMinute: int("SIGNER_MAX_PERSON_KEYS_PER_MINUTE", DEFAULT_LIMITS.personKeyPerMinute),
+      personKeyPerDay: int("SIGNER_MAX_PERSON_KEYS_PER_DAY", DEFAULT_LIMITS.personKeyPerDay),
       decryptPerDay: int("SIGNER_MAX_DECRYPT_PER_DAY", DEFAULT_LIMITS.decryptPerDay),
       maxGas: BigInt(int("SIGNER_MAX_GAS", Number(DEFAULT_LIMITS.maxGas))),
       maxFeePerGas: BigInt(int("SIGNER_MAX_FEE_GWEI", Number(DEFAULT_LIMITS.maxFeePerGas / 1_000_000_000n))) * 1_000_000_000n,

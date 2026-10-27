@@ -2,8 +2,8 @@
 // Strings used with { html } may contain markup and must stay static.
 import { storage } from "./dom.js";
 
-const PRIVACY_DATE_IT = "27 ottobre 2026";
-const PRIVACY_DATE_EN = "27 October 2026";
+const PRIVACY_DATE_IT = "28 ottobre 2026";
+const PRIVACY_DATE_EN = "28 October 2026";
 const CONTACTS_IT = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> oppure una segnalazione su <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 const CONTACTS_EN = `e-mail <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> or an issue on <a href="https://github.com/ChainIntegrate/up-cie-link/issues" target="_blank" rel="noopener">GitHub</a>`;
 
@@ -162,12 +162,14 @@ const T = {
     renounceConfirm: "Confermi la rinuncia? Firmerai la transazione con la UP.",
     renounceSent: "Transazione inviata. Lo stato si aggiorna appena la transazione è confermata.",
     dataTitle: "I tuoi dati",
-    dataText: "Puoi scaricare una copia dei dati che conserviamo su di te, oppure cancellarli. In entrambi i casi firmi la richiesta con la UP: solo chi la controlla può farlo. I dati riguardano tutte le UP collegate alla tua CIE.",
+    dataText: "Puoi scaricare una copia dei dati che conserviamo su di te, oppure cancellarli. In entrambi i casi firmi la richiesta con la UP: solo chi la controlla può farlo. Se questa UP ha un bollino valido, la richiesta riguarda tutte le UP collegate alla tua CIE; se il suo bollino non è più valido (rinuncia, migrazione, scadenza), riguarda solo questa UP. Se non hai più nessuna UP con un bollino valido e vuoi i dati di tutte, scrivici: ti chiederemo di firmare la richiesta con la CIE.",
     dataExportButton: "Scarica i miei dati",
     dataEraseButton: "Cancella i miei dati",
-    dataEraseConfirm: "Confermi la cancellazione? Tutti i bollini collegati alla tua CIE verranno invalidati e i dati cancellati. Non si annulla. Firmerai la richiesta con la UP.",
+    dataEraseConfirm: "Confermi la cancellazione? Se questa UP ha un bollino valido, tutti i bollini collegati alla tua CIE verranno invalidati e i dati cancellati; altrimenti si cancellano solo i dati di questa UP. Non si annulla. Firmerai la richiesta con la UP.",
     dataDownload: "Scarica il file",
     dataExportReady: "Ecco i tuoi dati.",
+    dataExportOne: "Ecco i dati di questa UP. Il suo bollino non è più valido, quindi il file non contiene le altre UP collegate alla tua CIE.",
+    dataErasedOne: "Dati di questa UP cancellati. Il suo bollino non era più valido, quindi le altre UP collegate alla tua CIE non sono state toccate.",
     dataErased: "Dati cancellati ({n} UP). I bollini ancora validi vengono invalidati sulla blockchain entro qualche minuto.",
     dataNone: "Non conserviamo dati collegati a questa UP.",
 
@@ -280,6 +282,7 @@ const T = {
       INVALID_REQUEST: "Richiesta non valida. Riprova.",
       MINT_IN_PROGRESS: "C'è già un bollino in corso di emissione per questa CIE o questa UP. Riprova tra qualche minuto.",
       MIGRATION_TOO_SOON: "Hai già spostato la UP principale negli ultimi 30 giorni. Riprova più avanti.",
+      ALREADY_VERIFIED: "Questa UP ha già un bollino valido con questa carta: non serve rinnovarlo. Potrai rinnovarlo con la nuova carta, quando l'avrai.",
       MINT_FAILED: "Il conio del bollino non è riuscito. ChainIntegrate è stata avvisata: riprova più tardi.",
       MINT_RATE_LIMITED: "In questo momento il servizio ha raggiunto il numero massimo di bollini per ora (o per oggi). La tua CIE è stata verificata, ma il bollino non è stato emesso: riprova tra un'ora. ChainIntegrate è stata avvisata.",
       SERVICE_UNAVAILABLE: "Il servizio di verifica è temporaneamente non disponibile. Riprova tra qualche minuto.",
@@ -331,14 +334,14 @@ const T = {
         <li><strong>Nodo della blockchain LUKSO</strong> (sulla rete principale un nodo di ChainIntegrate; sulla rete di prova il nodo pubblico di LUKSO): il nostro server legge lo stato dei bollini e invia le transazioni. Vede gli indirizzi delle UP.</li>
         <li><strong>Estensione UP Browser</strong> (LUKSO): firma l'enunciato e la rinuncia con la tua UP, nel tuo browser.</li>
         <li><strong>Aruba S.p.A.</strong> (Italia), fornitore che tratta i dati per nostro conto: il server su cui gira il servizio (database, registri, copie di sicurezza cifrate) e l'invio delle e-mail di avviso a ChainIntegrate.</li>
-        <li><strong>WalletConnect (Reown, Inc.)</strong>, solo se colleghi UP Wallet per Android: le richieste tra questa pagina e l'app passano dai suoi server (relay). Vede l'indirizzo della UP, la rete, l'IP e i dati tecnici della sessione; il contenuto delle richieste (testo da firmare, transazioni) è cifrato tra la pagina e l'app. Nessuna statistica d'uso viene inviata a Reown. Reown ha sede negli Stati Uniti: questi dati possono essere trattati fuori dall'Unione Europea, secondo la sua <a href="https://reown.com/privacy-policy" target="_blank" rel="noopener">informativa</a>. Se non vuoi, usa l'estensione UP Browser.</li>
+        <li><strong>WalletConnect (Reown, Inc.)</strong>, solo se colleghi UP Wallet per Android: le richieste tra questa pagina e l'app passano dai suoi server (relay). Vede l'indirizzo della UP, la rete, l'IP e i dati tecnici della sessione; il contenuto delle richieste (testo da firmare, transazioni) è cifrato tra la pagina e l'app. Nessuna statistica d'uso viene inviata a Reown. Reown ha sede negli Stati Uniti: questi dati possono essere trattati fuori dall'Unione Europea. Secondo la sua <a href="https://reown.com/privacy-policy" target="_blank" rel="noopener">informativa</a>, i trasferimenti fuori dallo Spazio economico europeo avvengono con i meccanismi di trasferimento previsti dalla legge. Se non vuoi, usa l'estensione UP Browser.</li>
         <li><strong>Chiunque legga la blockchain</strong>: vede il bollino delle UP. Se sposti la UP principale (migrazione), le due operazioni avvengono a breve distanza e possono far capire che le due UP sono della stessa persona.</li>
         <li><strong>Avvisi a ChainIntegrate</strong>: per i problemi del servizio e gli eventi importanti (per esempio una richiesta di eccezione) riceviamo una e-mail con l'indirizzo della UP, mai dati della carta.</li>
       </ul>
       <h2>6 · Cosa resta nel tuo browser</h2>
       <p>La lingua e il tema scelti, il numero dell'enunciato in corso (solo per la sessione) e, se colleghi UP Wallet, i dati del collegamento WalletConnect, fino a quando premi "Disconnetti". Nient'altro.</p>
       <h2>7 · I tuoi diritti</h2>
-      <p>Secondo il Regolamento UE 2016/679 (GDPR) puoi chiedere l'accesso, la rettifica, la cancellazione o la limitazione del trattamento dei dati che ti riguardano, riceverli in un formato leggibile da una macchina (portabilità: "Scarica i miei dati" dà un file JSON), o revocare il consenso in qualsiasi momento, dalla pagina "Il mio bollino", firmando la richiesta con la UP (solo chi controlla la UP può farlo). Puoi anche scrivere ai contatti del punto 2: ti chiederemo comunque una firma della UP, per essere certi che la richiesta venga da te. La cancellazione invalida i bollini e cancella anche l'impronta del codice fiscale: dopo potresti collegare di nuovo la CIE come se fosse la prima volta. Puoi anche rinunciare al bollino da solo, dalla pagina "Il mio bollino". Puoi presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). Quello che sta sulla blockchain (il bollino e la sua storia) non può essere cancellato da nessuno.</p>
+      <p>Secondo il Regolamento UE 2016/679 (GDPR) puoi chiedere l'accesso ai dati che ti riguardano e riceverli in un formato leggibile da una macchina (portabilità), o la loro cancellazione, dalla pagina "Il mio bollino" ("Scarica i miei dati" dà un file JSON), firmando la richiesta con la UP: solo chi la controlla può farlo. Se la UP non ha più un bollino valido, la richiesta riguarda solo quella UP. Rettifica e limitazione del trattamento, e le richieste di chi non ha più una UP con un bollino valido, si fanno scrivendo ai contatti del punto 2: ti chiederemo una firma della UP o, per i dati di tutte le tue UP, una firma con la CIE, per essere certi che la richiesta venga da te. Puoi revocare il consenso in qualsiasi momento. La cancellazione invalida i bollini e cancella anche l'impronta del codice fiscale: dopo potresti collegare di nuovo la CIE come se fosse la prima volta. Puoi anche rinunciare al bollino da solo, dalla pagina "Il mio bollino". Puoi presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). Quello che sta sulla blockchain (il bollino e la sua storia) non può essere cancellato da nessuno.</p>
       <h2>8 · Minori e modifiche</h2>
       <p>Il servizio è riservato ai maggiorenni: l'età si ricava dal codice fiscale del certificato, solo durante la verifica. Se questa informativa cambia, cambia la data in alto; le versioni precedenti restano nella <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">cronologia del repository</a>.</p>`,
 
@@ -354,7 +357,9 @@ const T = {
         <li>La firma usata è fatta con il certificato di autenticazione della carta: non è una firma digitale qualificata.</li>
       </ul>
       <h2>Servizio sperimentale</h2>
-      <p>Il servizio è in prova e viene fornito così com'è, senza garanzie. ChainIntegrate può revocare un bollino in caso di abuso. Il codice è pubblico con licenza Apache-2.0.</p>`,
+      <p>Il servizio è in prova e viene fornito così com'è, senza garanzie. ChainIntegrate può revocare un bollino in caso di abuso. Il codice è pubblico con licenza Apache-2.0.</p>
+      <h2>Componenti di terzi</h2>
+      <p>Solo per il collegamento con UP Wallet, la pagina carica due componenti di terzi, non modificati: il client WalletConnect di Reown, Inc., con la <a href="/vendor/WALLETCONNECT-LICENSE.md" target="_blank" rel="noopener">WalletConnect Community License</a> (Portions © 2025 Reown, Inc. All Rights Reserved), e qrcode-generator di Kazuhiko Arase (licenza MIT). Elenco completo dei pacchetti inclusi e delle loro licenze: <a href="https://github.com/ChainIntegrate/up-cie-link/tree/main/frontend/vendor" target="_blank" rel="noopener">frontend/vendor</a>.</p>`,
   },
 
   en: {
@@ -507,12 +512,14 @@ const T = {
     renounceConfirm: "Do you confirm? You will sign the transaction with your UP.",
     renounceSent: "Transaction sent. The status updates as soon as it is confirmed.",
     dataTitle: "Your data",
-    dataText: "You can download a copy of the data we keep about you, or erase it. Either way you sign the request with your UP: only whoever controls it can do so. The data covers every UP linked to your CIE.",
+    dataText: "You can download a copy of the data we keep about you, or erase it. Either way you sign the request with your UP: only whoever controls it can do so. If this UP has a valid badge, the request covers every UP linked to your CIE; if its badge is no longer valid (renounced, migrated, expired), it covers this UP only. If you have no UP with a valid badge left and want the data of all of them, write to us: we will ask you to sign the request with your CIE.",
     dataExportButton: "Download my data",
     dataEraseButton: "Erase my data",
-    dataEraseConfirm: "Do you confirm the erasure? Every badge linked to your CIE will be invalidated and the data deleted. It cannot be undone. You will sign the request with your UP.",
+    dataEraseConfirm: "Do you confirm the erasure? If this UP has a valid badge, every badge linked to your CIE will be invalidated and the data deleted; otherwise only this UP's data is erased. It cannot be undone. You will sign the request with your UP.",
     dataDownload: "Download the file",
     dataExportReady: "Here is your data.",
+    dataExportOne: "Here is the data of this UP. Its badge is no longer valid, so the file does not include the other UPs linked to your CIE.",
+    dataErasedOne: "The data of this UP has been erased. Its badge was no longer valid, so the other UPs linked to your CIE were not touched.",
     dataErased: "Data erased ({n} UP). The badges still valid are invalidated on the blockchain within a few minutes.",
     dataNone: "We keep no data linked to this UP.",
 
@@ -622,6 +629,7 @@ const T = {
       INVALID_REQUEST: "Invalid request. Try again.",
       MINT_IN_PROGRESS: "A badge is already being issued for this CIE or this UP. Try again in a few minutes.",
       MIGRATION_TOO_SOON: "You already moved your primary UP in the last 30 days. Try again later.",
+      ALREADY_VERIFIED: "This UP already has a valid badge with this card: there is no need to renew it. You can renew it with your new card, when you have it.",
       MINT_FAILED: "Minting the badge failed. ChainIntegrate has been notified: try again later.",
       MINT_RATE_LIMITED: "The service has reached its maximum number of badges for this hour (or today). Your CIE was verified, but the badge was not issued: try again in an hour. ChainIntegrate has been notified.",
       SERVICE_UNAVAILABLE: "The verification service is temporarily unavailable. Try again in a few minutes.",
@@ -672,14 +680,14 @@ const T = {
         <li><strong>LUKSO blockchain node</strong> (on mainnet a ChainIntegrate node; on the test network LUKSO's public node): our server reads the badges and sends the transactions. It sees the UP addresses.</li>
         <li><strong>UP Browser extension</strong> (LUKSO): signs the statement and the renunciation with your UP, in your browser.</li>
         <li><strong>Aruba S.p.A.</strong> (Italy), a provider processing data on our behalf: the server the service runs on (database, logs, encrypted backups) and the alert e-mails sent to ChainIntegrate.</li>
-        <li><strong>WalletConnect (Reown, Inc.)</strong>, only if you connect UP Wallet for Android: requests between this page and the app go through its servers (relay). It sees the UP address, the network, the IP and the session's technical data; the content of the requests (text to sign, transactions) is encrypted between the page and the app. No usage statistics are sent to Reown. Reown is based in the United States: this data may be processed outside the European Union, under its <a href="https://reown.com/privacy-policy" target="_blank" rel="noopener">privacy policy</a>. If you do not want that, use the UP Browser extension.</li>
+        <li><strong>WalletConnect (Reown, Inc.)</strong>, only if you connect UP Wallet for Android: requests between this page and the app go through its servers (relay). It sees the UP address, the network, the IP and the session's technical data; the content of the requests (text to sign, transactions) is encrypted between the page and the app. No usage statistics are sent to Reown. Reown is based in the United States: this data may be processed outside the European Union. According to its <a href="https://reown.com/privacy-policy" target="_blank" rel="noopener">privacy policy</a>, transfers outside the European Economic Area use the lawful transfer mechanisms provided by law. If you do not want that, use the UP Browser extension.</li>
         <li><strong>Anyone reading the blockchain</strong>: sees the badges of the UPs. If you move your primary UP (migration), the two operations happen close together and may reveal that both UPs belong to the same person.</li>
         <li><strong>Alerts to ChainIntegrate</strong>: for service problems and notable events (for example an exception request) we receive an e-mail with the UP address, never card data.</li>
       </ul>
       <h2>6 · What stays in your browser</h2>
       <p>The language and theme you chose, the number of the statement in progress (for the session only) and, if you connect UP Wallet, the WalletConnect connection data, until you press "Disconnect". Nothing else.</p>
       <h2>7 · Your rights</h2>
-      <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to, rectification, erasure or restriction of processing of your data, receive it in a machine-readable format (portability: "Download my data" gives a JSON file), or withdraw your consent at any time, from the "My badge" page, signing the request with your UP (only whoever controls the UP can do so). You can also write to the contacts in section 2: we will still ask for a signature of the UP, to be sure the request comes from you. Erasure invalidates the badges and also deletes the tax code fingerprint: afterwards you could link the CIE again as if for the first time. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
+      <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to your data and receive it in a machine-readable format (portability), or for its erasure, from the "My badge" page ("Download my data" gives a JSON file), signing the request with your UP: only whoever controls it can do so. If the UP no longer has a valid badge, the request covers that UP only. Rectification and restriction of processing, and requests from people who no longer have a UP with a valid badge, are made by writing to the contacts in section 2: we will ask for a signature of the UP or, for the data of all your UPs, a signature with your CIE, to be sure the request comes from you. You can withdraw your consent at any time. Erasure invalidates the badges and also deletes the tax code fingerprint: afterwards you could link the CIE again as if for the first time. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
       <h2>8 · Minors and changes</h2>
       <p>The service is for adults only: the age is read from the certificate's tax code, during the check only. If this notice changes, the date at the top changes; previous versions stay in the <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">repository history</a>.</p>`,
 
@@ -694,7 +702,9 @@ const T = {
         <li>The signature uses the card's authentication certificate: it is not a qualified digital signature.</li>
       </ul>
       <h2>Experimental service</h2>
-      <p>The service is in testing and provided as is, without warranties. ChainIntegrate may revoke a badge in case of abuse. The code is public under the Apache-2.0 licence.</p>`,
+      <p>The service is in testing and provided as is, without warranties. ChainIntegrate may revoke a badge in case of abuse. The code is public under the Apache-2.0 licence.</p>
+      <h2>Third-party components</h2>
+      <p>Only for the UP Wallet connection, the page loads two unmodified third-party components: the WalletConnect client of Reown, Inc., under the <a href="/vendor/WALLETCONNECT-LICENSE.md" target="_blank" rel="noopener">WalletConnect Community License</a> (Portions © 2025 Reown, Inc. All Rights Reserved), and qrcode-generator by Kazuhiko Arase (MIT licence). Full list of the bundled packages and their licences: <a href="https://github.com/ChainIntegrate/up-cie-link/tree/main/frontend/vendor" target="_blank" rel="noopener">frontend/vendor</a>.</p>`,
   },
 };
 

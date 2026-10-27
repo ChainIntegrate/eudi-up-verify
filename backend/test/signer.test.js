@@ -109,6 +109,17 @@ describe("UCL-08: signer", () => {
     assert.equal(st.used.attestDay, 1);
   });
 
+  it("UCL-47: a daily cap on person keys, and the refusals of the last 24 hours in the status", async () => {
+    let t = Date.parse("2026-10-27T00:00:00Z");
+    const { signer: s, core } = testSigner({ clock: () => t, limits: { personKeyPerMinute: 100, personKeyPerDay: 3 } });
+    for (let i = 0; i < 3; i++) await s.personKey("RSSMRA80A01H501X");
+    await rejectsCode(s.personKey("RSSMRA80A01H501X"), "RATE_LIMITED");
+    assert.deepEqual((await core.handle({ op: "status" })).refusedLastDay, { personKey: 1 });
+    t += 86_400_001;
+    await s.personKey("RSSMRA80A01H501X");
+    assert.deepEqual((await core.handle({ op: "status" })).refusedLastDay, {});
+  });
+
   it("refuses unknown operations", async () => {
     const { core } = testSigner();
     await rejectsCode(core.handle({ op: "export" }), "UNKNOWN_OP");

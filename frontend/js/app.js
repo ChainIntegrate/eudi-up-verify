@@ -656,11 +656,11 @@ function dataPanel(up) {
       if (action === "export") {
         const url = URL.createObjectURL(new Blob([JSON.stringify(r.data, null, 2)], { type: "application/json" }));
         const a = h("a", { href: url, download: `up-cie-link-data-${up.slice(2, 10)}.json` }, t("dataDownload"));
-        result.replaceChildren(notice("ok", t("dataExportReady"), " ", a));
+        result.replaceChildren(notice("ok", t(r.scope === "up" ? "dataExportOne" : "dataExportReady"), " ", a));
         a.click();
         onLeave(() => URL.revokeObjectURL(url));
       } else {
-        result.replaceChildren(notice("ok", t("dataErased").replace("{n}", String(r.ups.length))));
+        result.replaceChildren(notice("ok", r.scope === "up" ? t("dataErasedOne") : t("dataErased").replace("{n}", String(r.ups.length))));
       }
     } catch (e) {
       result.replaceChildren(codeOf(e) === "NO_DATA" ? notice("ok", t("dataNone")) : errorNotice(e));

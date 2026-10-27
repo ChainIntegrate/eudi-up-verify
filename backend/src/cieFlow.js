@@ -112,7 +112,7 @@ export function createCieFlow(deps) {
   async function process(row, job) {
     let plan;
     try {
-      plan = await decide(db, badge, { up: row.up, mode: row.mode, personKey: job.personKey }, clock());
+      plan = await decide(db, badge, { up: row.up, mode: row.mode, personKey: job.personKey, expiresAtMs: job.expiresAtSec * 1000 }, clock());
     } catch (e) {
       if (!(e instanceof LinkError)) throw e;
       setStatus(db, row.id, { status: "failed", error_code: e.code, exception_ticket: e.ticket ?? null });

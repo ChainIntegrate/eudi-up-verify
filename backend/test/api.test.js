@@ -126,6 +126,15 @@ describe("API: statements and UP signature", () => {
     await close();
   });
 
+  it("UCL-45: compressed request bodies are refused (no decompression)", async () => {
+    const { gzipSync } = await import("node:zlib");
+    const body = gzipSync(JSON.stringify({ up: UP, mode: "link" }));
+    const r = await fetch(`${base}/api/statements`, { method: "POST", headers: { "Content-Type": "application/json", "Content-Encoding": "gzip" }, body });
+    assert.equal(r.status, 415);
+    assert.equal((await r.json()).error, "UNSUPPORTED_ENCODING");
+    await close();
+  });
+
   it("CORS only for the configured origin", async () => {
     const good = await fetch(`${base}/api/config`, { headers: { Origin: cfg.publicOrigin } });
     assert.equal(good.headers.get("access-control-allow-origin"), cfg.publicOrigin);

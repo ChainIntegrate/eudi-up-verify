@@ -17,11 +17,11 @@ export const MIGRATION_INTERVAL_MS = 30 * 86_400_000; // UCL-07: at most one mig
 /**
  * Decides what to do for a verified (UP, person) pair.
  * @returns {Promise<{primary: boolean, invalidate: string|null, ticket: string|null}>}
- * @throws LinkError with codes MINT_IN_PROGRESS, MIGRATION_TOO_SOON, UP_REVOKED, UP_LINKED_TO_ANOTHER_PERSON, MIGRATION_OR_EXCEPTION_REQUIRED,
+ * @throws LinkError with codes MINT_IN_PROGRESS, ALREADY_VERIFIED, MIGRATION_TOO_SOON, UP_REVOKED, UP_LINKED_TO_ANOTHER_PERSON, MIGRATION_OR_EXCEPTION_REQUIRED,
  *         NO_PRIMARY_LINK, EXCEPTION_REQUIRED, EXCEPTION_PENDING, EXCEPTION_LIMIT_REACHED, EXCEPTION_WITHDRAWN,
  *         EXCEPTION_REJECTED
  */
-export async function decide(db, badge, { up, mode, personKey }, nowMs = Date.now()) {
+export async function decide(db, badge, { up, mode, personKey, expiresAtMs }, nowMs = Date.now()) {
   // UCL-04: a mint still open (timeout, restart) for this person or this UP must be closed first
   if (db.prepare("SELECT 1 FROM mints WHERE person_key = ? OR up = ?").get(personKey, up)) throw new LinkError("MINT_IN_PROGRESS");
   const linkOfUp = db.prepare("SELECT * FROM links WHERE up = ?").get(up);
@@ -40,6 +40,9 @@ export async function decide(db, badge, { up, mode, personKey }, nowMs = Date.no
   // Renewal of a still-valid link of the same UP for the same person (e.g. renewed card): keep its role.
   // An invalidated link (renounced, migrated away) is NOT renewed this way: it goes through the normal rules.
   if (sameUpOfPerson && sameUpOfPerson.status === "valid" && mode === "link") {
+    // UCL-46: a renewal must bring something new (a card expiring later); otherwise one holder could spend the
+    // signer's global mint quota on the same badge again and again
+    if (expiresAtMs !== undefined && expiresAtMs <= sameUpOfPerson.expires_at) throw new LinkError("ALREADY_VERIFIED");
     const keepPrimary = sameUpOfPerson.is_primary === 1 || !primaryElsewhere;
     return { primary: keepPrimary, invalidate: null, ticket: null };
   }

@@ -15,11 +15,12 @@ import { JsonRpcProvider, formatEther, parseEther } from "ethers";
 import { createBadgeReader } from "./chain.js";
 import { loadDeployment } from "./config.js";
 import { createMailer } from "./notify.js";
+import { createSigner, socketTransport } from "./signer.js";
 
 const HOUR = 3_600_000;
 
 /** @returns {Promise<Array<{id: string, level: "problem"|"todo", text: string}>>} */
-export async function collectFindings({ cfg, provider, db, fetchHealth, now }) {
+export async function collectFindings({ cfg, provider, db, fetchHealth, fetchSignerStatus, now }) {
   const findings = [];
   const add = (id, level, text) => findings.push({ id, level, text });
 
@@ -41,6 +42,19 @@ export async function collectFindings({ cfg, provider, db, fetchHealth, now }) {
   else if (!health?.ok) add("backend_unhealthy", "problem", "backend /api/health does not report ok");
   // UCL-08: without the signer no CIE file is verified and nothing is minted
   else if (health.signer && !health.signer.ready) add("signer_not_ready", "problem", `signer not ready (${health.signer.error}): new CIE files are refused`);
+  // UCL-47: the signer's own counters, read on its socket (an alarm that does not depend on the backend)
+  if (fetchSignerStatus) {
+    let st = null;
+    try {
+      st = await fetchSignerStatus();
+    } catch {
+      add("signer_down", "problem", "signer not answering on its socket");
+    }
+    const refused = Object.entries(st?.refusedLastDay ?? {}).filter(([, n]) => n > 0);
+    if (refused.length) {
+      add("signer_refusals", "problem", `signer rate limits hit in the last 24 hours (${refused.map(([k, n]) => `${k}: ${n}`).join(", ")}): real traffic → raise the limits in /etc/up-cie-link/signer.env; otherwise check the server`);
+    }
+  }
   if (health?.indexer?.at && now - health.indexer.at > 15 * 60_000) {
     add("indexer_stuck", "problem", `event indexer has not run for ${Math.round((now - health.indexer.at) / 60_000)} minutes`);
   }
@@ -182,8 +196,8 @@ function render(findings) {
  * One monitor run. State (last findings, last email, last summary) lives in `stateFile`.
  * @returns {Promise<{findings, sent: string[]}>}
  */
-export async function runMonitor({ cfg, provider, db, fetchHealth, mailer, stateFile, now = Date.now(), dryRun = false }) {
-  const findings = await collectFindings({ cfg, provider, db, fetchHealth, now });
+export async function runMonitor({ cfg, provider, db, fetchHealth, fetchSignerStatus, mailer, stateFile, now = Date.now(), dryRun = false }) {
+  const findings = await collectFindings({ cfg, provider, db, fetchHealth, fetchSignerStatus, now });
   const state = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, "utf8")) : { ids: [], lastMail: 0, lastSummaryDay: null };
   const ids = findings.map((f) => f.id).sort();
   const changed = JSON.stringify(ids) !== JSON.stringify(state.ids);
@@ -286,11 +300,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const provider = new JsonRpcProvider(cfg.rpcUrl, cfg.deployment.chainId, { staticNetwork: true });
   const db = existsSync(cfg.dbPath) ? new Database(cfg.dbPath, { readonly: true, fileMustExist: true }) : null;
   const fetchHealth = async () => (await fetch(`http://127.0.0.1:${cfg.port}/api/health`, { signal: AbortSignal.timeout(10_000) })).json();
+  const signer = createSigner(socketTransport(process.env.SIGNER_SOCKET || "/run/up-cie-link-signer/signer.sock", { timeoutMs: 5000 }));
   const { findings, sent, mailErrors } = await runMonitor({
     cfg,
     provider,
     db,
     fetchHealth,
+    fetchSignerStatus: () => signer.status(),
     mailer,
     stateFile: cfg.stateFile,
     dryRun: args.has("--dry-run"),

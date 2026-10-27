@@ -85,13 +85,36 @@ describe("UCL-31: self-service data-subject requests", () => {
     const c = await challenge(UP, "erase");
     const r = await post("/api/subject/request", { ...c, signature: await controller.signMessage(c.text) });
     assert.equal(r.status, 200);
-    assert.deepEqual({ ...r.body, ups: r.body.ups.sort() }, { action: "erase", ups: [UP, UP2].sort(), invalidations: 2 });
+    assert.deepEqual({ ...r.body, ups: r.body.ups.sort() }, { action: "erase", scope: "person", ups: [UP, UP2].sort(), invalidations: 2 });
     assert.equal(db.prepare("SELECT COUNT(*) n FROM links").get().n, 0);
     assert.equal(db.prepare("SELECT COUNT(*) n FROM persons").get().n, 0);
     assert.equal(db.prepare("SELECT COUNT(*) n FROM pending_invalidations").get().n, 2);
     // a second request finds nothing
     const c2 = await challenge(UP, "export");
     assert.deepEqual(await post("/api/subject/request", { ...c2, signature: await controller.signMessage(c2.text) }), { status: 404, body: { error: "NO_DATA" } });
+  });
+
+  it("UCL-44: a UP whose link has ended reaches only its own data (the auditor's PoC, now refused)", async () => {
+    // UP is the old UP (migrated away / renounced), UP2 the person's current primary
+    db.prepare("UPDATE links SET status = 'invalidated', is_primary = 0 WHERE up = ?").run(UP);
+    const c = await challenge(UP, "export");
+    const ex = await post("/api/subject/request", { ...c, signature: await controller.signMessage(c.text) });
+    assert.equal(ex.body.scope, "up");
+    assert.deepEqual(ex.body.data.links.map((l) => l.up), [UP]);
+    assert.ok(!JSON.stringify(ex.body).includes(UP2), "the other UPs of the person are not disclosed");
+    const e = await challenge(UP, "erase");
+    const er = await post("/api/subject/request", { ...e, signature: await controller.signMessage(e.text) });
+    assert.deepEqual({ ...er.body }, { action: "erase", scope: "up", ups: [UP], invalidations: 0 });
+    assert.deepEqual(db.prepare("SELECT up, status FROM links").all().map((r) => [r.up, r.status]), [[UP2, "valid"]]);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM pending_invalidations").get().n, 0, "the current badge is not touched");
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM persons").get().n, 1, "the person stays while a link is left");
+  });
+
+  it("UCL-44: an expired link counts as ended", async () => {
+    db.prepare("UPDATE links SET expires_at = ? WHERE up = ?").run(now - 1, UP);
+    const c = await challenge(UP, "export");
+    const ex = await post("/api/subject/request", { ...c, signature: await controller.signMessage(c.text) });
+    assert.equal(ex.body.scope, "up");
   });
 
   it("rejects bad input on the challenge", async () => {

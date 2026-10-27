@@ -292,12 +292,12 @@ sudo -u up-cie-link -H pm2 reload up-cie-link
 |---|---|
 | Log del backend | `sudo -u up-cie-link -H pm2 logs up-cie-link --lines 50 --nostream` |
 | Log e stato del firmatario | `sudo journalctl -u up-cie-link-signer -n 50 --no-pager`; lo stato (pronto, limiti) è anche nella pagina admin |
-| Limiti del firmatario raggiunti (mail) | se è traffico vero: alzarli in `/etc/up-cie-link/signer.env`, poi `sudo systemctl restart up-cie-link-signer`; se non lo è, **Ferma i conii** e controllare il server |
+| Limiti del firmatario raggiunti (mail del backend o del monitor, `signer_refusals`) | se è traffico vero: alzarli in `/etc/up-cie-link/signer.env`, poi `sudo systemctl restart up-cie-link-signer`; se non lo è, **Ferma i conii** e controllare il server. Le decifrature al giorno (`SIGNER_MAX_DECRYPT_PER_DAY`, 2.000) vanno tenute sopra il numero di bollini attivi (UCL-53) |
 | Stato del monitor (senza mail) | `cd /var/www/up-cie-link/backend && sudo -u up-cie-link -H node src/monitor.js --dry-run` |
 | Backup subito | `sudo systemctl start up-cie-link-backup.service` |
 | Ripristino (sul PC o su un altro server) | `npm run restore -- --file <backup.db.gz.age> --identity <chiave age privata> --out restored.db` |
-| Richiesta di accesso o cancellazione dei dati | la persona la fa da sola da "Il mio bollino", firmando con la UP (UCL-31). Se scrive per e-mail o Telegram, indicarle quella pagina: **mai** eseguire una richiesta senza una firma della UP |
-| Accesso / cancellazione da riga di comando (solo dopo aver verificato la firma) | `sudo -u up-cie-link -H node scripts/data-subject.js export --up 0x…` (in `backend/`); `… erase --up 0x…`, poi lo stesso con `--yes` |
+| Richiesta di accesso o cancellazione dei dati | la persona la fa da sola da "Il mio bollino", firmando con la UP (UCL-31). Con una UP dal bollino valido riguarda tutta la persona; con una UP il cui bollino è finito, solo quella UP (UCL-44). **Mai** eseguire una richiesta senza una firma |
+| Richiesta di chi non ha più una UP valida (tutti i dati), o di rettifica/limitazione | con la CIE (UCL-44): `sudo -u up-cie-link -H node scripts/data-subject.js template erase --up 0x… > /home/up-cie-link/p7m/richiesta.txt` (o `export`), mandare il file alla persona da firmare con CieSign **senza modificarlo**; ricevuto il `.p7m` in `/home/up-cie-link/p7m/` (§2.4): `… data-subject.js erase --up 0x… --p7m <file>` (mostra cosa), poi con `--yes`; infine `shred -u` del `.p7m`. Lo script verifica firma, catena, revoca, data (≤ 30 giorni) e che la carta sia della persona collegata a quella UP |
 | `security.txt` (`frontend/.well-known/`) | rinnovare il campo `Expires` prima del 2027-10-19 |
 | Eccezioni, revoche, metadati, emergenza | pagina `https://up-cie-link.chainintegrate.it/admin` con la UP owner |
 

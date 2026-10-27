@@ -33,6 +33,7 @@ export const DEFAULT_LIMITS = {
   attestPerDay: 100,
   invalidatePerHour: 100,
   personKeyPerMinute: 30,
+  personKeyPerDay: 300, // UCL-47: each link needs one; a compromised backend cannot use the signer as a bulk oracle
   decryptPerDay: 2000,
   maxGas: 1_000_000n,
   maxFeePerGas: 100_000_000_000n, // 100 gwei
@@ -77,14 +78,19 @@ export function createSignerCore({ attesterKey, pepper, certRefKey, contract, ch
     attestDay: limiter(L.attestPerDay, DAY),
     invalidateHour: limiter(L.invalidatePerHour, HOUR),
     personKeyMinute: limiter(L.personKeyPerMinute, 60_000),
+    personKeyDay: limiter(L.personKeyPerDay, DAY),
     decryptDay: limiter(L.decryptPerDay, DAY),
   };
   const refused = { attest: 0, invalidate: 0, personKey: 0, decryptCertRef: 0 };
+  // UCL-47: refusals of the last 24 hours, read by the monitor directly (an alarm that does not depend on the backend)
+  const refusals = [];
   const take = (name, ...lims) => {
     const now = clock();
     // check every window first, so a refusal does not consume the others
     if (lims.some((l) => l.used(now) >= l.max)) {
       refused[name]++;
+      refusals.push({ at: now, name });
+      if (refusals.length > 10_000) refusals.shift();
       throw new SignerError("RATE_LIMITED");
     }
     lims.forEach((l) => l.take(now));
@@ -98,7 +104,7 @@ export function createSignerCore({ attesterKey, pepper, certRefKey, contract, ch
 
     personKey({ taxCode }) {
       if (typeof taxCode !== "string" || !/^[A-Z0-9]{16}$/i.test(taxCode)) throw new SignerError("BAD_REQUEST");
-      take("personKey", counters.personKeyMinute);
+      take("personKey", counters.personKeyMinute, counters.personKeyDay);
       return { key: createHmac("sha256", pepperBuf).update(`up-cie-link:person:v1:${taxCode.toUpperCase()}`).digest("hex") };
     },
 
@@ -164,10 +170,12 @@ export function createSignerCore({ attesterKey, pepper, certRefKey, contract, ch
           attestDay: counters.attestDay.used(now),
           invalidateHour: counters.invalidateHour.used(now),
           personKeyMinute: counters.personKeyMinute.used(now),
+          personKeyDay: counters.personKeyDay.used(now),
           decryptDay: counters.decryptDay.used(now),
         },
-        limits: { attestPerHour: L.attestPerHour, attestPerDay: L.attestPerDay, invalidatePerHour: L.invalidatePerHour, personKeyPerMinute: L.personKeyPerMinute, decryptPerDay: L.decryptPerDay },
+        limits: { attestPerHour: L.attestPerHour, attestPerDay: L.attestPerDay, invalidatePerHour: L.invalidatePerHour, personKeyPerMinute: L.personKeyPerMinute, personKeyPerDay: L.personKeyPerDay, decryptPerDay: L.decryptPerDay },
         refused: { ...refused },
+        refusedLastDay: refusals.filter((r) => r.at > now - DAY).reduce((acc, r) => ({ ...acc, [r.name]: (acc[r.name] ?? 0) + 1 }), {}),
       };
     },
   };
