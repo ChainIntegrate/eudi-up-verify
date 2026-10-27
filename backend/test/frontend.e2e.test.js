@@ -502,7 +502,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
 
     // the session is kept: after a reload "My badge" is connected without pairing again
     await page.goto(site + "/il-mio-bollino");
-    await page.getByText("con UP Wallet").waitFor();
+    await page.getByText("con ChainIntegrate UP Wallet").waitFor(); // the name the app gives in the session
     assert.equal(await page.locator("#badgeState").textContent(), "Bollino valido");
     // the admin page offers the extension only (desktop only)
     await page.goto(site + "/admin");
@@ -527,6 +527,14 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     const [openY, qrY] = await page.evaluate(() => ["#wcOpen", "#wcQr"].map((s) => document.querySelector(s).getBoundingClientRect().top));
     assert.ok(openY < qrY, "on a phone the open button comes before the QR code");
     await shot(page, "12-upwallet-phone");
+    await page.locator("#wcCancel").click();
+
+    // M-9: LUKSO's Universal Profiles app, opened by its own link (it cannot scan a QR: the QR holds the same link)
+    await page.locator("#connectLuksoApp").click();
+    await page.locator("#wcQr").waitFor();
+    assert.equal(await page.locator("#wcOpen").getAttribute("href"), "io.universaleverything.universalprofiles://wallet-connect/pair-1@2?relay-protocol=irn&symKey=00");
+    assert.equal(await page.locator("#wcCopy").count(), 0);
+    await page.getByText("Collega l'app Universal Profiles").waitFor();
     await page.locator("#wcCancel").click();
     assert.deepEqual(problems, []);
   });
