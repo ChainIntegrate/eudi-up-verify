@@ -342,7 +342,9 @@ backup esterni rinviati (UCL-25).
 `LSP4Creators[]` + `LSP4CreatorsMap` sul contratto (la UP owner come creatore) e `LSP12IssuedAssets[]` +
 `LSP12IssuedAssetsMap` sulla UP owner (il contratto come asset emesso; la transazione va alla UP stessa, gli asset già
 elencati restano). **Prova generale sul testnet** prima del deploy: dalla pagina admin, "Imposta" sulle due righe
-della Paternità; devono diventare "impostato" e Universal Everything deve mostrare il creatore.
+della Paternità; devono diventare "impostato" e Universal Everything deve mostrare il creatore. **Fatta il
+2026-10-27:** entrambe "impostato" con l'estensione UP Browser (anche la transazione diretta alla UP stessa);
+Universal Everything mostra "Creators" con la spunta verde di verifica accanto ad "Asset Maintainer".
 
 **B. Prerequisiti (owner):** pochi LYX sulla chiave di deploy (segreti di Codespaces); 5 LYX sull'attestatore
 `0x8F42…723a` in mainnet; la UP owner mainnet `0x4a26…8c27` nell'estensione UP Browser con un controller che può
