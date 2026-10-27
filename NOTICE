@@ -11,3 +11,6 @@ The site's UP Wallet connection (frontend/vendor/, loaded only when it is used) 
 client of Reown, Inc., under the WalletConnect Community License Agreement (not open source):
 Portions © 2025 Reown, Inc. All Rights Reserved. It also includes qrcode-generator by Kazuhiko Arase (MIT) and
 the open-source packages listed in frontend/vendor/signclient-2.25.0.THIRD-PARTY.txt.
+
+The LUKSO logo in the site footer (frontend/js/i18n.js) belongs to LUKSO and is not covered by this
+product's licence; it only indicates the network the service is built on and implies no endorsement.

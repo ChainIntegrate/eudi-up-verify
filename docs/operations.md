@@ -24,19 +24,20 @@ gestore di password.
 | nginx | `/etc/nginx/sites-available/up-cie-link` (modificato da certbot: gli aggiornamenti del template si riportano a mano), log `/var/log/nginx/up-cie-link.*.log`. CSP con le sole eccezioni di WalletConnect: il relay (`connect-src … wss://relay.walletconnect.org`) e il servizio Verify (`frame-src https://verify.walletconnect.org https://verify.walletconnect.com`, iframe nascosto che attesta il dominio a UP Wallet; senza, UP Wallet mostra "UNKNOWN"); `/vendor/` con le regole di `js|css|img`; `/README.md` non servito; header di sicurezza non duplicati sulle API; `/.well-known/security.txt` (scade il 2027-10-19) |
 | HTTP/2 | **non attivato** (decisione del 2026-10-15): con la versione di nginx del server l'opzione `http2` su `listen 443` vale per tutti i siti; si rivaluta con nginx ≥ 1.25.1 (`http2 on;` per singolo sito) |
 | Rotazione log nginx | giornaliera, 14 file (`/etc/logrotate.d/nginx`, verificato il 2026-10-15) — coerente con l'informativa |
-| Rete | LUKSO testnet (4201), RPC pubblico `https://rpc.testnet.lukso.network` |
-| Contratto | `0x6A525B5662EF905f3DD90F7139DC3a702b1371BA`, blocco 8745039 (`contracts/deployments/luksoTestnet.json`) |
-| Owner | UP testnet `0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C` |
+| Rete | **LUKSO mainnet (42)** dal 2026-10-27; RPC: nodo di ChainIntegrate con una chiave dedicata a up-cie-link (URL e chiave nel gestore di password), lo stesso nel `.env` del backend e in `monitor.env` |
+| Contratto | `0xc945c5FABBc19dBd04f90a1a4878cfA0F78C5e38`, blocco 8661334 (`contracts/deployments/luksoMainnet.json`), deploy dal commit `8746055`. Blockscout: verificato in *partial match* (il sorgente mostrato ha il vecchio commento di `attest`; codice eseguibile identico); la verifica completa con lo Standard JSON non è riuscita il 2026-10-27 per un errore del servizio di verifica di Blockscout: da riprovare |
+| Owner | UP mainnet di ChainIntegrate `0x4a2605796e0d91A9667d6E30365aEEC384C48c27` |
 | Attestatore | `0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a` (chiave privata solo nel firmatario, `/etc/up-cie-link/signer.env`; la stessa anche per il mainnet, decisione A3 del 2026-10-27) |
-| Contratti testnet sostituiti | `0x056a…7892` e `0x329D…4C2f`: attestatore a zero dal 2026-10-19 (audit UCL-38) |
+| Testnet (dismesso, A1) | contratto `0x6A52…71BA`: attestatore a zero dal 2026-10-27 ("Ferma i conii"); i precedenti `0x056a…7892` e `0x329D…4C2f` dal 2026-10-19 (audit UCL-38). Database e backup del testnet cancellati il 2026-10-27, senza copie (M2) |
+| Notifiche | `NOTIFY_EACH_LINK=true` nel primo periodo (decisione del 2026-10-27): una mail a ChainIntegrate per ogni collegamento; si passa a `false` quando i collegamenti aumentano |
 | Canali di firma CIE | CieSign `.p7m` attivo (`ALLOW_CADES_UPLOAD=true`); canale dell'app Android spento (`ALLOW_RAW_CHANNEL=false`, audit UCL-40) |
 | UP Wallet (WalletConnect) | attivo dal 2026-10-26 (`WALLETCONNECT_PROJECT_ID` nel `.env` del backend: è pubblico, lo stesso progetto Reown di Cross_Chain); `up-cie-link.chainintegrate.it` è negli allowed domains del progetto; la verifica del dominio passa dall'iframe di Verify consentito dalla CSP: UP Wallet mostra "VALID" (verificato il 2026-10-28) |
 | Segreti nel `.env` del backend | **nessuno** (il backend non parte se ci sono); il `.env` contiene solo configurazione e credenziali SMTP |
 | Root CIE fissata (`CIE_ROOT_SHA256`) | `40f425927e8a1e6a297a15c2a9d79e2221bf4fe25b2f21e3bfad53a1ba58b0d7` — "National root CA for the Italian Electronic Identity Card" (Ministero dell'Interno), valida fino al 2044-05-16; presente nella Trusted List AgID (controllo del 2026-10-15) |
 | Sub CA | SUBCA003, SHA-256 `8f3cce1555f96594d294f00fec381fda9d8bac7271fcbdc8bb8f7766b0e27eee`, valida fino al 2039-05-13 (`backend/trust/` sul server) |
 | Installazione | 2026-10-15: backend online (PM2 `pm2-up-cie-link.service` abilitato), timer attivi, primo backup ok, mail ok (`smtps.aruba.it`), HTTPS con certbot (scadenza 2027-01-13, rinnovo automatico) |
-| Primo collegamento reale | 2026-10-15: riuscito (UP + CIE reale via CieSign → bollino principale valido) |
-| Metadati del bollino | serviti dal nostro dominio (`/metadata/badge.json`, `/metadata/badge-icon.png`), **niente IPFS** (decisione del 2026-10-15: un solo file, sempre uguale; integrità garantita dagli hash on-chain). Non modificarli senza "Aggiorna i metadati" dalla pagina admin; mantenere il dominio finché esistono bollini. Ultimo aggiornamento on-chain: 2026-10-15 (testo "No name, tax code or card data on-chain") |
+| Primo collegamento reale | testnet 2026-10-15; **mainnet 2026-10-27**: bollino principale, poi una UP aggiuntiva da telefono con eccezione approvata dalla pagina admin (flusso eccezioni provato in mainnet) |
+| Metadati del bollino | serviti dal nostro dominio (`/metadata/badge.json`, `/metadata/badge-icon.png`), **niente IPFS** (decisione del 2026-10-15: un solo file, sempre uguale; integrità garantita dagli hash on-chain). Non modificarli senza "Aggiorna i metadati" dalla pagina admin; mantenere il dominio finché esistono bollini. Mainnet: metadati e Paternità (LSP4Creators, LSP12IssuedAssets) impostati il 2026-10-27; Universal Everything mostra nome, immagine e Creators con la spunta verde |
 | Prova OCSP reale | `check-p7m` con una CIE reale: **CHECK OK** il 2026-10-15 (audit UCL-06) |
 | Prove reali successive | 2026-10-26: collegamento con UP Wallet da computer e tutto dal telefono Android; 2026-10-27: cancellazione dati e nuovo collegamento passando dal firmatario; VPS aggiornata alle correzioni del terzo audit (`2515c27`: firmatario reinstallato, pepper invariato, monitor senza problemi, corpi compressi → 415) |
 
@@ -351,7 +352,8 @@ Universal Everything mostra "Creators" con la spunta verde di verifica accanto a
 firmare e scrivere dati; la chiave RPC del nodo dedicata a up-cie-link (gestore di password); facoltativo: la chiave del
 telefono di UP Wallet autorizzata sulla propria UP mainnet (pagina Backup di Cross_Chain).
 
-**C. Deploy (Codespaces):**
+**C. Deploy (Codespaces) — fatto il 2026-10-27:** contratto `0xc945…5e38`, blocco 8661334; verifica Blockscout in partial match (vedi §1).
+
 
 ```bash
 cd contracts
@@ -360,7 +362,8 @@ npm run verify:mainnet
 git add deployments/luksoMainnet.json && git commit -m "Deploy UpCieBadge to LUKSO mainnet" && git push
 ```
 
-**D. VPS (servizio fermo per qualche minuto):**
+**D. VPS (servizio fermo per qualche minuto) — fatto il 2026-10-27:** passi 1–8 eseguiti; il pepper check del firmatario è rimasto `dcdf…0121`; primo backup fatto a mano dopo il passaggio (il monitor segnalava "no backup found" sul database nuovo).
+
 
 1. pagina admin, **ancora sul testnet**: "Ferma i conii" (attestatore a zero sul contratto testnet, A1);
 2. `sudo -u up-cie-link -H pm2 stop up-cie-link`;

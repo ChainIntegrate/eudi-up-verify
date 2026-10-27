@@ -20,7 +20,7 @@ const T = {
     navLink: "Collega",
     navVerify: "Verifica",
     navMine: "Il mio bollino",
-    footer: `Servizio sperimentale di <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · Costruito su ${LUKSO_LOGO} · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Note legali</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Codice sorgente</a> · Assistenza: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
+    footer: `Servizio sperimentale di <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · Costruito su ${LUKSO_LOGO} · <a href="/guida" data-link>Guida</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Note legali</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Codice sorgente</a> · Assistenza: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
     footerNote: "Non è un servizio pubblico e non è collegato al Ministero dell'Interno.",
     testnetBanner: "Rete di prova (LUKSO testnet): i bollini emessi qui servono solo per i test.",
     loading: "Caricamento…",
@@ -33,7 +33,7 @@ const T = {
     homeVerify: "Verifica una UP",
     howTitle: "Come funziona",
     how: `<ol>
-      <li>Colleghi la Universal Profile con l'estensione UP Browser e la UP firma un enunciato che contiene il suo indirizzo.</li>
+      <li>Colleghi la Universal Profile con l'estensione UP Browser o con UP Wallet per Android, e la UP firma un enunciato che contiene il suo indirizzo.</li>
       <li>Firmi lo stesso enunciato con la CIE (CieSign, lettore e PIN); poi carichi qui il file firmato.</li>
       <li>Il servizio controlla firma, certificato e revoca della carta; se tutto è valido conia il bollino sulla tua UP.</li>
     </ol>`,
@@ -46,9 +46,10 @@ const T = {
     needTitle: "Cosa ti serve",
     need: `<ul>
       <li>La CIE con il PIN e un lettore (NFC o USB) con <strong>CieSign</strong>.</li>
-      <li>L'estensione <strong>UP Browser</strong> con la tua Universal Profile; il controller deve avere il permesso di firma (SIGN).</li>
+      <li>La tua Universal Profile nell'estensione <strong>UP Browser</strong> oppure nell'app <strong>UP Wallet</strong> per Android; il controller deve avere il permesso di firma (SIGN).</li>
       <li>Circa 10 minuti: l'enunciato vale 15 minuti.</li>
-    </ul>`,
+    </ul>
+    <p><a href="/guida" data-link>Leggi la guida completa</a></p>`,
     rulesTitle: "Una persona, una UP principale",
     rules: `<p>Ogni CIE può collegare <strong>una sola UP principale</strong>. Puoi spostarla su una nuova UP (migrazione: la vecchia viene invalidata). UP aggiuntive solo con un'eccezione approvata da ChainIntegrate.</p>
       <p>Il bollino scade all'inizio del mese in cui scade la carta e si invalida se il certificato della carta viene revocato. Puoi rinunciarvi quando vuoi.</p>`,
@@ -315,7 +316,7 @@ const T = {
 
     // privacy
     privacyTitle: "Informativa sulla privacy",
-    privacySubtitle: `Ultimo aggiornamento: ${PRIVACY_DATE_IT}. Riguarda il servizio UP CIE Link (up-cie-link.chainintegrate.it), in prova.`,
+    privacySubtitle: `Ultimo aggiornamento: ${PRIVACY_DATE_IT}. Riguarda il servizio UP CIE Link (up-cie-link.chainintegrate.it), sperimentale.`,
     privacy: `
       <h2>1 · In breve</h2>
       <ul>
@@ -356,6 +357,79 @@ const T = {
       <h2>8 · Minori e modifiche</h2>
       <p>Il servizio è riservato ai maggiorenni: l'età si ricava dal codice fiscale del certificato, solo durante la verifica. Se questa informativa cambia, cambia la data in alto; le versioni precedenti restano nella <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">cronologia del repository</a>.</p>`,
 
+    // guide
+    guideTitle: "Guida",
+    guideSubtitle: "Come collegare la UP alla CIE, verificare un bollino e gestire il tuo.",
+    guide: `
+      <h2>1 · Cosa ti serve</h2>
+      <ul>
+        <li>La <strong>CIE</strong> con il suo PIN e un lettore (NFC o USB).</li>
+        <li><strong>CieSign</strong>, il programma per firmare file con la CIE, sul computer.</li>
+        <li>La tua <strong>Universal Profile</strong> in uno di questi wallet:
+          <ul>
+            <li>l'estensione <strong>UP Browser</strong> (computer, Chrome o Brave);</li>
+            <li>l'app <strong>UP Wallet</strong> per Android: dal telefono la apri con un tocco, dal computer inquadri un QR.</li>
+          </ul>
+          Il controller che usi deve avere il permesso di firma (SIGN) sulla UP.</li>
+        <li>Circa 10 minuti. Non servono LYX: il conio del bollino lo paga il servizio.</li>
+      </ul>
+
+      <h2>2 · Collegare la UP, passo per passo</h2>
+      <ol>
+        <li><strong>UP</strong>: nella pagina <a href="/collega" data-link>Collega</a> scegli il wallet e collega la UP.</li>
+        <li><strong>Modalità</strong>: "Primo collegamento" se la CIE non è ancora collegata a nessuna UP (vale anche per rinnovare il bollino della stessa UP); le altre due modalità sono spiegate al punto 5.</li>
+        <li><strong>Consenso</strong>: leggi l'informativa e dai il consenso; il servizio prepara l'enunciato, un breve testo con l'indirizzo della UP.</li>
+        <li><strong>Firma UP</strong>: controlla che l'indirizzo sia il tuo e firma con la UP. Hai 5 minuti.</li>
+        <li><strong>Firma CIE</strong>: scarica il file dell'enunciato senza aprirlo né modificarlo; in CieSign scegli <em>Firma</em>, il file e il formato <strong>CAdES (.p7m)</strong>, appoggia la CIE e inserisci il PIN; poi carica qui il file <strong>.p7m</strong>. L'enunciato vale 15 minuti dalla sua creazione.</li>
+        <li><strong>Esito</strong>: il servizio controlla la firma, il certificato della carta e la sua revoca, poi conia il bollino. Di solito serve meno di un minuto; alla fine trovi il link alla transazione e al bollino.</li>
+      </ol>
+      <p>Se il tempo scade, ricomincia: serve un nuovo enunciato.</p>
+
+      <h2>3 · Verificare una UP</h2>
+      <p>Nella pagina <a href="/verifica" data-link>Verifica</a> chiunque può inserire l'indirizzo di una UP e leggere dalla blockchain lo stato del suo bollino, senza collegare nulla. Puoi anche condividere il link diretto alla verifica della tua UP.</p>
+      <ul>
+        <li><strong>Valido</strong>: la UP ha un bollino in corso di validità. Vedi la data di verifica, la scadenza e se è la UP principale della persona.</li>
+        <li><strong>Scaduto</strong>: è passata la data di scadenza. Si rinnova con una carta valida.</li>
+        <li><strong>Invalidato</strong>: il titolare ha rinunciato, ha spostato la UP principale, ha cancellato i suoi dati, oppure il certificato della carta è stato revocato.</li>
+        <li><strong>Revocato</strong>: revocato da ChainIntegrate; non si può rinnovare.</li>
+        <li><strong>Nessun bollino</strong>: la UP non l'ha mai ricevuto.</li>
+      </ul>
+
+      <h2>4 · Il mio bollino</h2>
+      <p>Nella pagina <a href="/il-mio-bollino" data-link>Il mio bollino</a> colleghi la UP e puoi:</p>
+      <ul>
+        <li><strong>rinnovarlo</strong>: quando hai una nuova carta, rifai il collegamento con la stessa UP e la nuova CIE. Con la stessa carta non serve: il bollino dura già fino alla sua scadenza;</li>
+        <li><strong>rinunciarvi</strong>: la UP invia una transazione che invalida il bollino. Questa la paga la UP, quindi serve un po' di LYX. Non si annulla: per riaverlo rifai il collegamento con la CIE;</li>
+        <li><strong>scaricare o cancellare i tuoi dati</strong>: firmi la richiesta con la UP, senza transazioni né costi. Se il bollino della UP è valido, la richiesta riguarda tutte le UP collegate alla tua CIE; altrimenti solo quella UP. La cancellazione invalida i bollini ancora validi.</li>
+      </ul>
+
+      <h2>5 · Più di una UP</h2>
+      <p>Ogni CIE ha <strong>una sola UP principale</strong>. Se vuoi usarne un'altra hai due strade:</p>
+      <ul>
+        <li><strong>Sposta la UP principale</strong>: colleghi la nuova UP con questa modalità; il bollino della vecchia viene invalidato. Si può fare una volta ogni 30 giorni.</li>
+        <li><strong>UP aggiuntiva</strong>: per una UP in più, oltre alla principale (che deve essere valida). Al primo tentativo ricevi un codice: mandalo a <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, così possiamo avvisarti quando l'eccezione è approvata. Dopo l'approvazione rifai il collegamento con la modalità "UP aggiuntiva". Sulla blockchain le due UP non risultano collegate tra loro.</li>
+      </ul>
+
+      <h2>6 · Domande frequenti</h2>
+      <ul>
+        <li><strong>Cosa vede chi guarda la mia UP?</strong> Che ha un bollino "CIE verificata", con la data di verifica, la scadenza e se è la UP principale. Mai nome, codice fiscale o dati della carta.</li>
+        <li><strong>Perché la scadenza è il primo del mese?</strong> Il bollino scade il primo giorno del mese in cui scade la carta: così sulla blockchain non c'è la data esatta, che aiuterebbe a riconoscere la persona.</li>
+        <li><strong>La mia carta scade questo mese.</strong> Il bollino scadrebbe subito, quindi il servizio non lo emette: usa la nuova carta quando l'avrai.</li>
+        <li><strong>Ho perso la carta o me l'hanno rubata.</strong> Quando la denunci, il suo certificato viene revocato; il servizio lo controlla ogni giorno e invalida il bollino. Con la nuova carta rifai il collegamento.</li>
+        <li><strong>Ho perso l'accesso alla UP.</strong> Collega una nuova UP con "Sposta la UP principale": quella vecchia viene invalidata. Per i dati scrivici: ti chiederemo una firma con la CIE.</li>
+        <li><strong>Quanto costa?</strong> Il collegamento è gratuito: le transazioni del conio le paga il servizio. Solo la rinuncia è una transazione della tua UP.</li>
+        <li><strong>È un documento d'identità?</strong> No. Il bollino dice solo che chi controllava la UP ha firmato anche con una CIE valida. Non è un servizio pubblico: vedi le <a href="/note-legali" data-link>note legali</a>.</li>
+      </ul>
+
+      <h2>7 · Problemi comuni</h2>
+      <ul>
+        <li><strong>"La firma della UP non è valida"</strong>: il controller che hai usato non ha il permesso di firma (SIGN). Aggiungilo dalle impostazioni della UP, o usa un altro controller.</li>
+        <li><strong>Il file firmato non viene accettato</strong>: carica il <strong>.p7m</strong> creato da CieSign in formato CAdES, firmato sull'enunciato scaricato senza modifiche.</li>
+        <li><strong>UP Wallet è su un'altra rete</strong>: nell'app scegli la rete LUKSO principale e riprova.</li>
+        <li><strong>"Troppe verifiche in corso" o "numero massimo di bollini"</strong>: il servizio ha dei limiti per proteggersi dagli abusi. Riprova dopo il tempo indicato.</li>
+        <li>Per tutto il resto: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> o <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>.</li>
+      </ul>`,
+
     // legal
     legalTitle: "Note legali",
     legal: `
@@ -382,7 +456,7 @@ const T = {
     navLink: "Link",
     navVerify: "Verify",
     navMine: "My badge",
-    footer: `Experimental service by <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · Built on ${LUKSO_LOGO} · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Legal notes</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Source code</a> · Support: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
+    footer: `Experimental service by <a href="https://www.linkedin.com/company/chainintegrate" target="_blank" rel="noopener">ChainIntegrate</a> · Built on ${LUKSO_LOGO} · <a href="/guida" data-link>Guide</a> · <a href="/privacy" data-link>Privacy</a> · <a href="/note-legali" data-link>Legal notes</a> · <a href="https://github.com/ChainIntegrate/up-cie-link" target="_blank" rel="noopener">Source code</a> · Support: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a>, <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>`,
     footerNote: "Not a public service and not connected to the Italian Ministry of the Interior.",
     testnetBanner: "Test network (LUKSO testnet): badges issued here are for testing only.",
     loading: "Loading…",
@@ -394,7 +468,7 @@ const T = {
     homeVerify: "Verify a UP",
     howTitle: "How it works",
     how: `<ol>
-      <li>You connect your Universal Profile with the UP Browser extension, and the UP signs a statement containing its address.</li>
+      <li>You connect your Universal Profile with the UP Browser extension or with UP Wallet for Android, and the UP signs a statement containing its address.</li>
       <li>You sign the same statement with your CIE (CieSign, card reader and PIN), then upload the signed file here.</li>
       <li>The service checks the signature, the certificate and its revocation; if everything is valid it mints the badge to your UP.</li>
     </ol>`,
@@ -407,9 +481,10 @@ const T = {
     needTitle: "What you need",
     need: `<ul>
       <li>Your CIE with its PIN and a reader (NFC or USB) with <strong>CieSign</strong>.</li>
-      <li>The <strong>UP Browser</strong> extension with your Universal Profile; the controller needs the SIGN permission.</li>
+      <li>Your Universal Profile in the <strong>UP Browser</strong> extension or in the <strong>UP Wallet</strong> app for Android; the controller needs the SIGN permission.</li>
       <li>About 10 minutes: the statement is valid for 15 minutes.</li>
-    </ul>`,
+    </ul>
+    <p><a href="/guida" data-link>Read the full guide</a></p>`,
     rulesTitle: "One person, one primary UP",
     rules: `<p>Each CIE can link <strong>one primary UP</strong>. You can move it to a new UP (migration: the old one is invalidated). Additional UPs only with an exception approved by ChainIntegrate.</p>
       <p>The badge expires at the start of the month in which the card expires and is invalidated if the card's certificate is revoked. You can renounce it at any time.</p>`,
@@ -669,7 +744,7 @@ const T = {
     },
 
     privacyTitle: "Privacy notice",
-    privacySubtitle: `Last updated: ${PRIVACY_DATE_EN}. Covers the UP CIE Link service (up-cie-link.chainintegrate.it), in testing.`,
+    privacySubtitle: `Last updated: ${PRIVACY_DATE_EN}. Covers the UP CIE Link service (up-cie-link.chainintegrate.it), experimental.`,
     privacy: `
       <h2>1 · In short</h2>
       <ul>
@@ -709,6 +784,78 @@ const T = {
       <p>Under Regulation (EU) 2016/679 (GDPR) you can ask for access to your data and receive it in a machine-readable format (portability), or for its erasure, from the "My badge" page ("Download my data" gives a JSON file), signing the request with your UP: only whoever controls it can do so. If the UP no longer has a valid badge, the request covers that UP only. Rectification and restriction of processing, and requests from people who no longer have a UP with a valid badge, are made by writing to the contacts in section 2: we will ask for a signature of the UP or, for the data of all your UPs, a signature with your CIE, to be sure the request comes from you. You can withdraw your consent at any time. Erasure invalidates the badges and also deletes the tax code fingerprint: afterwards you could link the CIE again as if for the first time. You can also renounce the badge yourself from the "My badge" page. You can lodge a complaint with the Italian data protection authority (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">garanteprivacy.it</a>). What is on the blockchain (the badge and its history) cannot be deleted by anyone.</p>
       <h2>8 · Minors and changes</h2>
       <p>The service is for adults only: the age is read from the certificate's tax code, during the check only. If this notice changes, the date at the top changes; previous versions stay in the <a href="https://github.com/ChainIntegrate/up-cie-link/commits/main/frontend/js/i18n.js" target="_blank" rel="noopener">repository history</a>.</p>`,
+
+    guideTitle: "Guide",
+    guideSubtitle: "How to link your UP to your CIE, verify a badge and manage yours.",
+    guide: `
+      <h2>1 · What you need</h2>
+      <ul>
+        <li>Your <strong>CIE</strong> (Italian electronic identity card) with its PIN and a reader (NFC or USB).</li>
+        <li><strong>CieSign</strong>, the program to sign files with the CIE, on a computer.</li>
+        <li>Your <strong>Universal Profile</strong> in one of these wallets:
+          <ul>
+            <li>the <strong>UP Browser</strong> extension (computer, Chrome or Brave);</li>
+            <li>the <strong>UP Wallet</strong> app for Android: on the phone you open it with a tap, from a computer you scan a QR code.</li>
+          </ul>
+          The controller you use needs the SIGN permission on the UP.</li>
+        <li>About 10 minutes. No LYX needed: the service pays for minting the badge.</li>
+      </ul>
+
+      <h2>2 · Linking your UP, step by step</h2>
+      <ol>
+        <li><strong>UP</strong>: on the <a href="/collega" data-link>Link</a> page choose the wallet and connect your UP.</li>
+        <li><strong>Mode</strong>: "First link" if your CIE is not yet linked to any UP (also to renew the badge of the same UP); the other two modes are explained in section 5.</li>
+        <li><strong>Consent</strong>: read the privacy notice and give your consent; the service prepares the statement, a short text with the UP address.</li>
+        <li><strong>UP signature</strong>: check that the address is yours and sign with the UP. You have 5 minutes.</li>
+        <li><strong>CIE signature</strong>: download the statement file without opening or editing it; in CieSign choose <em>Sign</em>, the file and the <strong>CAdES (.p7m)</strong> format, place the CIE on the reader and enter the PIN; then upload the <strong>.p7m</strong> file here. The statement is valid for 15 minutes from its creation.</li>
+        <li><strong>Result</strong>: the service checks the signature, the card's certificate and its revocation, then mints the badge. It usually takes less than a minute; at the end you get links to the transaction and the badge.</li>
+      </ol>
+      <p>If time runs out, start again: a new statement is needed.</p>
+
+      <h2>3 · Verifying a UP</h2>
+      <p>On the <a href="/verifica" data-link>Verify</a> page anyone can enter a UP address and read the state of its badge from the blockchain, without connecting anything. You can also share the direct link to the verification of your UP.</p>
+      <ul>
+        <li><strong>Valid</strong>: the UP has a badge in force. You see the verification date, the expiry and whether it is the person's primary UP.</li>
+        <li><strong>Expired</strong>: the expiry date has passed. Renew it with a valid card.</li>
+        <li><strong>Invalidated</strong>: the holder renounced it, moved the primary UP or erased their data, or the card's certificate was revoked.</li>
+        <li><strong>Revoked</strong>: revoked by ChainIntegrate; it cannot be renewed.</li>
+        <li><strong>No badge</strong>: the UP never received one.</li>
+      </ul>
+
+      <h2>4 · My badge</h2>
+      <p>On the <a href="/il-mio-bollino" data-link>My badge</a> page you connect your UP and you can:</p>
+      <ul>
+        <li><strong>renew it</strong>: when you get a new card, link again with the same UP and the new CIE. With the same card there is no need: the badge already lasts until the card expires;</li>
+        <li><strong>renounce it</strong>: the UP sends a transaction that invalidates the badge. The UP pays for it, so it needs a little LYX. It cannot be undone: to get the badge back, link again with your CIE;</li>
+        <li><strong>download or erase your data</strong>: you sign the request with the UP, with no transaction and no cost. If the UP's badge is valid, the request covers all the UPs linked to your CIE; otherwise only that UP. Erasure invalidates the badges that are still valid.</li>
+      </ul>
+
+      <h2>5 · More than one UP</h2>
+      <p>Each CIE has <strong>one primary UP</strong>. To use another one you have two options:</p>
+      <ul>
+        <li><strong>Move the primary UP</strong>: link the new UP with this mode; the old UP's badge is invalidated. It can be done once every 30 days.</li>
+        <li><strong>Additional UP</strong>: one more UP besides the primary one (which must be valid). On the first attempt you get a code: send it to <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>, so we can tell you when the exception is approved. Once approved, link again with the "Additional UP" mode. On the blockchain the two UPs are not linked to each other.</li>
+      </ul>
+
+      <h2>6 · Frequently asked questions</h2>
+      <ul>
+        <li><strong>What does someone looking at my UP see?</strong> That it has a "CIE verified" badge, with the verification date, the expiry and whether it is the primary UP. Never name, tax code or card data.</li>
+        <li><strong>Why does it expire on the first of the month?</strong> The badge expires on the first day of the month in which the card expires: this way the exact date, which would help identify the person, is not on the blockchain.</li>
+        <li><strong>My card expires this month.</strong> The badge would expire at once, so the service does not issue it: use your new card when you have it.</li>
+        <li><strong>I lost my card or it was stolen.</strong> When you report it, its certificate is revoked; the service checks this every day and invalidates the badge. Link again with the new card.</li>
+        <li><strong>I lost access to my UP.</strong> Link a new UP with "Move the primary UP": the old one is invalidated. For your data, write to us: we will ask for a signature with your CIE.</li>
+        <li><strong>How much does it cost?</strong> Linking is free: the service pays for the minting transactions. Only renouncing is a transaction of your UP.</li>
+        <li><strong>Is it an identity document?</strong> No. The badge only says that whoever controlled the UP also signed with a valid CIE. It is not a public service: see the <a href="/note-legali" data-link>legal notes</a>.</li>
+      </ul>
+
+      <h2>7 · Common problems</h2>
+      <ul>
+        <li><strong>"The UP signature is not valid"</strong>: the controller you used lacks the SIGN permission. Add it in the UP settings, or use another controller.</li>
+        <li><strong>The signed file is not accepted</strong>: upload the <strong>.p7m</strong> created by CieSign in CAdES format, signed on the downloaded statement without changes.</li>
+        <li><strong>UP Wallet is on another network</strong>: in the app choose the LUKSO mainnet and try again.</li>
+        <li><strong>"Too many checks in progress" or "maximum number of badges"</strong>: the service has limits to protect itself from abuse. Try again after the time shown.</li>
+        <li>For anything else: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> or <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>.</li>
+      </ul>`,
 
     legalTitle: "Legal notes",
     legal: `

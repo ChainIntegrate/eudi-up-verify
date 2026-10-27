@@ -1,5 +1,5 @@
 // UP CIE Link frontend: static ES modules, no third-party code, no build step.
-// Routes: / · /collega · /verifica[/<up>] · /il-mio-bollino · /privacy · /note-legali
+// Routes: / · /collega · /verifica[/<up>] · /il-mio-bollino · /guida · /privacy · /note-legali
 import { ApiError, api } from "./api.js";
 import { fill, h, shortAddr, storage } from "./dom.js";
 import { errorText, formatDate, getLang, setLang, t } from "./i18n.js";
@@ -74,6 +74,7 @@ const routes = [
   [/^\/verifica\/?$/, () => viewVerify(null)],
   [/^\/verifica\/(0x[0-9a-fA-F]{40})\/?$/, (m) => viewVerify(m[1])],
   [/^\/il-mio-bollino\/?$/, viewMine],
+  [/^\/guida\/?$/, () => viewStatic("guideTitle", "guide", t("guideSubtitle"))],
   [/^\/privacy\/?$/, () => viewStatic("privacyTitle", "privacy", t("privacySubtitle"))],
   [/^\/note-legali\/?$/, () => viewStatic("legalTitle", "legal")],
   // owner only, not in the menu: the backend checks the owner on-chain and the signed login
