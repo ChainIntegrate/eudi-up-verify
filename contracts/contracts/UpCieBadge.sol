@@ -92,7 +92,7 @@ contract UpCieBadge is LSP8IdentifiableDigitalAsset {
     // ---------------------------------------------------------------- attester
 
     /// @notice Mints the badge to `up`, or renews it in place if it already exists.
-    /// @param expiresAt Badge expiry (unix seconds): the first day of the month after the card expiry (UCL-03).
+    /// @param expiresAt Badge expiry (unix seconds): the first day of the month in which the card expires (UCL-03, UCL-34).
     /// @param primary True for the person's primary UP, false for an additional UP allowed by an exception.
     function attest(address up, bytes32 source, uint64 expiresAt, bool primary) external onlyAttester nonReentrant {
         if (up == address(0)) revert InvalidUniversalProfile();

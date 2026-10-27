@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import express from "express";
 import { Interface, concat, encodeBytes32String, formatEther, getAddress, isAddress, keccak256, toUtf8Bytes } from "ethers";
 import { audit, kvGet } from "./db.js";
+import { INTERFACE_ID_LSP0, INTERFACE_ID_LSP8, LSP12_ISSUED_ARRAY, LSP12_ISSUED_MAP, LSP4_CREATORS_ARRAY, LSP4_CREATORS_MAP, appendEntry, arrayLength, mapKey } from "./lsp.js";
 import { notify } from "./notify.js";
 
 export const LSP4_METADATA_KEY = "0x9afb95cacc9f95858ec44aa8c3b685511002e30ae54415823f406128b85b238e";
@@ -25,6 +26,7 @@ const OWNER_IFACE = new Interface([
   "function reinstate(address up)",
   "function setAttester(address newAttester)",
   "function setData(bytes32 dataKey, bytes dataValue)",
+  "function setDataBatch(bytes32[] dataKeys, bytes[] dataValues)",
 ]);
 export const REVOKE_REASONS = ["REVOKED", "ABUSE"];
 
@@ -137,6 +139,19 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
   }
   const metadataUrl = () => `${cfg.publicOrigin.replace(/\/$/, "")}/metadata/badge.json`;
 
+  /** Authorship (mainnet phase A): owner UP in the contract's LSP4Creators, contract in the owner UP's LSP12IssuedAssets. */
+  async function authorship(owner) {
+    try {
+      const [creator, issued] = await Promise.all([
+        chain.getData(mapKey(LSP4_CREATORS_MAP, owner)),
+        chain.getDataOf(owner, mapKey(LSP12_ISSUED_MAP, contract)),
+      ]);
+      return { creatorSet: creator !== "0x", issuedSet: issued !== "0x" };
+    } catch {
+      return null; // unknown (the admin page shows nothing)
+    }
+  }
+
   async function status() {
     const now = clock();
     const [owner, attester, onChainMetadata] = await Promise.all([chain.owner(), chain.attester(), chain.getData(LSP4_METADATA_KEY)]);
@@ -179,6 +194,7 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
       },
       lastBackup: backupFile && existsSync(backupFile) ? JSON.parse(readFileSync(backupFile, "utf8")).at : null,
       superseded,
+      authorship: await authorship(getAddress(owner)),
       metadata: { url: metadataUrl(), onChain: onChainMetadata, expected, upToDate: expected !== null && onChainMetadata === expected },
     };
   }
@@ -254,6 +270,23 @@ export function createAdmin({ db, cfg, upChecker, chain, minterAddress = null, h
         data = OWNER_IFACE.encodeFunctionData("setAttester", [attesterAddr()]);
         summary = `restore the attester ${attesterAddr()}`;
         break;
+      case "setCreator": {
+        // LSP4Creators[] on the badge contract: the owner UP (an LSP0) appended as creator
+        const owner = getAddress(await chain.owner());
+        if ((await chain.getData(mapKey(LSP4_CREATORS_MAP, owner))) !== "0x") throw new AdminError(409, "ALREADY_SET");
+        const e = appendEntry({ arrayKey: LSP4_CREATORS_ARRAY, mapPrefix: LSP4_CREATORS_MAP, item: owner, interfaceId: INTERFACE_ID_LSP0, length: arrayLength(await chain.getData(LSP4_CREATORS_ARRAY)) });
+        data = OWNER_IFACE.encodeFunctionData("setDataBatch", [e.keys, e.values]);
+        summary = `set the owner UP ${owner} as creator of the badge collection (LSP4Creators)`;
+        break;
+      }
+      case "setIssuedAsset": {
+        // LSP12IssuedAssets[] on the owner UP itself: the transaction goes to the UP (its own setDataBatch)
+        const owner = getAddress(await chain.owner());
+        if ((await chain.getDataOf(owner, mapKey(LSP12_ISSUED_MAP, contract))) !== "0x") throw new AdminError(409, "ALREADY_SET");
+        const e = appendEntry({ arrayKey: LSP12_ISSUED_ARRAY, mapPrefix: LSP12_ISSUED_MAP, item: contract, interfaceId: INTERFACE_ID_LSP8, length: arrayLength(await chain.getDataOf(owner, LSP12_ISSUED_ARRAY)) });
+        const tx = { to: owner, data: OWNER_IFACE.encodeFunctionData("setDataBatch", [e.keys, e.values]), value: "0x0" };
+        return { ...tx, summary: `add the badge contract ${contract} to the issued assets of the owner UP (LSP12IssuedAssets)`, mainnet: cfg.deployment.chainId === 42 };
+      }
       case "stopSuperseded": {
         // UCL-38: only the earlier contracts listed in the deployment record
         const target = (cfg.deployment.superseded ?? []).find((a) => isAddress(args.address ?? "") && getAddress(a) === getAddress(args.address));

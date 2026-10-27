@@ -55,7 +55,8 @@ describe("admin API", () => {
       owner: async () => chain.ownerAddr,
       attester: async () => ATTESTER,
       attesterOf: async (a) => (a === cfg.deployment.superseded[0] ? ATTESTER : "0x0000000000000000000000000000000000000000"),
-      getData: async () => "0x",
+      getData: async (key) => chain.data?.[key] ?? "0x",
+      getDataOf: async (addr, key) => chain.upData?.[key] ?? "0x",
       getAttestation: async () => ({ status: 1n, primary: true, verifiedAt: 1n, expiresAt: 2n }),
       exceptionOf: async () => 0n,
       balance: async () => 5n * 10n ** 18n,
@@ -161,6 +162,39 @@ describe("admin API", () => {
     ]);
     assert.equal(s.metadata.upToDate, false);
     assert.equal(s.metadata.expected, metadataValue('{"LSP4Metadata":{"name":"UP CIE Link"}}\n', "https://up-cie-link.example/metadata/badge.json"));
+    await close();
+  });
+
+  it("mainnet phase A: authorship calldata (LSP4Creators on the contract, LSP12IssuedAssets on the owner UP)", async () => {
+    const { cookie } = await login();
+    const tx = async (action) => (await post("/tx", { action }, { Cookie: cookie })).json();
+    const batch = new Interface(["function setDataBatch(bytes32[] dataKeys, bytes[] dataValues)"]);
+    // creator: empty array -> length 1, index 0, map = LSP0 interface id + index 0
+    let t = await tx("setCreator");
+    assert.equal(t.to, cfg.deployment.address);
+    let p = batch.parseTransaction({ data: t.data });
+    assert.deepEqual([...p.args[0]], [
+      "0x114bd03b3a46d48759680d81ebb2b414fda7d030a7105a851867accf1c2352e7",
+      "0x114bd03b3a46d48759680d81ebb2b41400000000000000000000000000000000",
+      `0x6de85eaf5d982b4e5da00000${OWNER.slice(2).toLowerCase()}`,
+    ]);
+    assert.deepEqual([...p.args[1]], ["0x00000000000000000000000000000001", OWNER.toLowerCase(), "0x24871b3d00000000000000000000000000000000"]);
+    // issued asset: the owner UP already lists 2 assets -> appended at index 2; the transaction goes to the UP
+    chain.upData = { "0x7c8c3416d6cda87cd42c71ea1843df28ac4850354f988d55ee2eaa47b6dc05cd": "0x00000000000000000000000000000002" };
+    t = await tx("setIssuedAsset");
+    assert.equal(t.to, OWNER);
+    p = batch.parseTransaction({ data: t.data });
+    assert.deepEqual([...p.args[0]], [
+      "0x7c8c3416d6cda87cd42c71ea1843df28ac4850354f988d55ee2eaa47b6dc05cd",
+      "0x7c8c3416d6cda87cd42c71ea1843df2800000000000000000000000000000002",
+      `0x74ac2555c10b9349e78f0000${cfg.deployment.address.slice(2).toLowerCase()}`,
+    ]);
+    assert.deepEqual([...p.args[1]], ["0x00000000000000000000000000000003", cfg.deployment.address.toLowerCase(), "0x3a27170600000000000000000000000000000002"]);
+    // already set: refused; the status says so
+    chain.data = { [`0x6de85eaf5d982b4e5da00000${OWNER.slice(2).toLowerCase()}`]: "0x24871b3d00000000000000000000000000000000" };
+    assert.equal((await post("/tx", { action: "setCreator" }, { Cookie: cookie })).status, 409);
+    const s = await (await fetch(`${base}/status`, { headers: { Cookie: cookie } })).json();
+    assert.deepEqual(s.authorship, { creatorSet: true, issuedSet: false });
     await close();
   });
 

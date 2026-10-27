@@ -330,22 +330,46 @@ l'attestatore a zero.
 - chiave privata age dei backup (file generato con `npm run backup:keygen`, mai sul server);
 - accesso alla UP owner (controller nell'estensione).
 
-## 6. Passaggio a mainnet (da fare più avanti)
+## 6. Passaggio a mainnet (procedura confermata il 2026-10-27, decisioni A1-A3, M1-M4)
 
-- deploy del contratto in mainnet (`CONFIRM_MAINNET=yes`), verifica, metadati dalla pagina admin; deploy normale,
-  **senza** Nick factory (decisione A2 del 2026-10-27: il contratto vive solo su LUKSO);
-- stessa chiave dell'attestatore `0x8F42…723a` (decisione A3), con LYX veri per il gas;
-- firmatario: `SIGNER_CONTRACT` = nuovo indirizzo e `SIGNER_CHAIN_ID=42` in `/etc/up-cie-link/signer.env`, poi
-  riavvio del firmatario e del backend;
-- testnet abbandonato (decisione A1): attestatore a zero sul contratto testnet dalla pagina admin; database e backup
-  del testnet cancellati quando il mainnet parte (o una copia tenuta fuori dal server, a scelta);
-- nel sorgente del contratto il commento di `attest` dice ancora "mese dopo la scadenza": correggerlo prima del deploy
-  (oggi la scadenza è il primo giorno del mese della scadenza, UCL-34);
-- paternità on-chain: `LSP4Creators` sul contratto e `LSP12IssuedAssets` sulla UP owner (oggi Universal Everything
-  mostra ChainIntegrate come creatore e "Asset Maintainer", probabilmente perché la UP è `owner`);
-- `NETWORK=luksoMainnet`, `RPC_URL` con la chiave dedicata del nodo ChainIntegrate;
-- copia dei backup fuori dal server (audit UCL-25) quando gli utenti saranno in numero discreto (confermato il
-  2026-10-27); processo separato per HMAC e firma (UCL-08): fatto e installato sulla VPS il 2026-10-27 (§2.3b);
-- informativa: completata il 2026-10-27 (UCL-14);
-- `ALLOW_RAW_CHANNEL=false` finché l'app Android non è pronta (UCL-40);
-- `NOTIFY_EACH_LINK=false`.
+Decisioni: deploy normale, senza Nick factory (A2); stessa chiave dell'attestatore `0x8F42…723a` (A3, audit UCL-48
+accettato); testnet abbandonato (A1); 5 LYX iniziali sull'attestatore (M1, il monitor avvisa sotto 1); database del
+testnet cancellato senza copie (M2); paternità dalla pagina admin dopo una prova sul testnet (M3); qualche minuto di
+servizio fermo durante il passaggio, senza avviso (M4). Restano invariati: `ALLOW_RAW_CHANNEL=false` (UCL-40) e i
+backup esterni rinviati (UCL-25).
+
+**A. Codice (fatto il 2026-10-27):** commento di `attest` corretto (UCL-34); sezione **Paternità** nella pagina admin:
+`LSP4Creators[]` + `LSP4CreatorsMap` sul contratto (la UP owner come creatore) e `LSP12IssuedAssets[]` +
+`LSP12IssuedAssetsMap` sulla UP owner (il contratto come asset emesso; la transazione va alla UP stessa, gli asset già
+elencati restano). **Prova generale sul testnet** prima del deploy: dalla pagina admin, "Imposta" sulle due righe
+della Paternità; devono diventare "impostato" e Universal Everything deve mostrare il creatore.
+
+**B. Prerequisiti (owner):** pochi LYX sulla chiave di deploy (segreti di Codespaces); 5 LYX sull'attestatore
+`0x8F42…723a` in mainnet; la UP owner mainnet `0x4a26…8c27` nell'estensione UP Browser con un controller che può
+firmare e scrivere dati; la chiave RPC del nodo dedicata a up-cie-link (gestore di password); facoltativo: la chiave del
+telefono di UP Wallet autorizzata sulla propria UP mainnet (pagina Backup di Cross_Chain).
+
+**C. Deploy (Codespaces):**
+
+```bash
+cd contracts
+ATTESTER=0x8F42E3A2a23DE54a8DFa94502f344Cb81062723a CONFIRM_MAINNET=yes npm run deploy:mainnet
+npm run verify:mainnet
+git add deployments/luksoMainnet.json && git commit -m "Deploy UpCieBadge to LUKSO mainnet" && git push
+```
+
+**D. VPS (servizio fermo per qualche minuto):**
+
+1. pagina admin, **ancora sul testnet**: "Ferma i conii" (attestatore a zero sul contratto testnet, A1);
+2. `sudo -u up-cie-link -H pm2 stop up-cie-link`;
+3. database e backup del testnet cancellati (M2): `/var/lib/up-cie-link/up-cie-link.db*` e
+   `/var/backups/up-cie-link/*` (il backend crea il database nuovo all'avvio);
+4. `/etc/up-cie-link/signer.env`: `SIGNER_CONTRACT=<indirizzo mainnet>`, `SIGNER_CHAIN_ID=42`; poi
+   `sudo systemctl restart up-cie-link-signer` (il valore di controllo del pepper resta lo stesso);
+5. `backend/.env`: `NETWORK=luksoMainnet`, `RPC_URL=<nodo ChainIntegrate con la chiave dedicata>`,
+   `NOTIFY_EACH_LINK=false`; `backend/monitor.env`: `NETWORK=luksoMainnet`, `RPC_URL` (lo stesso nodo);
+6. `git pull` (porta `contracts/deployments/luksoMainnet.json`), `pm2 start up-cie-link`: nel log
+   `signer ready: attester 0x8F42…` e `luksoMainnet, contract <indirizzo mainnet>`;
+7. pagina admin **in mainnet**: "Aggiorna i metadati", poi Paternità (le due righe);
+8. `node src/monitor.js --dry-run`: nessun problema; poi il primo collegamento reale in mainnet;
+9. aggiornare questo file (§1: rete, contratto, blocco, owner) e il README.

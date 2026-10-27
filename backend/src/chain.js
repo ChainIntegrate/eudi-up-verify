@@ -31,6 +31,8 @@ export function createBadgeReader(provider, address) {
     attesterOf: (other) => new Contract(other, BADGE_ABI, provider).attester(), // UCL-38: superseded contracts
     owner: () => c.owner(),
     getData: (key) => c.getData(key),
+    // ERC725Y data of another contract (the owner UP: LSP12IssuedAssets)
+    getDataOf: (address, key) => new Contract(address, ["function getData(bytes32) view returns (bytes)"], provider).getData(key),
     balance: (address) => provider.getBalance(address),
   };
 }

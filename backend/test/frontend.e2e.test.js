@@ -430,12 +430,22 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.getByText("attestatore a zero", { exact: true }).waitFor({ timeout: 30_000 });
     assert.equal(await new Contract(oldBadgeAddress, ["function attester() view returns (address)"], node.provider).attester(), "0x0000000000000000000000000000000000000000");
 
+    // mainnet phase A: authorship, the owner UP as creator (on the contract) and the contract as issued asset (on the UP)
+    await page.locator("#adminSetCreator").click();
+    await page.locator('[data-authorship="setCreator"]').waitFor({ timeout: 30_000 });
+    await page.locator("#adminSetIssued").click();
+    await page.locator('[data-authorship="setIssuedAsset"]').waitFor({ timeout: 30_000 });
+    const getData = (addr, key) => new Contract(addr, ["function getData(bytes32) view returns (bytes)"], node.provider).getData(key);
+    assert.equal(await getData(badgeAddress, "0x114bd03b3a46d48759680d81ebb2b414fda7d030a7105a851867accf1c2352e7"), "0x00000000000000000000000000000001");
+    assert.equal((await getData(badgeAddress, "0x114bd03b3a46d48759680d81ebb2b41400000000000000000000000000000000")).toLowerCase(), ownerProfile.up.toLowerCase());
+    assert.equal(await getData(ownerProfile.up, `0x74ac2555c10b9349e78f0000${badgeAddress.slice(2).toLowerCase()}`), "0x3a27170600000000000000000000000000000000");
+
     // every action is in the audit log
     const db = new Database(path.join(dir, "fe2e.db"), { readonly: true });
     const events = db.prepare("SELECT event FROM audit WHERE event LIKE 'admin_%' ORDER BY id").all().map((r) => r.event);
     db.close();
     assert.ok(!/\bnull\b|\bundefined\b/.test(await page.locator("main").innerText()), "no stray null/undefined in the page");
-    assert.deepEqual(events, ["admin_login", "admin_approveException", "admin_revoke", "admin_reinstate", "admin_setMetadata", "admin_stopMinting", "admin_restoreAttester", "admin_stopSuperseded"]);
+    assert.deepEqual(events, ["admin_login", "admin_approveException", "admin_revoke", "admin_reinstate", "admin_setMetadata", "admin_stopMinting", "admin_restoreAttester", "admin_stopSuperseded", "admin_setCreator", "admin_setIssuedAsset"]);
     assert.deepEqual(problems, []);
   });
 

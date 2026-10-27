@@ -47,7 +47,9 @@ export async function deployProfile(deployer, controller) {
     up,
     keyManager: await km.getAddress(),
     execute: async (to, data) => {
-      const tx = await new Contract(await km.getAddress(), kmArt.abi, controller).execute(upIface.encodeFunctionData("execute", [0, to, 0, data]));
+      // a transaction to the UP itself (its own setData) goes straight through the Key Manager, as the UP wallets do
+      const payload = to.toLowerCase() === up.toLowerCase() ? data : upIface.encodeFunctionData("execute", [0, to, 0, data]);
+      const tx = await new Contract(await km.getAddress(), kmArt.abi, controller).execute(payload);
       return tx.wait();
     },
   };

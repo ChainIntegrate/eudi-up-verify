@@ -129,6 +129,28 @@ export function viewAdmin(ctx) {
       h("p", { class: "small dim" }, s.mintingStopped ? t("adminRestoreText").replace("{address}", s.configuredAttester ?? "—") : t("adminStopText")),
       h("div", { class: "actions" }, stop),
       supersededList(s.superseded ?? [], box, out),
+      authorshipPanel(s.authorship, box, out),
+    );
+  }
+
+  // Authorship on-chain: the owner UP as creator of the collection (LSP4Creators, on the contract) and the
+  // collection among the UP's issued assets (LSP12IssuedAssets, on the UP itself)
+  function authorshipPanel(a, box, out) {
+    if (!a) return null;
+    const row = (key, set, action, id) => {
+      const btn = h("button", { type: "button", class: "btn secondary", id }, t("adminAuthorshipSet"));
+      btn.addEventListener("click", async () => {
+        if (await run(action, {}, null, out)) loadStatus(box).then(() => box.prepend(out));
+      });
+      return h("li", {}, t(key), " · ", set ? h("span", { class: "status ok", "data-authorship": action }, t("adminAuthorshipOk")) : btn);
+    };
+    return h("div", {},
+      h("h2", { class: "mt" }, t("adminAuthorship")),
+      h("p", { class: "small dim" }, t("adminAuthorshipText")),
+      h("ul", { class: "plain" },
+        row("adminCreator", a.creatorSet, "setCreator", "adminSetCreator"),
+        row("adminIssued", a.issuedSet, "setIssuedAsset", "adminSetIssued"),
+      ),
     );
   }
 
