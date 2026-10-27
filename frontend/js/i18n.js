@@ -72,7 +72,7 @@ const T = {
     adminDesktopOnly: "La pagina admin si usa solo dal computer, con l'estensione UP Browser.",
     viaWallet: "con {name}",
     connectLuksoApp: "App Universal Profiles (LUKSO)",
-    luksoAppHint: `App Universal Profiles: l'app ufficiale di LUKSO per iPhone e Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, o "Universal Profiles" sul Play Store). Si apre con un tocco da questo telefono e lì confermi ogni firma.`,
+    luksoAppHint: `App Universal Profiles: l'app ufficiale di LUKSO per iPhone e Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, <a href="https://play.google.com/store/apps/details?id=io.universaleverything.universalprofiles" target="_blank" rel="noopener">Play Store</a>). Si apre con un tocco da questo telefono e lì confermi ogni firma.`,
     lkTitle: "Collega l'app Universal Profiles",
     lkIntroPhone: "Tocca \"Apri l'app\": l'app Universal Profiles di LUKSO si apre con la richiesta di collegamento. Scegli la tua UP, approva e torna qui.",
     lkOpenApp: "Apri l'app",
@@ -373,7 +373,7 @@ const T = {
         <li><strong>CieSign</strong>, il programma per firmare file con la CIE, sul computer.</li>
         <li>La tua <strong>Universal Profile</strong> in uno di questi wallet:
           <ul>
-            <li>sul telefono, l'app <strong>Universal Profiles</strong>, l'app ufficiale di LUKSO per iPhone e Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, o "Universal Profiles" sul Play Store): dalla pagina Collega del telefono la apri con un tocco. Se la tua UP è nell'estensione, puoi esportarla nell'app;</li>
+            <li>sul telefono, l'app <strong>Universal Profiles</strong>, l'app ufficiale di LUKSO per iPhone e Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, <a href="https://play.google.com/store/apps/details?id=io.universaleverything.universalprofiles" target="_blank" rel="noopener">Play Store</a>): dalla pagina Collega del telefono la apri con un tocco. Se la tua UP è nell'estensione, puoi esportarla nell'app;</li>
             <li>l'estensione <strong>UP Browser</strong> di LUKSO, sul computer (<a href="https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" target="_blank" rel="noopener">Chrome Web Store</a>);</li>
             <li>in alternativa, l'app <strong>UP Wallet</strong> per Android: dal telefono la apri con un tocco, dal computer inquadri un QR. È un prototipo open source di ChainIntegrate, nato come wallet del manutentore: non è sul Play Store e si usa a proprio rischio, con piccoli importi. Si scarica dalle <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">release su GitHub</a> (file <code>.apk</code>); per installarla e autorizzare la chiave del telefono sulla tua UP segui la <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">guida cross-chain</a>, sezione "Strumenti". Serve un controller di amministrazione della UP usabile da un computer (per esempio in MetaMask). Se non ti è chiaro, usa l'estensione.</li>
           </ul>
@@ -513,7 +513,7 @@ const T = {
     adminDesktopOnly: "The admin page is used only from a computer, with the UP Browser extension.",
     viaWallet: "with {name}",
     connectLuksoApp: "Universal Profiles app (LUKSO)",
-    luksoAppHint: `Universal Profiles app: LUKSO's official app for iPhone and Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, or "Universal Profiles" on the Play Store). It opens with a tap from this phone, and you confirm every signature there.`,
+    luksoAppHint: `Universal Profiles app: LUKSO's official app for iPhone and Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, <a href="https://play.google.com/store/apps/details?id=io.universaleverything.universalprofiles" target="_blank" rel="noopener">Play Store</a>). It opens with a tap from this phone, and you confirm every signature there.`,
     lkTitle: "Connect the Universal Profiles app",
     lkIntroPhone: "Tap \"Open the app\": LUKSO's Universal Profiles app opens with the connection request. Choose your UP, approve and come back here.",
     lkOpenApp: "Open the app",
@@ -807,7 +807,7 @@ const T = {
         <li><strong>CieSign</strong>, the program to sign files with the CIE, on a computer.</li>
         <li>Your <strong>Universal Profile</strong> in one of these wallets:
           <ul>
-            <li>on a phone, the <strong>Universal Profiles</strong> app, LUKSO's official app for iPhone and Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, or "Universal Profiles" on the Play Store): from the Link page on the phone it opens with a tap. If your UP is in the extension, you can export it to the app;</li>
+            <li>on a phone, the <strong>Universal Profiles</strong> app, LUKSO's official app for iPhone and Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, <a href="https://play.google.com/store/apps/details?id=io.universaleverything.universalprofiles" target="_blank" rel="noopener">Play Store</a>): from the Link page on the phone it opens with a tap. If your UP is in the extension, you can export it to the app;</li>
             <li>LUKSO's <strong>UP Browser</strong> extension, on a computer (<a href="https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" target="_blank" rel="noopener">Chrome Web Store</a>);</li>
             <li>alternatively, the <strong>UP Wallet</strong> app for Android: on the phone you open it with a tap, from a computer you scan a QR code. It is an open-source prototype by ChainIntegrate, born as the maintainer's wallet: it is not on the Play Store and you use it at your own risk, with small amounts. Download it from the <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">GitHub releases</a> (<code>.apk</code> file); to install it and authorize the phone key on your UP, follow the <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">cross-chain guide</a>, "Tools" section. You need an admin controller of the UP usable from a computer (for example in MetaMask). If this is unclear, use the extension.</li>
           </ul>
