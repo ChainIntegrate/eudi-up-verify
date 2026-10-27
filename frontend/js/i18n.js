@@ -33,7 +33,7 @@ const T = {
     homeVerify: "Verifica una UP",
     howTitle: "Come funziona",
     how: `<ol>
-      <li>Colleghi la Universal Profile con l'estensione UP Browser o con UP Wallet per Android, e la UP firma un enunciato che contiene il suo indirizzo.</li>
+      <li>Colleghi la Universal Profile (estensione UP Browser sul computer, app Universal Profiles o UP Wallet sul telefono) e la UP firma un enunciato che contiene il suo indirizzo.</li>
       <li>Firmi lo stesso enunciato con la CIE (CieSign, lettore e PIN); poi carichi qui il file firmato.</li>
       <li>Il servizio controlla firma, certificato e revoca della carta; se tutto è valido conia il bollino sulla tua UP.</li>
     </ol>`,
@@ -46,7 +46,7 @@ const T = {
     needTitle: "Cosa ti serve",
     need: `<ul>
       <li>La CIE con il PIN e un lettore (NFC o USB) con <strong>CieSign</strong>.</li>
-      <li>La tua Universal Profile nell'estensione <strong>UP Browser</strong> oppure nell'app <strong>UP Wallet</strong> per Android; il controller deve avere il permesso di firma (SIGN).</li>
+      <li>La tua Universal Profile nell'estensione <strong>UP Browser</strong>, nell'app <strong>Universal Profiles</strong> di LUKSO oppure in <strong>UP Wallet</strong> per Android; il controller deve avere il permesso di firma (SIGN).</li>
       <li>Circa 10 minuti: l'enunciato vale 15 minuti.</li>
     </ul>
     <p><a href="/guida" data-link>Leggi la guida completa</a></p>`,
@@ -72,10 +72,9 @@ const T = {
     adminDesktopOnly: "La pagina admin si usa solo dal computer, con l'estensione UP Browser.",
     viaWallet: "con {name}",
     connectLuksoApp: "App Universal Profiles (LUKSO)",
+    luksoAppHint: `App Universal Profiles: l'app ufficiale di LUKSO per iPhone e Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, o "Universal Profiles" sul Play Store). Si apre con un tocco da questo telefono e lì confermi ogni firma.`,
     lkTitle: "Collega l'app Universal Profiles",
-    lkIntro: "Inquadra il QR con la fotocamera del telefono su cui hai l'app Universal Profiles di LUKSO: si apre l'app con la richiesta di collegamento. Scegli la tua UP, approva e torna qui.",
     lkIntroPhone: "Tocca \"Apri l'app\": l'app Universal Profiles di LUKSO si apre con la richiesta di collegamento. Scegli la tua UP, approva e torna qui.",
-    lkQrOther: "Oppure inquadra questo QR con la fotocamera di un altro telefono.",
     lkOpenApp: "Apri l'app",
     disconnect: "Disconnetti",
     cancel: "Annulla",
@@ -374,8 +373,9 @@ const T = {
         <li><strong>CieSign</strong>, il programma per firmare file con la CIE, sul computer.</li>
         <li>La tua <strong>Universal Profile</strong> in uno di questi wallet:
           <ul>
+            <li>sul telefono, l'app <strong>Universal Profiles</strong>, l'app ufficiale di LUKSO per iPhone e Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, o "Universal Profiles" sul Play Store): dalla pagina Collega del telefono la apri con un tocco. Se la tua UP è nell'estensione, puoi esportarla nell'app;</li>
             <li>l'estensione <strong>UP Browser</strong> di LUKSO, sul computer (<a href="https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" target="_blank" rel="noopener">Chrome Web Store</a>);</li>
-            <li>l'app <strong>UP Wallet</strong> per Android: dal telefono la apri con un tocco, dal computer inquadri un QR. È un prototipo open source di ChainIntegrate, nato come wallet del manutentore: non è sul Play Store e si usa a proprio rischio, con piccoli importi. Si scarica dalle <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">release su GitHub</a> (file <code>.apk</code>); per installarla e autorizzare la chiave del telefono sulla tua UP segui la <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">guida cross-chain</a>, sezione "Strumenti". Serve un controller di amministrazione della UP usabile da un computer (per esempio in MetaMask). Se non ti è chiaro, usa l'estensione.</li>
+            <li>in alternativa, l'app <strong>UP Wallet</strong> per Android: dal telefono la apri con un tocco, dal computer inquadri un QR. È un prototipo open source di ChainIntegrate, nato come wallet del manutentore: non è sul Play Store e si usa a proprio rischio, con piccoli importi. Si scarica dalle <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">release su GitHub</a> (file <code>.apk</code>); per installarla e autorizzare la chiave del telefono sulla tua UP segui la <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">guida cross-chain</a>, sezione "Strumenti". Serve un controller di amministrazione della UP usabile da un computer (per esempio in MetaMask). Se non ti è chiaro, usa l'estensione.</li>
           </ul>
           Il controller che usi deve avere il permesso di firma (SIGN) sulla UP.</li>
         <li>Circa 10 minuti. Non servono LYX: il conio del bollino lo paga il servizio.</li>
@@ -383,7 +383,7 @@ const T = {
 
       <h2>2 · Collegare la UP, passo per passo</h2>
       <ol>
-        <li><strong>UP</strong>: nella pagina <a href="/collega" data-link>Collega</a> scegli il wallet e collega la UP.</li>
+        <li><strong>UP</strong>: nella pagina <a href="/collega" data-link>Collega</a> scegli il wallet e collega la UP. Dal telefono la prima scelta è l'app Universal Profiles; dal computer l'estensione.</li>
         <li><strong>Modalità</strong>: "Primo collegamento" se la CIE non è ancora collegata a nessuna UP (vale anche per rinnovare il bollino della stessa UP); le altre due modalità sono spiegate al punto 5.</li>
         <li><strong>Consenso</strong>: leggi l'informativa e dai il consenso; il servizio prepara l'enunciato, un breve testo con l'indirizzo della UP.</li>
         <li><strong>Firma UP</strong>: controlla che l'indirizzo sia il tuo e firma con la UP. Hai 5 minuti.</li>
@@ -432,7 +432,7 @@ const T = {
       <ul>
         <li><strong>"La firma della UP non è valida"</strong>: il controller che hai usato non ha il permesso di firma (SIGN). Aggiungilo dalle impostazioni della UP, o usa un altro controller.</li>
         <li><strong>Il file firmato non viene accettato</strong>: carica il <strong>.p7m</strong> creato da CieSign in formato CAdES, firmato sull'enunciato scaricato senza modifiche.</li>
-        <li><strong>UP Wallet è su un'altra rete</strong>: nell'app scegli la rete LUKSO principale e riprova.</li>
+        <li><strong>L'app sul telefono è su un'altra rete</strong>: nell'app scegli la rete LUKSO principale e riprova.</li>
         <li><strong>"Troppe verifiche in corso" o "numero massimo di bollini"</strong>: il servizio ha dei limiti per proteggersi dagli abusi. Riprova dopo il tempo indicato.</li>
         <li>Per tutto il resto: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> o <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>.</li>
       </ul>`,
@@ -475,7 +475,7 @@ const T = {
     homeVerify: "Verify a UP",
     howTitle: "How it works",
     how: `<ol>
-      <li>You connect your Universal Profile with the UP Browser extension or with UP Wallet for Android, and the UP signs a statement containing its address.</li>
+      <li>You connect your Universal Profile (UP Browser extension on a computer, Universal Profiles app or UP Wallet on a phone), and the UP signs a statement containing its address.</li>
       <li>You sign the same statement with your CIE (CieSign, card reader and PIN), then upload the signed file here.</li>
       <li>The service checks the signature, the certificate and its revocation; if everything is valid it mints the badge to your UP.</li>
     </ol>`,
@@ -488,7 +488,7 @@ const T = {
     needTitle: "What you need",
     need: `<ul>
       <li>Your CIE with its PIN and a reader (NFC or USB) with <strong>CieSign</strong>.</li>
-      <li>Your Universal Profile in the <strong>UP Browser</strong> extension or in the <strong>UP Wallet</strong> app for Android; the controller needs the SIGN permission.</li>
+      <li>Your Universal Profile in the <strong>UP Browser</strong> extension, in LUKSO's <strong>Universal Profiles</strong> app or in <strong>UP Wallet</strong> for Android; the controller needs the SIGN permission.</li>
       <li>About 10 minutes: the statement is valid for 15 minutes.</li>
     </ul>
     <p><a href="/guida" data-link>Read the full guide</a></p>`,
@@ -513,10 +513,9 @@ const T = {
     adminDesktopOnly: "The admin page is used only from a computer, with the UP Browser extension.",
     viaWallet: "with {name}",
     connectLuksoApp: "Universal Profiles app (LUKSO)",
+    luksoAppHint: `Universal Profiles app: LUKSO's official app for iPhone and Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, or "Universal Profiles" on the Play Store). It opens with a tap from this phone, and you confirm every signature there.`,
     lkTitle: "Connect the Universal Profiles app",
-    lkIntro: "Scan the QR code with the camera of the phone that has LUKSO's Universal Profiles app: the app opens with the connection request. Choose your UP, approve and come back here.",
     lkIntroPhone: "Tap \"Open the app\": LUKSO's Universal Profiles app opens with the connection request. Choose your UP, approve and come back here.",
-    lkQrOther: "Or scan this QR code with the camera of another phone.",
     lkOpenApp: "Open the app",
     disconnect: "Disconnect",
     cancel: "Cancel",
@@ -808,8 +807,9 @@ const T = {
         <li><strong>CieSign</strong>, the program to sign files with the CIE, on a computer.</li>
         <li>Your <strong>Universal Profile</strong> in one of these wallets:
           <ul>
+            <li>on a phone, the <strong>Universal Profiles</strong> app, LUKSO's official app for iPhone and Android (<a href="https://apps.apple.com/app/id6702018631" target="_blank" rel="noopener">App Store</a>, or "Universal Profiles" on the Play Store): from the Link page on the phone it opens with a tap. If your UP is in the extension, you can export it to the app;</li>
             <li>LUKSO's <strong>UP Browser</strong> extension, on a computer (<a href="https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" target="_blank" rel="noopener">Chrome Web Store</a>);</li>
-            <li>the <strong>UP Wallet</strong> app for Android: on the phone you open it with a tap, from a computer you scan a QR code. It is an open-source prototype by ChainIntegrate, born as the maintainer's wallet: it is not on the Play Store and you use it at your own risk, with small amounts. Download it from the <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">GitHub releases</a> (<code>.apk</code> file); to install it and authorize the phone key on your UP, follow the <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">cross-chain guide</a>, "Tools" section. You need an admin controller of the UP usable from a computer (for example in MetaMask). If this is unclear, use the extension.</li>
+            <li>alternatively, the <strong>UP Wallet</strong> app for Android: on the phone you open it with a tap, from a computer you scan a QR code. It is an open-source prototype by ChainIntegrate, born as the maintainer's wallet: it is not on the Play Store and you use it at your own risk, with small amounts. Download it from the <a href="https://github.com/ChainIntegrate/up-wallet-android/releases" target="_blank" rel="noopener">GitHub releases</a> (<code>.apk</code> file); to install it and authorize the phone key on your UP, follow the <a href="https://crosschain-lukso.chainintegrate.it/up-crosschain-guide.html" target="_blank" rel="noopener">cross-chain guide</a>, "Tools" section. You need an admin controller of the UP usable from a computer (for example in MetaMask). If this is unclear, use the extension.</li>
           </ul>
           The controller you use needs the SIGN permission on the UP.</li>
         <li>About 10 minutes. No LYX needed: the service pays for minting the badge.</li>
@@ -817,7 +817,7 @@ const T = {
 
       <h2>2 · Linking your UP, step by step</h2>
       <ol>
-        <li><strong>UP</strong>: on the <a href="/collega" data-link>Link</a> page choose the wallet and connect your UP.</li>
+        <li><strong>UP</strong>: on the <a href="/collega" data-link>Link</a> page choose the wallet and connect your UP. On a phone the first choice is the Universal Profiles app; on a computer, the extension.</li>
         <li><strong>Mode</strong>: "First link" if your CIE is not yet linked to any UP (also to renew the badge of the same UP); the other two modes are explained in section 5.</li>
         <li><strong>Consent</strong>: read the privacy notice and give your consent; the service prepares the statement, a short text with the UP address.</li>
         <li><strong>UP signature</strong>: check that the address is yours and sign with the UP. You have 5 minutes.</li>
@@ -866,7 +866,7 @@ const T = {
       <ul>
         <li><strong>"The UP signature is not valid"</strong>: the controller you used lacks the SIGN permission. Add it in the UP settings, or use another controller.</li>
         <li><strong>The signed file is not accepted</strong>: upload the <strong>.p7m</strong> created by CieSign in CAdES format, signed on the downloaded statement without changes.</li>
-        <li><strong>UP Wallet is on another network</strong>: in the app choose the LUKSO mainnet and try again.</li>
+        <li><strong>The phone app is on another network</strong>: in the app choose the LUKSO mainnet and try again.</li>
         <li><strong>"Too many checks in progress" or "maximum number of badges"</strong>: the service has limits to protect itself from abuse. Try again after the time shown.</li>
         <li>For anything else: <a href="https://t.me/Simone_1977_2" target="_blank" rel="noopener">Telegram</a> or <a href="mailto:info@chainintegrate.it">info@chainintegrate.it</a>.</li>
       </ul>`,

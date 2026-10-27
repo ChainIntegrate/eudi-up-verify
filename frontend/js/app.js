@@ -153,18 +153,21 @@ function walletPanel(onConnected, { upWallet = true } = {}) {
     // without the extension UP Wallet is the main choice; on a phone the extension is not offered at all
     const wcFirst = wcOn && !ext;
     const phone = wcFirst && isPhone();
+    // LUKSO's app opens from a link on the same phone only: its QR code from a computer did not work (2026-10-27)
+    const luksoApp = wcOn && isPhone();
     fill(box,
       h("p", { class: "dim" }, t("connectText")),
       h("div", { class: "actions" },
         phone ? null : h("button", { type: "button", class: wcFirst ? "btn secondary" : "btn", onclick: () => connect(ext) }, t("connectExtension")),
-        upWallet
-          ? h("button", { type: "button", class: wcFirst ? "btn" : "btn secondary", id: "connectUpWallet", disabled: !wcOn, title: wcOn ? null : t("androidSoon"), onclick: () => pair("upwallet") }, t("connectAndroid"))
+        luksoApp
+          ? h("button", { type: "button", class: phone ? "btn" : "btn secondary", id: "connectLuksoApp", onclick: () => pair("lukso") }, t("connectLuksoApp"))
           : null,
-        upWallet && wcOn
-          ? h("button", { type: "button", class: "btn secondary", id: "connectLuksoApp", onclick: () => pair("lukso") }, t("connectLuksoApp"))
+        upWallet
+          ? h("button", { type: "button", class: wcFirst && !luksoApp ? "btn" : "btn secondary", id: "connectUpWallet", disabled: !wcOn, title: wcOn ? null : t("androidSoon"), onclick: () => pair("upwallet") }, t("connectAndroid"))
           : null,
       ),
       ext || phone ? null : notice("warn", h("span", { html: t("noExtension") })),
+      luksoApp ? h("p", { class: "small dim", html: t("luksoAppHint") }) : null,
       h("p", { class: "small dim" }, !upWallet ? t("adminDesktopOnly") : wcOn ? t("upWalletHint") : t("androidSoon")),
       upWallet && wcOn ? h("p", { class: "small dim", html: t("upWalletGet") }) : null,
       err ? errorNotice(err) : null,
@@ -206,15 +209,16 @@ const isPhone = () => window.matchMedia("(max-width: 820px)").matches;
 
 // LUKSO's Universal Profiles app opens a WalletConnect pairing through its own link, as LUKSO's @lukso/up-modal
 // 0.22.0 does (MOBILE_APP_DEEP_LINK_PREFIX, walletConnectDeepLinkUrl): <prefix>://wallet-connect/<wc path and query>.
-// It cannot scan a QR code: from a computer the QR holds this link, for the phone's camera.
+// It cannot scan a QR code, and the link in a QR code read by the phone's camera did not work (2026-10-27): it is
+// offered on phones only, without a QR code.
 const LUKSO_APP_LINK = "io.universaleverything.universalprofiles://wallet-connect/";
 const luksoAppLink = (uri) => {
   const u = new URL(uri);
   return `${LUKSO_APP_LINK}${u.pathname}${u.search}`;
 };
 
-// A WalletConnect app on the phone: a window with the QR code (computer), the link that opens the app (phone) and,
-// for UP Wallet, copy. app: "upwallet" (UP Wallet for Android) or "lukso" (LUKSO's Universal Profiles app).
+// A WalletConnect app on the phone: a window with the QR code (computer), the link that opens the app (phone) and
+// copy. app: "upwallet" (UP Wallet for Android) or "lukso" (LUKSO's Universal Profiles app: the link only).
 function pairWindow(app, onWallet) {
   const lukso = app === "lukso";
   const k = (key) => t(lukso ? key.replace(/^wc/, "lk") : key);
@@ -229,8 +233,8 @@ function pairWindow(app, onWallet) {
   const win = h("div", { class: "modal-back" },
     h("div", { class: `modal panel${phone ? " phone" : ""}`, role: "dialog", "aria-modal": "true", "aria-labelledby": "wcTitle" },
       h("h2", { id: "wcTitle" }, k("wcTitle")),
-      h("p", {}, phone ? k("wcIntroPhone") : k("wcIntro")),
-      phone ? [actions, status, qrBox, h("p", { class: "small dim qr-caption" }, k("wcQrOther"))] : [qrBox, actions, status],
+      h("p", {}, lukso ? t("lkIntroPhone") : phone ? t("wcIntroPhone") : t("wcIntro")),
+      lukso ? [actions, status] : phone ? [actions, status, qrBox, h("p", { class: "small dim qr-caption" }, t("wcQrOther"))] : [qrBox, actions, status],
       h("p", { class: "small dim" }, t("wcPrivacy")),
     ),
   );
@@ -249,6 +253,7 @@ function pairWindow(app, onWallet) {
       open.removeAttribute("aria-disabled");
       if (copy) copy.disabled = false;
       status.textContent = t("wcWaiting");
+      if (lukso) return;
       try {
         qr.src = await qrDataUrl(link);
         qr.hidden = false;

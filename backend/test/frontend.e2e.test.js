@@ -514,7 +514,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.locator("#connectUpWallet").waitFor();
     assert.equal(await page.evaluate(() => [window.__wcDisconnected, localStorage.getItem("ucl-wc-session")]).then((r) => JSON.stringify(r)), "[true,null]");
 
-    // phone-sized screen: menu on one line per link, UP Wallet is the only choice, the window opens the app first
+    // phone-sized screen: menu on one line per link, no extension; the UP Wallet window opens the app first
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(site + "/collega");
     await page.locator("#connectUpWallet").waitFor();
@@ -529,13 +529,21 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await shot(page, "12-upwallet-phone");
     await page.locator("#wcCancel").click();
 
-    // M-9: LUKSO's Universal Profiles app, opened by its own link (it cannot scan a QR: the QR holds the same link)
+    // M-9: LUKSO's Universal Profiles app, on a phone only (first choice there), opened by its own link, no QR code
+    assert.equal(await page.locator("#connectLuksoApp").getAttribute("class"), "btn");
+    assert.equal(await page.locator("#connectUpWallet").getAttribute("class"), "btn secondary");
     await page.locator("#connectLuksoApp").click();
-    await page.locator("#wcQr").waitFor();
+    await page.getByText("Collega l'app Universal Profiles").waitFor();
+    await page.waitForFunction(() => document.querySelector("#wcOpen")?.getAttribute("aria-disabled") === null);
     assert.equal(await page.locator("#wcOpen").getAttribute("href"), "io.universaleverything.universalprofiles://wallet-connect/pair-1@2?relay-protocol=irn&symKey=00");
     assert.equal(await page.locator("#wcCopy").count(), 0);
-    await page.getByText("Collega l'app Universal Profiles").waitFor();
+    assert.equal(await page.locator("#wcQr").count(), 0);
     await page.locator("#wcCancel").click();
+    // not on a computer: the QR code route did not work with that app
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(site + "/collega");
+    await page.locator("#connectUpWallet").waitFor();
+    assert.equal(await page.locator("#connectLuksoApp").count(), 0);
     assert.deepEqual(problems, []);
   });
 });
