@@ -92,7 +92,8 @@ npx hardhat clean && npx hardhat run scripts/export-standard-json.ts --network l
 
 `clean` first: with builds of an older source still in `artifacts/` the script stops ("found 2"). In the UI the
 licence is Apache-2.0. Blockscout may verify a new deployment by itself as a *partial match* when the same bytecode
-was verified before with different comments; the Standard JSON upload replaces it with the exact source.
+was verified before with different comments; the Standard JSON upload is meant to replace it with the exact source (on 2026-10-27
+Blockscout's verifier service did not answer: to retry).
 
 ## After deployment
 
