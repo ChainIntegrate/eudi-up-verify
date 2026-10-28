@@ -2,10 +2,10 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { describe, it } from "node:test";
-import { kvSet, openDb } from "../src/db.js";
+import { audit, kvSet, openDb } from "../src/db.js";
 import { applyLink } from "../src/linking.js";
 import { startMint } from "../src/mints.js";
-import { collectFindings, monitorConfig } from "../src/monitor.js";
+import { collectFindings, dailySummary, monitorConfig } from "../src/monitor.js";
 
 const UP = "0x83cBE526D949A3AaaB4EF9a03E48dd862e81472C";
 const HOUR = 3_600_000;
@@ -71,5 +71,28 @@ describe("monitor: database-side findings", () => {
     const base = { NETWORK: "luksoTestnet", RPC_URL: "http://x", PORT: "1", DB_PATH: "/tmp/x.db" };
     assert.throws(() => monitorConfig({ ...base, ATTESTER_PRIVATE_KEY: `0x${"11".repeat(32)}` }), /ATTESTER_ADDRESS/);
     assert.equal(monitorConfig({ ...base, ATTESTER_ADDRESS: UP }).attesterAddress, UP);
+  });
+});
+
+describe("monitor: daily summary", () => {
+  it("reads as the steps of a link: the owner's first mainnet day (2026-10-27)", () => {
+    const db = openDb(":memory:");
+    const at = now - HOUR;
+    // primary link, additional UP refused for the missing exception, additional UP after approval, one abandoned
+    for (let i = 0; i < 4; i++) audit(db, "statement_created", { up: UP }, at);
+    for (let i = 0; i < 4; i++) audit(db, "up_signed", { up: UP }, at);
+    for (let i = 0; i < 3; i++) audit(db, "cie_verified", { up: UP }, at);
+    audit(db, "attested", { up: UP, detail: "primary" }, at);
+    audit(db, "link_refused", { up: UP, detail: "EXCEPTION_REQUIRED" }, at);
+    audit(db, "attested", { up: UP, detail: "additional" }, at);
+    audit(db, "statement_created", { up: UP }, now - 25 * HOUR); // outside the window
+    const text = dailySummary({ db, now, attesterBalance: null, backupStatus: null });
+    assert.match(text, /statements created: +4\n/);
+    assert.match(text, /signed with the UP: +4\n/);
+    assert.match(text, /CIE signature checked: +3 \(3 valid, 0 refused\); 1 stopped before the CIE signature/);
+    assert.match(text, /CIE refused because: +none/);
+    assert.match(text, /after a valid CIE: +2 minted \(1 primary, 1 additional\), 1 refused, 0 minting failure\(s\)/);
+    assert.match(text, /refused because: +EXCEPTION_REQUIRED 1/);
+    db.close();
   });
 });

@@ -157,14 +157,28 @@ export function dailySummary({ db, now, attesterBalance, backupStatus }) {
     db.prepare("SELECT detail, COUNT(*) n FROM audit WHERE event = ? AND ts >= ? GROUP BY detail ORDER BY n DESC").all(event, since);
   const active = db.prepare("SELECT is_primary, COUNT(*) n FROM links WHERE status = 'valid' AND expires_at > ? GROUP BY is_primary").all(now);
   const activeOf = (p) => active.find((r) => r.is_primary === p)?.n ?? 0;
+  const reasons = (event) => grouped(event).map((r) => `${r.detail} ${r.n}`).join(", ") || "none";
+  // the link funnel: each statement goes UP signature -> CIE check -> decision (mint or refusal), one step at a time
+  const created = count("statement_created");
+  const upSigned = count("up_signed");
+  const cieValid = count("cie_verified");
+  const cieRefused = count("cie_rejected");
+  const mintedPrimary = count("attested", "primary");
+  const mintedAdditional = count("attested", "additional");
+  const linkRefused = count("link_refused");
+  const mintFailed = count("mint_failed");
+  // differences of counters over the same window: a statement that crosses the window's start can make them
+  // negative, hence the floor at zero
+  const notSigned = Math.max(0, created - upSigned);
+  const stoppedBeforeCie = Math.max(0, upSigned - cieValid - cieRefused);
   const lines = [
-    "Last 24 hours",
-    `  statements created:        ${count("statement_created")}`,
-    `  UP signatures accepted:    ${count("up_signed")}`,
-    `  CIE signatures verified:   ${count("cie_verified")}`,
-    `  badges minted (primary):   ${count("attested", "primary")}`,
-    `  badges minted (additional):${count("attested", "additional")}`,
-    `  minting failures:          ${count("mint_failed")}`,
+    "Last 24 hours (one line per step of a link)",
+    `  statements created:        ${created}`,
+    `  signed with the UP:        ${upSigned}${notSigned ? ` (${notSigned} not signed: abandoned or expired)` : ""}`,
+    `  CIE signature checked:     ${cieValid + cieRefused} (${cieValid} valid, ${cieRefused} refused)${stoppedBeforeCie ? `; ${stoppedBeforeCie} stopped before the CIE signature (abandoned, expired or service busy)` : ""}`,
+    `    CIE refused because:     ${reasons("cie_rejected")}`,
+    `  after a valid CIE:         ${mintedPrimary + mintedAdditional} minted (${mintedPrimary} primary, ${mintedAdditional} additional), ${linkRefused} refused, ${mintFailed} minting failure(s)`,
+    `    refused because:         ${reasons("link_refused")}`,
     `  renounced / revoked:       ${count("renounced")} / ${count("revoked")}`,
     `  revocation recheck:        ${(() => {
       const r = db.prepare("SELECT value FROM kv WHERE key = 'revocation'").get();
@@ -172,8 +186,6 @@ export function dailySummary({ db, now, attesterBalance, backupStatus }) {
       const v = JSON.parse(r.value);
       return `${new Date(v.at).toISOString()}: ${v.checked} checked, ${v.good} good, ${v.revoked} revoked, ${v.unavailable} unavailable, ${v.errors} errors`;
     })()}`,
-    "  CIE refused by reason:     " + (grouped("cie_rejected").map((r) => `${r.detail} ${r.n}`).join(", ") || "none"),
-    "  links refused by reason:   " + (grouped("link_refused").map((r) => `${r.detail} ${r.n}`).join(", ") || "none"),
     "",
     "Now",
     `  active badges:             ${activeOf(1)} primary, ${activeOf(0)} additional`,
