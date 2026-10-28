@@ -153,6 +153,7 @@ const T = {
     stateNoneText: "Questa UP non ha mai ricevuto il bollino.",
     stateInvalidatedText: "Il bollino non è più valido (rinuncia del titolare, migrazione o certificato della carta revocato).",
     stateRevokedText: "Il bollino è stato revocato da ChainIntegrate.",
+    stateStillVisible: "Il bollino resta visibile sul profilo (per esempio su Universal Everything) come traccia storica: per sapere se è valido conta solo lo stato mostrato qui.",
     factUp: "Universal Profile",
     factPrimary: "UP principale",
     factVerifiedAt: "Verificata il",
@@ -401,6 +402,7 @@ const T = {
         <li><strong>Revocato</strong>: revocato da ChainIntegrate; non si può rinnovare.</li>
         <li><strong>Nessun bollino</strong>: la UP non l'ha mai ricevuto.</li>
       </ul>
+      <p>Il bollino resta visibile sul profilo anche quando non è più valido (per esempio su Universal Everything), come traccia storica: per sapere se è valido conta solo lo stato mostrato dalla pagina Verifica.</p>
 
       <h2>4 · Il mio bollino</h2>
       <p>Nella pagina <a href="/il-mio-bollino" data-link>Il mio bollino</a> colleghi la UP e puoi:</p>
@@ -593,6 +595,7 @@ const T = {
     stateNoneText: "This UP has never received the badge.",
     stateInvalidatedText: "The badge is no longer valid (renounced by the holder, migration, or the card's certificate was revoked).",
     stateRevokedText: "The badge was revoked by ChainIntegrate.",
+    stateStillVisible: "The badge stays visible on the profile (for example on Universal Everything) as a record: only the state shown here says whether it is valid.",
     factUp: "Universal Profile",
     factPrimary: "Primary UP",
     factVerifiedAt: "Verified on",
@@ -835,6 +838,7 @@ const T = {
         <li><strong>Revoked</strong>: revoked by ChainIntegrate; it cannot be renewed.</li>
         <li><strong>No badge</strong>: the UP never received one.</li>
       </ul>
+      <p>The badge stays visible on the profile even when it is no longer valid (for example on Universal Everything), as a record: only the state shown by the Verify page says whether it is valid.</p>
 
       <h2>4 · My badge</h2>
       <p>On the <a href="/il-mio-bollino" data-link>My badge</a> page you connect your UP and you can:</p>

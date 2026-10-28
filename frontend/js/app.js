@@ -578,6 +578,8 @@ function badgeCard(b) {
   return h("section", { class: "panel", id: "badge" },
     h("span", { class: `status ${cls}`, id: "badgeState" }, t(key)),
     textKey ? h("p", { class: "dim" }, t(textKey)) : null,
+    // M-10: wallets and explorers keep showing the token; only the state read here says whether it is valid
+    key !== "stateValid" && key !== "stateNone" ? h("p", { class: "small dim", id: "stillVisible" }, t("stateStillVisible")) : null,
     h("dl", { class: "facts" },
       h("dt", {}, t("factUp")), h("dd", {}, h("code", {}, b.up)),
       b.status !== "none" ? [

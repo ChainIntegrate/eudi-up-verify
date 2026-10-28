@@ -306,6 +306,7 @@ describe("frontend end-to-end in Chromium", { skip: (!contractsAvailable && "con
     await page.getByRole("button", { name: "Rinuncia" }).click();
     await page.getByText("Transazione inviata.").waitFor({ timeout: 30_000 });
     assert.equal(await page.locator("#badgeState").textContent(), "Bollino invalidato");
+    await page.locator("#stillVisible").waitFor(); // M-10: the token stays on the profile, the state decides
     await shot(page, "08-mine-renounced");
 
     // UCL-31: data export and erasure, signed by the UP

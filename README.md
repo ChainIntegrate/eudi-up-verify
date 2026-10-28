@@ -29,6 +29,23 @@ and marks the UP with a soulbound "verified" badge. **No name, tax code or card 
 Both signatures cover the same bytes, so the link between the UP and the CIE is cryptographic, not just a session on
 our server.
 
+## For integrators
+
+Contract on LUKSO mainnet: `0xc945c5FABBc19dBd04f90a1a4878cfA0F78C5e38` (from block 8661334).
+
+**Gate on `isVerified(up)` or `isVerifiedPrimary(up)`, never on owning the token.** The badge is a permanent record:
+it stays on the UP after it expires, is invalidated (renounced, moved to another UP, certificate revoked) or is
+revoked, and only these two reads tell whether it is valid now.
+
+- `isVerified(up)`: valid and not expired. `isVerifiedPrimary(up)`: the same, and the UP is the person's primary one;
+  use it for "one person, one vote" (votes, airdrops). UPs of the same person are never linked on-chain.
+- `getAttestation(up)`: source, verification time, expiry (the first day of the month in which the card expires),
+  status, primary.
+- One token per UP: `tokenIdOf(up)` is the UP address as `bytes32`, so relinking restores the same token. No
+  transfers, no burns, no operators.
+- On-chain invalidation reasons are always the generic `INVALIDATED`: a lost or stolen card is not exposed.
+- Events to index: `Attested`, `Invalidated`, `Revoked`, `Reinstated`.
+
 ## Status
 
 | Phase | Content | State |
